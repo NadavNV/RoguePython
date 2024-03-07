@@ -18,11 +18,11 @@ class Entity:
     A generic object to represent players, enemies, items, etc.
     """
 
-    game_map: GameMap
+    parent: GameMap
 
     def __init__(
             self,
-            game_map: Optional[GameMap] = None,
+            parent: Optional[GameMap] = None,
             x: int = 0,
             y: int = 0,
             char: str = "?",
@@ -38,17 +38,21 @@ class Entity:
         self.name = name
         self.blocks_movement = blocks_movement
         self.render_order = render_order
-        if game_map:
-            # If game_map isn't provided now then it will be set later
-            self.game_map = game_map
-            game_map.entities.add(self)
+        if parent:
+            # If parent isn't provided now then it will be set later
+            self.parent = parent
+            parent.entities.add(self)
+
+    @property
+    def game_map(self) -> GameMap:
+        return self.parent.game_map
 
     def spawn(self: T, game_map: GameMap, x: int, y: int) -> T:
         """Spawn a copy of this instance at the given location."""
         clone = copy.deepcopy(self)
         clone.x = x
         clone.y = y
-        clone.game_map = game_map
+        clone.parent = game_map
         game_map.entities.add(clone)
         return clone
 
@@ -57,9 +61,10 @@ class Entity:
         self.x = x
         self.y = y
         if game_map:
-            if hasattr(self, "game_map"):  # Possibly uninitialized
-                self.game_map.entities.remove(self)
-            self.game_map = game_map
+            if hasattr(self, "parent"):  # Possibly uninitialized
+                if self.parent is self.game_map:
+                    self.parent.entities.remove(self)
+            self.parent = game_map
             game_map.entities.add(self)
 
     def move(self, dx: int, dy: int,) -> None:
@@ -93,7 +98,7 @@ class Actor(Entity):
         self.ai: Optional[BaseAI] = ai_cls(self)
 
         self.fighter = fighter
-        self.fighter.entity = self
+        self.fighter.parent = self
 
     @property
     def is_alive(self) -> bool:
