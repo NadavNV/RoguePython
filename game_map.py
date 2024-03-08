@@ -5,7 +5,7 @@ from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 import numpy as np  # type: ignore
 from tcod.console import Console
 
-from entity import Actor
+from entity import Actor, Item
 import tile_types
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class GameMap:
     def __init__(
-            self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()
+        self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()
     ):
         self.engine = engine
         self.width, self.height = width, height
@@ -24,7 +24,7 @@ class GameMap:
 
         self.visible = np.full(
             (width, height), fill_value=False, order="F"
-        )  # Tiles the player can Currently see
+        )  # Tiles the player can currently see
         self.explored = np.full(
             (width, height), fill_value=False, order="F"
         )  # Tiles the player has seen before
@@ -42,8 +42,12 @@ class GameMap:
             if isinstance(entity, Actor) and entity.is_alive
         )
 
+    @property
+    def items(self) -> Iterator[Item]:
+        yield from (entity for entity in self.entities if isinstance(entity, Item))
+
     def get_blocking_entity_at_location(
-            self, location_x: int, location_y: int
+            self, location_x: int, location_y: int,
     ) -> Optional[Entity]:
         for entity in self.entities:
             if (
@@ -70,7 +74,7 @@ class GameMap:
         """
         Renders the map.
 
-        If a tile is in the "visible" array, then it draws it with the "light" colors.
+        If a tile is in the "visible" array, then draw it with the "light" colors.
         If it isn't, but it's in the "explored" array, then draw it with the "dark" colors.
         Otherwise, the defaults is "SHROUD".
         """
