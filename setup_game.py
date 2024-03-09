@@ -9,13 +9,12 @@ from typing import Optional
 
 import tcod
 from tcod import libtcodpy
-from tcod.event import T
 
 import color
 from engine import Engine
 import entity_factories
+from game_map import GameWorld
 import input_handlers
-from procgen import generate_dungeon
 
 
 # Load the background image and remove the alpha channel.
@@ -31,14 +30,15 @@ def new_game() -> Engine:
     room_min_size = 6
     max_rooms = 30
 
-    max_monsters_per_room = 2
+    max_monsters_per_room = 3
     max_items_per_room = 2
 
     player = copy.deepcopy(entity_factories.player)
 
     engine = Engine(player=player)
 
-    engine.game_map = generate_dungeon(
+    engine.game_world = GameWorld(
+        engine=engine,
         max_rooms=max_rooms,
         room_min_size=room_min_size,
         room_max_size=room_max_size,
@@ -46,14 +46,16 @@ def new_game() -> Engine:
         map_height=map_height,
         max_monsters_per_room=max_monsters_per_room,
         max_items_per_room=max_items_per_room,
-        engine=engine,
     )
+
+    engine.game_world.generate_floor()
     engine.update_fov()
 
     engine.message_log.add_message(
         "Hello and welcome, adventurer, to yet another dungeon!", color.welcome_text
     )
     return engine
+
 
 def load_game(filename: str) -> Engine:
     """Load an engine instance from a file."""
@@ -87,7 +89,7 @@ class MainMenu(input_handlers.BaseEventHandler):
 
         menu_width = 24
         for i, text in enumerate(
-            ["[N] Play a new game", "[C] Continnue last game", "[Q] Quit"]
+            ["[N] Play a new game", "[C] Continue last game", "[Q] Quit"]
         ):
             console.print(
                 console.width // 2,
