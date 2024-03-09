@@ -320,8 +320,8 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         console.draw_frame(
             x=x - self.radius - 1,
             y=y - self.radius - 1,
-            width=self.radius * 2,
-            height=self.radius * 2,
+            width=self.radius ** 2,
+            height=self.radius ** 2,
             fg=color.red,
             clear=False,
         )
