@@ -17,8 +17,8 @@ def save_game(handler: input_handlers.BaseEventHandler, filename: str) -> None:
 
 
 def main() -> None:
-    screen_width = 80
-    screen_height = 50
+    screen_width = setup_game.WINDOW_WIDTH
+    screen_height = setup_game.WINDOW_HEIGHT
 
     tileset = tcod.tileset.load_tilesheet(
         "dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD
@@ -34,6 +34,8 @@ def main() -> None:
         vsync=True,
     ) as context:
         root_console = tcod.console.Console(screen_width, screen_height, order="F")
+        # Start the game in full screen mode
+        context.sdl_window.fullscreen = tcod.lib.SDL_WINDOW_FULLSCREEN_DESKTOP
         try:
             while True:
                 root_console.clear()

@@ -11,13 +11,13 @@ import tile_types
 
 
 if TYPE_CHECKING:
-    from engine import Engine
+    from engine import DungeonEngine
     from entity import Entity
 
 
 max_items_by_floor = [
-    (1, 1),
-    (4, 2),
+    (1, 2),
+    (4, 3),
 ]
 
 max_monsters_by_floor = [
@@ -137,7 +137,7 @@ def generate_dungeon(
     room_max_size: int,
     map_width: int,
     map_height: int,
-    engine: Engine,
+    engine: DungeonEngine,
 ) -> GameMap:
     """Generate a new dungeon map."""
     player = engine.player

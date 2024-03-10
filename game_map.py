@@ -9,13 +9,13 @@ from entity import Actor, Item
 import tile_types
 
 if TYPE_CHECKING:
-    from engine import Engine
+    from engine import DungeonEngine
     from entity import Entity
 
 
 class GameMap:
     def __init__(
-        self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()
+        self, engine: DungeonEngine, width: int, height: int, entities: Iterable[Entity] = ()
     ):
         self.engine = engine
         self.width, self.height = width, height
@@ -106,7 +106,7 @@ class GameWorld:
     def __init__(
             self,
             *,
-            engine: Engine,
+            engine: DungeonEngine,
             map_width: int,
             map_height: int,
             max_rooms: int,

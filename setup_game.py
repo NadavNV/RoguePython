@@ -11,7 +11,7 @@ import tcod
 from tcod import libtcodpy
 
 import color
-from engine import Engine
+from engine import DungeonEngine
 import entity_factories
 from game_map import GameWorld
 import input_handlers
@@ -20,11 +20,14 @@ import input_handlers
 # Load the background image and remove the alpha channel.
 background_image = tcod.image.load("menu_background.png")[:, :, :3]
 
+WINDOW_WIDTH = 128
+WINDOW_HEIGHT = 72
 
-def new_game() -> Engine:
+
+def new_game() -> DungeonEngine:
     """Return a brand new game session as an engine instance."""
-    map_width = 80
-    map_height = 43
+    map_width = WINDOW_WIDTH * 2 // 3
+    map_height = WINDOW_HEIGHT * 2 // 3
 
     room_max_size = 10
     room_min_size = 6
@@ -32,7 +35,7 @@ def new_game() -> Engine:
 
     player = copy.deepcopy(entity_factories.player)
 
-    engine = Engine(player=player)
+    engine = DungeonEngine(player=player)
 
     engine.game_world = GameWorld(
         engine=engine,
@@ -65,11 +68,11 @@ def new_game() -> Engine:
     return engine
 
 
-def load_game(filename: str) -> Engine:
+def load_game(filename: str) -> DungeonEngine:
     """Load an engine instance from a file."""
     with open(filename, "rb") as f:
         engine = pickle.loads(lzma.decompress(f.read()))
-    assert isinstance(engine, Engine)
+    assert isinstance(engine, DungeonEngine)
     return engine
 
 
@@ -83,7 +86,7 @@ class MainMenu(input_handlers.BaseEventHandler):
         console.print(
             console.width // 2,
             console.height // 2 - 4,
-            "LABORATORY OF MADNESS",
+            "ROGUE PYTHON",
             fg=color.menu_title,
             alignment=libtcodpy.CENTER,
         )

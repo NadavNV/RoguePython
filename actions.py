@@ -6,7 +6,7 @@ import color
 import exceptions
 
 if TYPE_CHECKING:
-    from engine import Engine
+    from engine import DungeonEngine, Engine, CombatEngine
     from entity import Actor, Entity, Item
 
 
@@ -16,7 +16,7 @@ class Action:
         self.entity = entity
 
     @property
-    def engine(self) -> Engine:
+    def engine(self) -> DungeonEngine:
         """Return the engine this action belongs to."""
         return self.entity.parent.engine
 
@@ -143,6 +143,7 @@ class ActionWithDirection(Action):
 
 class MeleeAction(ActionWithDirection):
     def perform(self) -> None:
+        # TODO: Replace - transition into instanced combat
         target = self.target_actor
         if not target:
             raise exceptions.Impossible("Nothing to attack.")

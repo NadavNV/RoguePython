@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os.path
-from typing import Callable, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import tcod
 from tcod import libtcodpy
@@ -17,19 +17,19 @@ import color
 import exceptions
 
 if TYPE_CHECKING:
-    from engine import Engine
+    from engine import DungeonEngine
     from entity import Item
 
 MOVE_KEYS = {
     # Arrow keys.
-    tcod.event.KeySym.UP: (0, -1),
-    tcod.event.KeySym.DOWN: (0, 1),
-    tcod.event.KeySym.LEFT: (-1, 0),
-    tcod.event.KeySym.RIGHT: (1, 0),
-    tcod.event.KeySym.HOME: (-1, -1),
-    tcod.event.KeySym.END: (-1, 1),
-    tcod.event.KeySym.PAGEUP: (1, -1),
-    tcod.event.KeySym.PAGEDOWN: (1, 1),
+    # tcod.event.KeySym.UP: (0, -1),
+    # tcod.event.KeySym.DOWN: (0, 1),
+    # tcod.event.KeySym.LEFT: (-1, 0),
+    # tcod.event.KeySym.RIGHT: (1, 0),
+    # tcod.event.KeySym.HOME: (-1, -1),
+    # tcod.event.KeySym.END: (-1, 1),
+    # tcod.event.KeySym.PAGEUP: (1, -1),
+    # tcod.event.KeySym.PAGEDOWN: (1, 1),
     # Numpad keys.
     tcod.event.KeySym.KP_1: (-1, 1),
     tcod.event.KeySym.KP_2: (0, 1),
@@ -40,20 +40,20 @@ MOVE_KEYS = {
     tcod.event.KeySym.KP_8: (0, -1),
     tcod.event.KeySym.KP_9: (1, -1),
     # Vi keys.
-    tcod.event.KeySym.h: (-1, 0),
-    tcod.event.KeySym.j: (0, 1),
-    tcod.event.KeySym.k: (0, -1),
-    tcod.event.KeySym.l: (1, 0),
-    tcod.event.KeySym.y: (-1, -1),
-    tcod.event.KeySym.u: (1, -1),
-    tcod.event.KeySym.b: (-1, 1),
-    tcod.event.KeySym.n: (1, 1),
+    # tcod.event.KeySym.h: (-1, 0),
+    # tcod.event.KeySym.j: (0, 1),
+    # tcod.event.KeySym.k: (0, -1),
+    # tcod.event.KeySym.l: (1, 0),
+    # tcod.event.KeySym.y: (-1, -1),
+    # tcod.event.KeySym.u: (1, -1),
+    # tcod.event.KeySym.b: (-1, 1),
+    # tcod.event.KeySym.n: (1, 1),
 }
 
 WAIT_KEYS = {
-    tcod.event.KeySym.PERIOD,
+    # tcod.event.KeySym.PERIOD,
     tcod.event.KeySym.KP_5,
-    tcod.event.KeySym.CLEAR,
+    # tcod.event.KeySym.CLEAR,
 }
 
 CONFIRM_KEYS = {
@@ -114,7 +114,7 @@ class PopupMessage(BaseEventHandler):
 
 
 class EventHandler(BaseEventHandler):
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: DungeonEngine):
         self.engine = engine
 
     def handle_events(self, event: tcod.event.Event) -> BaseEventHandler:
@@ -241,8 +241,8 @@ class LevelUpEventHandler(AskUserEventHandler):
     def on_render(self, console: tcod.console.Console) -> None:
         super().on_render(console)
 
-        if self.engine.player.x <= 30:
-            x = 40
+        if self.engine.player.x <= self.engine.game_map.width // 2 - 10:
+            x = self.engine.game_map.width // 2
         else:
             x = 0
 
@@ -310,6 +310,10 @@ class InventoryEventHandler(AskUserEventHandler):
 
     TITLE = "<missing title>"
 
+    def __init__(self, engine: DungeonEngine):
+        super().__init__(engine)
+        self.cursor = 0
+
     def on_render(self, console: tcod.console.Console) -> None:
         """Render an inventory menu, which displays the items in the inventory, and the letter to select them.
         Will move to a different position based on where the player is located, so the player can always see where
@@ -323,8 +327,8 @@ class InventoryEventHandler(AskUserEventHandler):
         if height <= 3:
             height = 3
 
-        if self.engine.player.x <= 30:
-            x = 40
+        if self.engine.player.x <= self.engine.game_map.width // 2 - 10:
+            x = self.engine.game_map.width // 2
         else:
             x = 0
 
@@ -344,17 +348,13 @@ class InventoryEventHandler(AskUserEventHandler):
         )
 
         if number_of_items_in_inventory > 0:
-            for i, item in enumerate(self.engine.player.inventory.items):
-                item_key = chr(ord("a") + i)
-
-                is_equipped = self.engine.player.equipment.item_is_equipped(item)
-
-                item_string = f"({item_key}) {item.name}"
-
-                if is_equipped:
-                    item_string = f"{item_string} (E)"
-
-                console.print(x + 1, y + i + 1, item_string)
+            print_menu(
+                console=console,
+                items=[item.name for item in self.engine.player.inventory.items],
+                x=x + 1,
+                y=y + 1,
+                cursor=self.cursor,
+            )
         else:
             console.print(x + 1, y + 1, "(Empty)")
 
@@ -370,7 +370,24 @@ class InventoryEventHandler(AskUserEventHandler):
                 self.engine.message_log.add_message("Invalid entry.", color.invalid)
                 return None
             return self.on_item_selected(selected_item)
-        return super().ev_keydown(event)
+        elif key in (tcod.event.KeySym.UP, tcod.event.KeySym.DOWN) and len(player.inventory.items) != 0:
+            adjust = CURSOR_Y_KEYS[key]
+            if adjust < 0 and self.cursor == 0:
+                self.cursor = len(player.inventory.items) - 1
+            elif adjust > 0 and self.cursor == len(player.inventory.items) - 1:
+                self.cursor = 0
+            else:
+                self.cursor += adjust
+        elif key in CONFIRM_KEYS:
+            try:
+                selected_item = player.inventory.items[self.cursor]
+            except IndexError:
+                self.engine.message_log.add_message("Invalid entry.", color.invalid)
+                return None
+            return self.on_item_selected(selected_item)
+        elif key == tcod.event.KeySym.ESCAPE:
+            return MainGameEventHandler(self.engine)
+        return None  # super().ev_keydown(event)
 
     def on_item_selected(self, item: Item) -> Optional[ActionOrHandler]:
         """Called when the user selects a valid item."""
@@ -405,7 +422,7 @@ class InventoryDropHandler(InventoryEventHandler):
 class SelectIndexHandler(AskUserEventHandler):
     """Handles asking the user for an index on the map."""
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: DungeonEngine):
         """Sets the curser to the player when this handler is constructed."""
         super().__init__(engine)
         player = self.engine.player
@@ -469,7 +486,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     """Handles targeting a single enemy. Only the enemy selected will be affected."""
 
     def __init__(
-        self, engine: Engine, callback: Callable[[Tuple[int, int]], Optional[Action]]
+        self, engine: DungeonEngine, callback: Callable[[Tuple[int, int]], Optional[Action]]
     ):
         super().__init__(engine)
 
@@ -484,7 +501,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
     def __init__(
             self,
-            engine: Engine,
+            engine: DungeonEngine,
             radius: int,
             callback: Callable[[Tuple[int, int]], Optional[Action]],
     ):
@@ -580,7 +597,7 @@ CURSOR_Y_KEYS = {
 class HistoryViewer(EventHandler):
     """Print the history on a larger window which can be navigated."""
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: DungeonEngine):
         super().__init__(engine)
         self.log_length = len(engine.message_log.messages)
         self.cursor = self.log_length - 1
@@ -626,3 +643,21 @@ class HistoryViewer(EventHandler):
         else:  # Any other key moves back to the main game state.
             return MainGameEventHandler(self.engine)
         return None
+
+
+def print_menu(console: tcod.console.Console, items: List[str], x: int, y: int, cursor: int) -> None:
+    """Prints a menu of choices to the given 'console' at location 'x', 'y'.
+
+    'items' is the list of menu items, 'cursor' is the currently selected item, which
+    will be printed differently.
+    """
+    for i, item in enumerate(items):
+        if i == cursor:
+            fg = color.black
+            bg = color.white
+        else:
+            fg = color.white
+            bg = color.black
+
+        key = chr(ord('a') + i)
+        console.print(x=x, y=y + i, fg=fg, bg=bg, string=f"({key}) {item}")
