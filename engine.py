@@ -21,12 +21,16 @@ class Engine:
     game_map: GameMap
     game_world: GameWorld
     in_combat: bool
+    in_cutscene: bool
+    cutscene_skip: bool
 
     def __init__(self, player: Actor):
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.player = player
         self.in_combat = False
+        self.in_cutscene = True
+        self.cutscene_skip = False
 
     def handle_enemy_turns(self) -> None:
         for entity in set(self.game_map.actors) - {self.player}:

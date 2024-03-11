@@ -79,7 +79,7 @@ def load_game(filename: str) -> Engine:
 class MainMenu(input_handlers.BaseEventHandler):
     """Handle the main menu rendering and input."""
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> input_handlers.BaseEventHandler:
         """Render the main menu on a background image."""
         console.draw_semigraphics(background_image, 0, 0)
 
@@ -112,6 +112,8 @@ class MainMenu(input_handlers.BaseEventHandler):
                 bg_blend=libtcodpy.BKGND_ALPHA(64),
             )
 
+        return self
+
     def ev_keydown(
             self, event: tcod.event.KeyDown
     ) -> Optional[input_handlers.BaseEventHandler]:
@@ -126,6 +128,6 @@ class MainMenu(input_handlers.BaseEventHandler):
                 traceback.print_exc()  # Print to stderr.
                 return input_handlers.PopupMessage(self, f"Failed to load save:\n{exc}")
         elif event.sym == tcod.event.KeySym.n:
-            return input_handlers.MainGameEventHandler(new_game())
+            return input_handlers.IntroEventHandler(new_game())
 
         return None

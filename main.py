@@ -8,6 +8,8 @@ import exceptions
 import input_handlers
 import setup_game
 
+FRAMERATE = 1.0 / 60
+
 
 def save_game(handler: input_handlers.BaseEventHandler, filename: str) -> None:
     """If the current event handler has an active Engine then save it."""
@@ -35,15 +37,15 @@ def main() -> None:
     ) as context:
         root_console = tcod.console.Console(screen_width, screen_height, order="F")
         # Start the game in full screen mode
-        context.sdl_window.fullscreen = tcod.lib.SDL_WINDOW_FULLSCREEN_DESKTOP
+        # context.sdl_window.fullscreen = tcod.lib.SDL_WINDOW_FULLSCREEN_DESKTOP
         try:
             while True:
                 root_console.clear()
-                handler.on_render(console=root_console)
+                handler = handler.on_render(console=root_console)
                 context.present(root_console)
 
                 try:
-                    for event in tcod.event.wait():
+                    for event in tcod.event.wait(FRAMERATE):
                         event = context.convert_event(event)
                         handler = handler.handle_events(event)
                 except Exception:  # Handle exceptions in game.

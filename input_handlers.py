@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os.path
+import time
 from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import tcod
 from tcod import libtcodpy
+import textwrap
 
 import actions
 from actions import (
@@ -61,6 +63,7 @@ CONFIRM_KEYS = {
     tcod.event.KeySym.KP_ENTER,
 }
 
+TIME_BETWEEN_LETTERS = 1 / 16.0
 
 ActionOrHandler = Union[Action, "BaseEventHandler"]
 """En event handler return value which can trigger an action or switch active handlers.
@@ -79,7 +82,7 @@ class BaseEventHandler(tcod.event.EventDispatch[ActionOrHandler]):
         assert not isinstance(state, Action), f"{self!r} can not handle actions."
         return self
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         raise NotImplementedError()
 
     def ev_quit(self, event: tcod.event.Quit) -> Optional[Action]:
@@ -93,7 +96,7 @@ class PopupMessage(BaseEventHandler):
         self.parent = parent_handler
         self.text = text
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         """Render the parent and dim the result, then print the message on top."""
         self.parent.on_render(console)
         console.rgb["fg"] //= 8
@@ -107,6 +110,8 @@ class PopupMessage(BaseEventHandler):
             bg=color.black,
             alignment=libtcodpy.CENTER,
         )
+
+        return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[BaseEventHandler]:
         """Any key returns to the parent handler."""
@@ -155,8 +160,9 @@ class EventHandler(BaseEventHandler):
         if self.engine.game_map.in_bounds(event.position.x, event.position.y):
             self.engine.mouse_location = event.position.x, event.position.y
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         self.engine.render(console)
+        return self
 
 
 class AskUserEventHandler(EventHandler):
@@ -192,7 +198,7 @@ class AskUserEventHandler(EventHandler):
 class CharacterScreenEventHandler(AskUserEventHandler):
     TITLE = "Character Information"
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         super().on_render(console)
 
         if self.engine.player.x <= 30:
@@ -233,12 +239,13 @@ class CharacterScreenEventHandler(AskUserEventHandler):
         console.print(
             x=x + 1, y=y + 5, string=f"Defense: {self.engine.player.fighter.defense}"
         )
+        return self
 
 
 class LevelUpEventHandler(AskUserEventHandler):
     TITlE = "Level Up"
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         super().on_render(console)
 
         if self.engine.player.x <= self.engine.game_map.width // 2 - 10:
@@ -275,6 +282,9 @@ class LevelUpEventHandler(AskUserEventHandler):
             y=6,
             string=f"c) Agility (+1 defense, from {self.engine.player.fighter.defense})",
         )
+
+        return self
+
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         player = self.engine.player
@@ -314,7 +324,7 @@ class InventoryEventHandler(AskUserEventHandler):
         super().__init__(engine)
         self.cursor = 0
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         """Render an inventory menu, which displays the items in the inventory, and the letter to select them.
         Will move to a different position based on where the player is located, so the player can always see where
         they are.
@@ -357,6 +367,8 @@ class InventoryEventHandler(AskUserEventHandler):
             )
         else:
             console.print(x + 1, y + 1, "(Empty)")
+
+        return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         player = self.engine.player
@@ -428,12 +440,14 @@ class SelectIndexHandler(AskUserEventHandler):
         player = self.engine.player
         engine.mouse_location = player.x, player.y
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         """Highlight the tile under the cursor."""
         super().on_render(console)
         x, y = self.engine.mouse_location
         console.rgb["bg"][x, y] = color.white
         console.rgb["fg"][x, y] = color.black
+
+        return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         """Check for key movement or confirmation keys."""
@@ -486,7 +500,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     """Handles targeting a single enemy. Only the enemy selected will be affected."""
 
     def __init__(
-        self, engine: Engine, callback: Callable[[Tuple[int, int]], Optional[Action]]
+            self, engine: Engine, callback: Callable[[Tuple[int, int]], Optional[Action]]
     ):
         super().__init__(engine)
 
@@ -510,7 +524,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
         self.radius = radius
         self.callback = callback
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         """Highlight the tile under the cursor."""
         super().on_render(console)
 
@@ -525,6 +539,8 @@ class AreaRangedAttackHandler(SelectIndexHandler):
             fg=color.red,
             clear=False,
         )
+
+        return self
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))
@@ -541,7 +557,7 @@ class MainGameEventHandler(EventHandler):
         player = self.engine.player
 
         if key == tcod.event.KeySym.PERIOD and modifier & (
-            tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
+                tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
         ):
             return actions.TakeStairsAction(player)
 
@@ -602,7 +618,7 @@ class HistoryViewer(EventHandler):
         self.log_length = len(engine.message_log.messages)
         self.cursor = self.log_length - 1
 
-    def on_render(self, console: tcod.console.Console) -> None:
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         super().on_render(console)  # Draw the main state as the background.
 
         log_console = tcod.console.Console(console.width - 6, console.height - 6)
@@ -623,6 +639,8 @@ class HistoryViewer(EventHandler):
             self.engine.message_log.messages[: self.cursor + 1],
         )
         log_console.blit(console, 3, 3)
+
+        return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[MainGameEventHandler]:
         # Fancy conditional movement to make it feel right.
@@ -661,3 +679,87 @@ def print_menu(console: tcod.console.Console, items: List[str], x: int, y: int, 
 
         key = chr(ord('a') + i)
         console.print(x=x, y=y + i, fg=fg, bg=bg, string=f"({key}) {item}")
+
+
+class CutsceneEventHandler(EventHandler):
+    text: str
+    time_to_hold: float
+
+    def __init__(self, engine: Engine):
+        super().__init__(engine)
+        self.chars_printed = 0
+        self.start = time.time()
+        self.now = self.start
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> None:
+        self.engine.cutscene_skip = True
+
+    def ev_mousebuttondown(self, event: tcod.event.MouseButtonDown) -> None:
+        self.engine.cutscene_skip = True
+
+    def ev_quit(self, event: tcod.event.Quit) -> Optional[Action]:
+        raise exceptions.QuiteWithoutSaving()
+
+
+class IntroEventHandler(CutsceneEventHandler):
+
+    def __init__(self, engine: Engine):
+        super().__init__(engine)
+        self.time_to_hold = 5  # Seconds to wait after printing the whole message.
+        self.text = ("A sudden jolt wakes you from your sleep. Your cage seems to have fallen, and the lid has come" +
+                     " loose." + "\n\nYou are free.\n\n" + "You are a python. You've spent your whole life in this " +
+                     "laboratory, being experimented on by an army of insane scientists. You've known nothing but" +
+                     " agony your  whole life, but those experiments also granted you great strength, two human-like " +
+                     "arms, and even a hint  of something that can only be described as magic." + "\n" + "Now is your" +
+                     " chance. Now is the time to use these abilities to exact your vengeance on everyone in the " +
+                     "building. It's time to escape the role you were given.""" + "\n\nIt's time to go ROGUE, PYTHON.")
+        self.total_length = len(self.text)
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        console.clear()
+        self.now = time.time()
+
+        x = console.width // 4
+        y = console.height // 4
+
+        if self.engine.cutscene_skip:
+            self.chars_printed = len(self.text)
+            self.engine.cutscene_skip = False
+
+        end = self.chars_printed
+        # Taken from https://stackoverflow.com/questions/1166317/python-textwrap-library-how-to-preserve-line-breaks
+        self.text = '\n'.join(['\n'.join(textwrap.wrap(line,
+                                                       console.width // 2,
+                                                       break_long_words=False,
+                                                       replace_whitespace=False
+                                                       )
+                                         ) for line in self.text.splitlines()])
+
+        for line in self.text.splitlines():
+            if end > len(line):
+                console.print(x=x, y=y, string=line, fg=(255, 255, 255), bg=(0, 0, 0))
+                end -= len(line)
+                x = console.width // 4
+                y += 1
+            elif end > 0:
+                console.print(x=x, y=y, string=line[:end], fg=(255, 255, 255), bg=(0, 0, 0))
+                end = 0
+            elif len(line) == 0:
+                y += 1
+            else:
+                break
+
+        if self.chars_printed < len(self.text) and self.now - self.start > TIME_BETWEEN_LETTERS:
+            self.start = self.now
+            self.chars_printed += 1
+        if self.chars_printed >= self.total_length and self.now - self.start > self.time_to_hold:
+            return MainGameEventHandler(self.engine)
+        else:
+            return self
+
+    def handle_events(self, event: tcod.event.Event) -> BaseEventHandler:
+        self.dispatch(event)
+        if self.chars_printed >= len(self.text):
+            if self.engine.cutscene_skip or self.now - self.start > self.time_to_hold:
+                return MainGameEventHandler(self.engine)
+        return self
