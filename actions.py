@@ -6,7 +6,7 @@ import color
 import exceptions
 
 if TYPE_CHECKING:
-    from engine import DungeonEngine, Engine, CombatEngine
+    from engine import Engine
     from entity import Actor, Entity, Item
 
 
@@ -16,7 +16,7 @@ class Action:
         self.entity = entity
 
     @property
-    def engine(self) -> DungeonEngine:
+    def engine(self) -> Engine:
         """Return the engine this action belongs to."""
         return self.entity.parent.engine
 

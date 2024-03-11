@@ -17,7 +17,7 @@ import color
 import exceptions
 
 if TYPE_CHECKING:
-    from engine import DungeonEngine
+    from engine import Engine
     from entity import Item
 
 MOVE_KEYS = {
@@ -114,7 +114,7 @@ class PopupMessage(BaseEventHandler):
 
 
 class EventHandler(BaseEventHandler):
-    def __init__(self, engine: DungeonEngine):
+    def __init__(self, engine: Engine):
         self.engine = engine
 
     def handle_events(self, event: tcod.event.Event) -> BaseEventHandler:
@@ -310,7 +310,7 @@ class InventoryEventHandler(AskUserEventHandler):
 
     TITLE = "<missing title>"
 
-    def __init__(self, engine: DungeonEngine):
+    def __init__(self, engine: Engine):
         super().__init__(engine)
         self.cursor = 0
 
@@ -422,7 +422,7 @@ class InventoryDropHandler(InventoryEventHandler):
 class SelectIndexHandler(AskUserEventHandler):
     """Handles asking the user for an index on the map."""
 
-    def __init__(self, engine: DungeonEngine):
+    def __init__(self, engine: Engine):
         """Sets the curser to the player when this handler is constructed."""
         super().__init__(engine)
         player = self.engine.player
@@ -486,7 +486,7 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     """Handles targeting a single enemy. Only the enemy selected will be affected."""
 
     def __init__(
-        self, engine: DungeonEngine, callback: Callable[[Tuple[int, int]], Optional[Action]]
+        self, engine: Engine, callback: Callable[[Tuple[int, int]], Optional[Action]]
     ):
         super().__init__(engine)
 
@@ -501,7 +501,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
 
     def __init__(
             self,
-            engine: DungeonEngine,
+            engine: Engine,
             radius: int,
             callback: Callable[[Tuple[int, int]], Optional[Action]],
     ):
@@ -597,7 +597,7 @@ CURSOR_Y_KEYS = {
 class HistoryViewer(EventHandler):
     """Print the history on a larger window which can be navigated."""
 
-    def __init__(self, engine: DungeonEngine):
+    def __init__(self, engine: Engine):
         super().__init__(engine)
         self.log_length = len(engine.message_log.messages)
         self.cursor = self.log_length - 1

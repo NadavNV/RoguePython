@@ -11,7 +11,7 @@ import tcod
 from tcod import libtcodpy
 
 import color
-from engine import DungeonEngine
+from engine import Engine
 import entity_factories
 from game_map import GameWorld
 import input_handlers
@@ -24,7 +24,7 @@ WINDOW_WIDTH = 128
 WINDOW_HEIGHT = 72
 
 
-def new_game() -> DungeonEngine:
+def new_game() -> Engine:
     """Return a brand new game session as an engine instance."""
     map_width = WINDOW_WIDTH * 2 // 3
     map_height = WINDOW_HEIGHT * 2 // 3
@@ -35,7 +35,7 @@ def new_game() -> DungeonEngine:
 
     player = copy.deepcopy(entity_factories.player)
 
-    engine = DungeonEngine(player=player)
+    engine = Engine(player=player)
 
     engine.game_world = GameWorld(
         engine=engine,
@@ -68,11 +68,11 @@ def new_game() -> DungeonEngine:
     return engine
 
 
-def load_game(filename: str) -> DungeonEngine:
+def load_game(filename: str) -> Engine:
     """Load an engine instance from a file."""
     with open(filename, "rb") as f:
         engine = pickle.loads(lzma.decompress(f.read()))
-    assert isinstance(engine, DungeonEngine)
+    assert isinstance(engine, Engine)
     return engine
 
 

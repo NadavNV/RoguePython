@@ -11,7 +11,7 @@ import tile_types
 
 
 if TYPE_CHECKING:
-    from engine import DungeonEngine
+    from engine import Engine
     from entity import Entity
 
 
@@ -137,7 +137,7 @@ def generate_dungeon(
     room_max_size: int,
     map_width: int,
     map_height: int,
-    engine: DungeonEngine,
+    engine: Engine,
 ) -> GameMap:
     """Generate a new dungeon map."""
     player = engine.player
@@ -167,7 +167,7 @@ def generate_dungeon(
 
         if len(rooms) == 0:
             # The first room, where the player starts.
-            player.place(*new_room.center, dungeon)
+            player.place(*new_room.center, game_map=dungeon)
         else:  # All rooms after the first.
             # Dig out a tunnel between this room and the previous one.
             for x, y in tunnel_between(rooms[-1].center, new_room.center):
