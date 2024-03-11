@@ -141,6 +141,7 @@ class Item(Entity):
         name: str = "<Unnamed>",
         consumable: Optional[Consumable] = None,
         equippable: Optional[Equippable] = None,
+        stackable: bool = False
     ):
         super().__init__(
             x=x,
@@ -161,3 +162,5 @@ class Item(Entity):
 
         if self.equippable:
             self.equippable.parent = self
+
+        self.stackable = stackable

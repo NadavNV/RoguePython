@@ -23,3 +23,18 @@ class Inventory(BaseComponent):
         item.place(self.parent.x, self.parent.y, self.game_map)
 
         self.engine.message_log.add_message(f"You dropped the {item.name}.")
+
+    def list_items(self) -> List[str]:
+        """Creates a list of the items in the inventory, with their amounts if stackable."""
+        result = []
+        item_amounts = {}
+        for item in self.items:
+            if item.name in item_amounts and item.stackable:
+                item_amounts[item.name] += 1
+            else:
+                item_amounts[item.name] = 1
+
+        for item in item_amounts:
+            result.append(item if item_amounts[item] == 1 else f"{item} (x{item_amounts[item]})")
+
+        return result

@@ -330,7 +330,7 @@ class InventoryEventHandler(AskUserEventHandler):
         they are.
         """
         super().on_render(console)
-        number_of_items_in_inventory = len(self.engine.player.inventory.items)
+        number_of_items_in_inventory = len(self.engine.player.inventory.list_items())
 
         height = number_of_items_in_inventory + 2
 
@@ -360,7 +360,7 @@ class InventoryEventHandler(AskUserEventHandler):
         if number_of_items_in_inventory > 0:
             print_menu(
                 console=console,
-                items=[item.name for item in self.engine.player.inventory.items],
+                items=[line for line in self.engine.player.inventory.list_items()],
                 x=x + 1,
                 y=y + 1,
                 cursor=self.cursor,
