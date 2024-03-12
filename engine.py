@@ -57,8 +57,7 @@ class Engine:
 
         render_functions.render_bars(
             console=console,
-            current_value=self.player.fighter.hp,
-            maximum_value=self.player.fighter.max_hp,
+            player=self.player.fighter,
             total_width=setup_game.WINDOW_WIDTH // 3 - 2,
         )
 
@@ -71,7 +70,7 @@ class Engine:
             render_functions.render_dungeon_level(
                 console=console,
                 dungeon_level=self.game_world.current_floor,
-                location=(0, setup_game.WINDOW_HEIGHT * 2 // 3 + 6)
+                location=(1, setup_game.WINDOW_HEIGHT * 2 // 3 + 6)
             )
 
             render_functions.render_names_at_mouse_location(

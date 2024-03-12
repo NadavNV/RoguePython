@@ -4,10 +4,11 @@ from typing import Tuple, TYPE_CHECKING
 
 import color
 import setup_game
+from components.fighter import Fighter
 
 if TYPE_CHECKING:
     from tcod import Console
-    from engine import DungeonEngine
+    from engine import Engine
     from game_map import GameMap
 
 
@@ -23,28 +24,48 @@ def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
 
 
 def render_bars(
-        console: Console, current_value: int, maximum_value: int, total_width: int
+        console: Console, player: Fighter, total_width: int
 ) -> None:
     """Render the player's hit points and mana as data bars."""
     # TODO: Add rendering of second bar with different values
-    bar_width = int(float(current_value) / maximum_value * total_width)
 
-    console.draw_rect(
-        x=0,
-        y=setup_game.WINDOW_HEIGHT * 2 // 3 + 2,
-        width=setup_game.WINDOW_WIDTH // 3 - 2,
-        height=1,
-        ch=1,
-        bg=color.bar_empty
-    )
+    def render_bar(current_value: int, maximum_value: int, x: int, y: int, bar_color: Tuple[int, int, int], name: str):
+        bar_width = int(float(current_value) / maximum_value * total_width)
 
-    if bar_width > 0:
         console.draw_rect(
-            x=0, y=setup_game.WINDOW_HEIGHT * 2 // 3 + 2, width=bar_width, height=1, ch=1, bg=color.bar_filled
+            x=x,
+            y=y,
+            width=total_width,
+            height=1,
+            ch=1,
+            bg=color.bar_empty
         )
 
-    console.print(
-        x=1, y=setup_game.WINDOW_HEIGHT * 2 // 3 + 2, string=f"HP: {current_value}/{maximum_value}", fg=color.bar_text
+        if bar_width > 0:
+            console.draw_rect(
+                x=x, y=y, width=bar_width, height=1, ch=1, bg=bar_color
+            )
+
+            console.print(
+                x=2, y=y, string=f"{name}: {current_value}/{maximum_value}", fg=color.bar_text
+            )
+
+    render_bar(
+        player.hp,
+        player.max_hp,
+        x=1,
+        y=setup_game.WINDOW_HEIGHT * 2 // 3 + 2,
+        bar_color=color.bar_hp_filled,
+        name="HP"
+    )
+
+    render_bar(
+        player.mana,
+        player.max_mana,
+        x=1,
+        y=setup_game.WINDOW_HEIGHT * 2 // 3 + 4,
+        bar_color=color.bar_mana_filled,
+        name="Mana"
     )
 
 
@@ -60,7 +81,7 @@ def render_dungeon_level(
 
 
 def render_names_at_mouse_location(
-    console: Console, x: int, y: int, engine: DungeonEngine
+    console: Console, x: int, y: int, engine: Engine
 ) -> None:
     mouse_x, mouse_y = engine.mouse_location
 
