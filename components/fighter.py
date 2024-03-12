@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import color
-from components.base_component import BaseComponent
+from components.base_component import BaseComponent, roll_dice
 from render_order import RenderOrder
 
 if TYPE_CHECKING:
@@ -44,10 +44,10 @@ class Fighter(BaseComponent):
         self.perseverance = perseverance
         self.agility = agility
         self.magic = magic
-        self.max_hp = hp
+        # self.max_hp = hp
         self.hit_dice = hit_dice
-        # self.max_hp = BaseComponent.roll_dice(hit_dice) + self.perseverance // 2
-        self._hp = hp
+        self.max_hp = roll_dice(hit_dice) + self.perseverance // 2
+        self._hp = self.max_hp
         self.max_mana = mana
         self._mana = mana
         self.base_defense = base_defense
