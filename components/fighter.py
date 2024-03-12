@@ -95,5 +95,20 @@ class Fighter(BaseComponent):
 
         return amount_recovered
 
+    def restore_mana(self, amount: int) -> int:
+        if self.mana == self.max_mana:
+            return 0
+
+        new_mana_value = self.mana + amount
+
+        if new_mana_value > self.max_mana:
+            new_mana_value = self.max_mana
+
+        amount_recovered = new_mana_value - self.mana
+
+        self.mana = new_mana_value
+
+        return amount_recovered
+
     def take_damage(self, amount: int) -> None:
         self.hp -= amount

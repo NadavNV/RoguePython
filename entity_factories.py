@@ -45,6 +45,7 @@ confusion_scroll = Item(
     consumable=consumable.ConfusionConsumable(number_of_turns=10),
     stackable=True
 )
+
 fireball_scroll = Item(
     char="~",
     color=(255, 0, 0),
@@ -52,6 +53,7 @@ fireball_scroll = Item(
     consumable=consumable.FireballDamageConsumable(damage=12, radius=3),
     stackable=True
 )
+
 health_potion = Item(
     char="!",
     color=(127, 0, 255),
@@ -59,6 +61,15 @@ health_potion = Item(
     consumable=consumable.HealingConsumable(amount=4),
     stackable=True
 )
+
+mana_potion = Item(
+    char="!",
+    color=(0x0E, 0x86, 0xD4),
+    name="Mana Potion",
+    consumable=consumable.ManaConsumable(amount=4),
+    stackable=True
+)
+
 lightning_scroll = Item(
     char="~",
     color=(255, 255, 0),

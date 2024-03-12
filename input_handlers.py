@@ -322,7 +322,7 @@ class InventoryEventHandler(AskUserEventHandler):
 
         y = 0
 
-        width = len(self.TITLE) + 4
+        width = max(max([len(line) for line in self.engine.player.inventory.list_items()]) + 7, len(self.TITLE) + 4)
 
         console.draw_frame(
             x=x,
