@@ -24,12 +24,27 @@ class Equippable(BaseComponent):
         self.defense_bonus = defense_bonus
 
 
-class Dagger(Equippable):
+class Weapon(Equippable):
+    def __init__(
+            self,
+            equipment_type: EquipmentType,
+            power_bonus: int = 0,
+            defense_bonus: int = 0,
+            two_handed: bool = False,  # If True, this weapon requires both main hand and offhand slots
+            offhand: bool = False,  # If True, this weapon can be equipped in the offhand slot
+    ):
+        super().__init__(equipment_type=equipment_type, power_bonus=power_bonus, defense_bonus=defense_bonus)
+
+        self.two_handed = two_handed
+        self.offhand = offhand
+
+
+class Dagger(Weapon):
     def __init__(self) -> None:
-        super().__init__(equipment_type=EquipmentType.WEAPON, power_bonus=2)
+        super().__init__(equipment_type=EquipmentType.WEAPON, power_bonus=2, offhand=True)
 
 
-class Sword(Equippable):
+class Sword(Weapon):
     def __init__(self) -> None:
         super().__init__(equipment_type=EquipmentType.WEAPON, power_bonus=4)
 

@@ -56,6 +56,9 @@ class Entity:
     def spawn(self: T, game_map: GameMap, x: int, y: int) -> T:
         """Spawn a copy of this instance at the given location."""
         clone = copy.deepcopy(self)
+        if hasattr(clone, 'fighter'):
+            clone.fighter.roll_hit_dice()
+            print(f"Spawned a {clone.name} with {clone.fighter.hp} hit points.")
         clone.x = x
         clone.y = y
         clone.parent = game_map

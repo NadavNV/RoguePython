@@ -17,6 +17,8 @@ from actions import (
 )
 import color
 import exceptions
+from equipment_slots import EquipmentSlot
+from equipment_types import EquipmentType
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -178,14 +180,15 @@ class CharacterScreenEventHandler(AskUserEventHandler):
     TITLE = "Character Information"
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        from setup_game import WINDOW_WIDTH
         super().on_render(console)
 
-        if self.engine.player.x <= 30:
-            x = 40
+        if self.engine.player.x <= WINDOW_WIDTH // 2 - 10:
+            x = WINDOW_WIDTH // 2
         else:
-            x = 0
+            x = 1
 
-        y = 0
+        y = 1
 
         width = len(self.TITLE) + 4
 
@@ -193,7 +196,7 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             x=x,
             y=y,
             width=width,
-            height=7,
+            height=8,
             title=self.TITLE,
             clear=True,
             fg=(255, 255, 255),
@@ -211,12 +214,15 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             y=y + 3,
             string=f"XP for next Level: {self.engine.player.level.experience_to_next_level}",
         )
+        console.print(
+            x=x + 1, y=y + 4, string=f"Proficiency Bonus: {self.engine.player.fighter.proficiency}",
+        )
 
         console.print(
-            x=x + 1, y=y + 4, string=f"Attack: {self.engine.player.fighter.power}"
+            x=x + 1, y=y + 5, string=f"Attack: {self.engine.player.fighter.power}"
         )
         console.print(
-            x=x + 1, y=y + 5, string=f"Defense: {self.engine.player.fighter.defense}"
+            x=x + 1, y=y + 6, string=f"Defense: {self.engine.player.fighter.defense}"
         )
         return self
 
@@ -322,7 +328,9 @@ class InventoryEventHandler(AskUserEventHandler):
 
         y = 0
 
-        width = max(max([len(line) for line in self.engine.player.inventory.list_items()]) + 7, len(self.TITLE) + 4)
+        width = len(self.TITLE) + 4
+        if number_of_items_in_inventory != 0:
+            width = max(max([len(line) for line in self.engine.player.inventory.list_items()]) + 7, width)
 
         console.draw_frame(
             x=x,
@@ -394,7 +402,12 @@ class InventoryActivateHandler(InventoryEventHandler):
             # Return the action for the selected item.
             return item.consumable.get_action(self.engine.player)
         elif item.equippable:
-            return actions.EquipAction(self.engine.player, item)
+            if item.equippable.equipment_type == EquipmentType.WEAPON:
+                return EquipWeaponEventHandler(self.engine, item, self)
+            elif item.equippable.equipment_type == EquipmentType.TRINKET:
+                return EquipTrinketEventHandler(self.engine, item, self)
+            else:
+                return actions.EquipAction(self.engine.player, item)
         else:
             return None
 
@@ -560,6 +573,8 @@ class MainGameEventHandler(EventHandler):
             return CharacterScreenEventHandler(self.engine)
         elif key == tcod.event.KeySym.SLASH:
             return LookHandler(self.engine)
+        elif key == tcod.event.KeySym.u:
+            return UnequipEventHandler(self.engine)
 
         # No valid key was pressed
         return action
@@ -741,3 +756,265 @@ class IntroEventHandler(CutsceneEventHandler):
             if self.engine.cutscene_skip or self.now - self.start > self.time_to_hold:
                 return MainGameEventHandler(self.engine)
         return self
+
+
+class EquipmentEventHandler(AskUserEventHandler):
+    """This handler lets the user select an equipment slot.
+
+    What happens then depends on the subclass.
+    """
+
+    TITLE = "<missing title>"
+
+    def __init__(self, engine: Engine):
+        super().__init__(engine)
+        self.cursor = 0
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        """Render an inventory menu, which displays the items in the inventory, and the letter to select them.
+        Will move to a different position based on where the player is located, so the player can always see where
+        they are.
+        """
+        super().on_render(console)
+
+        height = len(EquipmentSlot) + 2
+
+        if height <= 3:
+            height = 3
+
+        if self.engine.player.x <= self.engine.game_map.width // 2 - 10:
+            x = self.engine.game_map.width // 2
+        else:
+            x = 0
+
+        y = 0
+
+        width = max(
+            max([len(line) for line in self.engine.player.equipment.list_equipped_items()]) + 4,
+            len(self.TITLE) + 4
+        )
+
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            title=self.TITLE,
+            clear=True,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        print_menu(
+            console=console,
+            items=[line for line in self.engine.player.equipment.list_equipped_items()],
+            x=x + 1,
+            y=y + 1,
+            cursor=self.cursor,
+        )
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        player = self.engine.player
+        key = event.sym
+        index = key - tcod.event.KeySym.a
+
+        if 0 <= index < len(EquipmentSlot):
+            try:
+                selected_item = index
+            except IndexError:
+                self.engine.message_log.add_message("Invalid entry.", color.invalid)
+                return None
+            return self.on_item_selected(selected_item)
+        elif key in (tcod.event.KeySym.UP, tcod.event.KeySym.DOWN):
+            adjust = CURSOR_Y_KEYS[key]
+            if adjust < 0 and self.cursor == 0:
+                self.cursor = len(EquipmentSlot) - 1
+            elif adjust > 0 and self.cursor == len(EquipmentSlot) - 1:
+                self.cursor = 0
+            else:
+                self.cursor += adjust
+        elif key in CONFIRM_KEYS:
+            try:
+                selected_item = EquipmentSlot(self.cursor + 1)
+            except IndexError:
+                self.engine.message_log.add_message("Invalid entry.", color.invalid)
+                return None
+            return self.on_item_selected(selected_item)
+        elif key == tcod.event.KeySym.ESCAPE:
+            return MainGameEventHandler(self.engine)
+        return None  # super().ev_keydown(event)
+
+    def on_item_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
+        """Called when the user selects a valid item."""
+        raise NotImplementedError()
+
+
+class UnequipEventHandler(EquipmentEventHandler):
+    TITLE = "Select an item to unequip"
+
+    def on_item_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
+        item = self.engine.player.equipment.items[slot]
+        if item is None:
+            self.engine.message_log.add_message("Nothing to unequip.", color.invalid)
+            return self
+        else:
+            return actions.EquipAction(entity=self.engine.player, item=item, slot=slot)
+
+
+class EquipWeaponEventHandler(AskUserEventHandler):
+    def __init__(self, engine: Engine, item: Item, parent: EventHandler):
+        super().__init__(engine)
+        self.item = item
+        self.parent = parent
+        self.cursor = 0
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        player = self.engine.player
+        from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
+        if (not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND)
+            or not self.item.equippable.offhand
+            or player.equipment.items[EquipmentSlot.MAINHAND].equippable.two_handed
+        ):
+            player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, self.item, add_message=True)
+            return MainGameEventHandler(self.engine)
+        elif player.equipment.items[EquipmentSlot.OFFHAND] is None:
+            player.equipment.equip_to_slot(EquipmentSlot.OFFHAND, self.item, add_message=True)
+            return MainGameEventHandler(self.engine)
+        else:
+            super().on_render(console)
+            console.rgb["fg"] //= 8
+            console.rgb["bg"] //= 8
+
+            equipped_weapons = [
+                player.equipment.items[EquipmentSlot.MAINHAND].name,
+                player.equipment.items[EquipmentSlot.OFFHAND].name
+            ]
+
+            title = "Select weapon to replace"
+
+            width = max(len(title), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
+            height = 3
+            x = (WINDOW_WIDTH - width) // 2
+            y = (WINDOW_HEIGHT - height) // 2
+
+            console.draw_frame(
+                x=x,
+                y=y,
+                width=width,
+                height=height,
+                title=title,
+                clear=True,
+                fg=(255, 255, 255),
+                bg=(0, 0, 0),
+            )
+
+            for i in range(2):
+                if self.cursor == i:
+                    fg = (0, 0, 0)
+                    bg = (255, 255, 255)
+                else:
+                    fg = (255, 255, 255)
+                    bg = (0, 0, 0)
+
+                console.print(
+                    x=x,
+                    y=y + 1 + i,
+                    string=equipped_weapons[i],
+                    fg=fg,
+                    bg=bg,
+                )
+
+            return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+        if key in (tcod.event.KeySym.DOWN, tcod.event.KeySym.UP):
+            self.cursor = self.cursor + CURSOR_Y_KEYS[key] % 2
+        elif key in CONFIRM_KEYS:
+            if self.cursor == 0:
+                slot = EquipmentSlot.MAINHAND
+            else:
+                slot = EquipmentSlot.OFFHAND
+            self.engine.player.equipment.equip_to_slot(slot=slot, item=self.item, add_message=True)
+            return MainGameEventHandler(self.engine)
+        elif key == tcod.event.KeySym.ESCAPE:
+            return self.parent
+
+
+class EquipTrinketEventHandler(AskUserEventHandler):
+    def __init__(self, engine: Engine, item: Item, parent: EventHandler):
+        super().__init__(engine)
+        self.item = item
+        self.parent = parent
+        self.cursor = 0
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        player = self.engine.player
+        from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
+        if not player.equipment.item_is_equipped(EquipmentSlot.TRINKET1):
+            player.equipment.equip_to_slot(EquipmentSlot.TRINKET1, self.item, add_message=True)
+            return MainGameEventHandler(self.engine)
+        elif not player.equipment.item_is_equipped(EquipmentSlot.TRINKET2):
+            player.equipment.equip_to_slot(EquipmentSlot.TRINKET2, self.item, add_message=True)
+            return MainGameEventHandler(self.engine)
+        else:
+            super().on_render(console)
+            console.rgb["fg"] //= 8
+            console.rgb["bg"] //= 8
+
+            equipped_weapons = [
+                player.equipment.items[EquipmentSlot.TRINKET1].name,
+                player.equipment.items[EquipmentSlot.TRINKET2].name
+            ]
+
+            title = "Select trinket to replace"
+
+            width = max(len(title), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
+            height = 3
+            x = (WINDOW_WIDTH - width) // 2
+            y = (WINDOW_HEIGHT - height) // 2
+
+            console.draw_frame(
+                x=x,
+                y=y,
+                width=width,
+                height=height,
+                title=title,
+                clear=True,
+                fg=(255, 255, 255),
+                bg=(0, 0, 0),
+            )
+
+            for i in range(2):
+                if self.cursor == i:
+                    fg = (0, 0, 0)
+                    bg = (255, 255, 255)
+                else:
+                    fg = (255, 255, 255)
+                    bg = (0, 0, 0)
+
+                console.print(
+                    x=x,
+                    y=y + 1 + i,
+                    string=equipped_weapons[i],
+                    fg=fg,
+                    bg=bg,
+                )
+
+            return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+        if key in (tcod.event.KeySym.DOWN, tcod.event.KeySym.UP):
+            self.cursor = self.cursor + CURSOR_Y_KEYS[key] % 2
+        elif key in CONFIRM_KEYS:
+            if self.cursor == 0:
+                slot = EquipmentSlot.TRINKET1
+            else:
+                slot = EquipmentSlot.TRINKET2
+            self.engine.player.equipment.equip_to_slot(slot=slot, item=self.item, add_message=True)
+            return MainGameEventHandler(self.engine)
+        elif key == tcod.event.KeySym.ESCAPE:
+            return self.parent

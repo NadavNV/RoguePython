@@ -27,7 +27,6 @@ def render_bars(
         console: Console, player: Fighter, total_width: int
 ) -> None:
     """Render the player's hit points and mana as data bars."""
-    # TODO: Add rendering of second bar with different values
 
     def render_bar(current_value: int, maximum_value: int, x: int, y: int, bar_color: Tuple[int, int, int], name: str):
         bar_width = int(float(current_value) / maximum_value * total_width)

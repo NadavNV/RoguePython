@@ -4,6 +4,7 @@ from typing import Optional, Tuple, TYPE_CHECKING
 
 import color
 import exceptions
+from equipment_slots import EquipmentSlot
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -87,13 +88,14 @@ class DropItem(ItemAction):
 
 
 class EquipAction(Action):
-    def __init__(self, entity: Actor, item: Item):
+    def __init__(self, entity: Actor, item: Item, slot:EquipmentSlot):
         super().__init__(entity)
 
         self.item = item
+        self.slot = slot
 
     def perform(self) -> None:
-        self.entity.equipment.toggle_equip(self.item)
+        self.entity.equipment.toggle_equip(slot=self.slot, item_to_equip=self.item)
 
 
 class WaitAction(Action):
@@ -143,7 +145,6 @@ class ActionWithDirection(Action):
 
 class MeleeAction(ActionWithDirection):
     def perform(self) -> None:
-        # TODO: Replace - transition into instanced combat
         target = self.target_actor
         if not target:
             raise exceptions.Impossible("Nothing to attack.")
@@ -187,6 +188,7 @@ class MovementAction(ActionWithDirection):
 class BumpAction(ActionWithDirection):
     def perform(self) -> None:
         if self.target_actor:
+            # TODO: Replace - transition into instanced combat
             return MeleeAction(self.entity, self.dx, self.dy).perform()
 
         else:

@@ -51,6 +51,8 @@ class Level(BaseComponent):
 
         self.current_level += 1
 
+        self.parent.fighter.proficiency = 1 + self.current_level % 4
+
     def increase_max_hp(self, amount: int = 20) -> None:
         self.parent.fighter.max_hp += amount
         self.parent.fighter.hp += amount

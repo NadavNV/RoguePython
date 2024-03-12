@@ -126,6 +126,7 @@ class HealingConsumable(Consumable):
         else:
             raise Impossible(f"Your health is already full.")
 
+
 class ManaConsumable(Consumable):
     def __init__(self, amount: int):
         self.amount = amount

@@ -15,6 +15,7 @@ from engine import Engine
 import entity_factories
 from game_map import GameWorld
 import input_handlers
+from equipment_slots import EquipmentSlot
 
 
 # Load the background image and remove the alpha channel.
@@ -56,14 +57,11 @@ def new_game() -> Engine:
     dagger = copy.deepcopy(entity_factories.dagger)
     leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
-    dagger.parent = player.inventory
-    leather_armor.parent = player.inventory
+    dagger.parent = player.equipment
+    leather_armor.parent = player.equipment
 
-    player.inventory.items.append(dagger)
-    player.equipment.toggle_equip(dagger, add_message=False)
-
-    player.inventory.items.append(leather_armor)
-    player.equipment.toggle_equip(leather_armor, add_message=False)
+    player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
+    player.equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
 
     return engine
 

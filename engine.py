@@ -92,11 +92,12 @@ class Engine:
 
             console.print(x=frame_x + 1, y=frame_y + 1, string="Use item from bags:              i")
             console.print(x=frame_x + 1, y=frame_y + 2, string="Drop item:                       d")
-            console.print(x=frame_x + 1, y=frame_y + 3, string="Character information and gear:  c")
-            console.print(x=frame_x + 1, y=frame_y + 4, string="Expand message log:              v")
-            console.print(x=frame_x + 1, y=frame_y + 5, string="Descend stairs:          shift + .")
-            console.print(x=frame_x + 1, y=frame_y + 6, string="Movement:              Numpad keys")
-            console.print(x=frame_x + 1, y=frame_y + 7, string="Wait:                     Numpad 5")
+            console.print(x=frame_x + 1, y=frame_y + 3, string="Unequip item:                    u")
+            console.print(x=frame_x + 1, y=frame_y + 4, string="Character information:           c")
+            console.print(x=frame_x + 1, y=frame_y + 5, string="Expand message log:              v")
+            console.print(x=frame_x + 1, y=frame_y + 6, string="Descend stairs:          shift + .")
+            console.print(x=frame_x + 1, y=frame_y + 7, string="Movement:              Numpad keys")
+            console.print(x=frame_x + 1, y=frame_y + 8, string="Wait:                     Numpad 5")
 
             frame_x = setup_game.WINDOW_WIDTH * 2 // 3 + 1
             frame_y = setup_game.WINDOW_HEIGHT * 2 // 3 + 1

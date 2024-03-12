@@ -11,7 +11,7 @@ player = Actor(
     color=(255, 255, 255),
     name="Player",
     ai_cls=HostileEnemy,
-    equipment=Equipment(),
+    equipment=Equipment(items=None),
     fighter=Fighter(
         strength=1, perseverance=1, agility=1, magic=1, hit_dice="2d10", hp=30, base_defense=1, base_power=2, mana=20
     ),
@@ -24,7 +24,7 @@ orc = Actor(
     color=(63, 127, 63),
     name="Orc",
     ai_cls=HostileEnemy,
-    equipment=Equipment(),
+    equipment=Equipment(items=None),
     fighter=Fighter(
         strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d8", hp=10, base_defense=0, base_power=3
     ),
@@ -36,7 +36,7 @@ troll = Actor(
     color=(0, 127, 0),
     name="Troll",
     ai_cls=HostileEnemy,
-    equipment=Equipment(),
+    equipment=Equipment(items=None),
     fighter=Fighter(
         strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d10", hp=16, base_defense=1, base_power=4
     ),

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import random
+import math
+
 import color
 from components.base_component import BaseComponent, roll_dice
 from render_order import RenderOrder
@@ -39,6 +42,10 @@ class Fighter(BaseComponent):
             base_defense: int,
             base_power: int,
             mana: int = 0,
+            weapon_crit_threshold: int = 20,
+            spell_crit_threshold: int = 20,
+            has_weapon_advantage: bool = False,
+            has_spell_advantage: bool = False,
     ):
         self.strength = strength
         self.perseverance = perseverance
@@ -52,6 +59,11 @@ class Fighter(BaseComponent):
         self._mana = mana
         self.base_defense = base_defense
         self.base_power = base_power
+        self.weapon_crit_threshold = weapon_crit_threshold
+        self.spell_crit_threshold = spell_crit_threshold
+        self.has_weapon_advantage = has_weapon_advantage
+        self.has_spell_advantage = has_spell_advantage
+        self.proficiency = 1
 
     @property
     def hp(self) -> int:
@@ -144,3 +156,31 @@ class Fighter(BaseComponent):
 
     def take_damage(self, amount: int) -> None:
         self.hp -= amount
+
+    @staticmethod
+    def roll_attack(crit_threshold: int, attack_bonus: int, advantage: bool = False) -> int:
+        roll = random.randint(1, 20)
+        if advantage:
+            roll = max(roll, random.randint(1, 20))
+        if roll >= crit_threshold:
+            return int(math.inf)
+        else:
+            return roll + attack_bonus
+
+    def roll_weapon_attack(self) -> int:
+        return self.roll_attack(
+            self.weapon_crit_threshold,
+            self.weapon_attack_bonus,
+            self.has_weapon_advantage
+        )
+
+    def roll_spell_attack(self) -> int:
+        return self.roll_attack(
+            self.spell_crit_threshold,
+            self.spell_attack_bonus,
+            self.has_spell_advantage
+        )
+
+    def roll_hit_dice(self) -> None:
+        self.max_hp = roll_dice(self.hit_dice) + self.perseverance // 2
+        self._hp = self.max_hp
