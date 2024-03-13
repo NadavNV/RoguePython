@@ -7,6 +7,9 @@ from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 import tcod
 from tcod import libtcodpy
 import textwrap
+import lzma
+import pickle
+import traceback
 
 import actions
 from actions import (
@@ -222,7 +225,7 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             x=x + 1, y=y + 5, string=f"Attack: {self.engine.player.fighter.power}"
         )
         console.print(
-            x=x + 1, y=y + 6, string=f"Defense: {self.engine.player.fighter.defense}"
+            x=x + 1, y=y + 6, string=f"Defense: {self.engine.player.fighter.armor}"
         )
         return self
 
@@ -265,7 +268,7 @@ class LevelUpEventHandler(AskUserEventHandler):
         console.print(
             x=x + 1,
             y=6,
-            string=f"c) Agility (+1 defense, from {self.engine.player.fighter.defense})",
+            string=f"c) Agility (+1 defense, from {self.engine.player.fighter.armor})",
         )
 
         return self
@@ -363,7 +366,7 @@ class InventoryEventHandler(AskUserEventHandler):
 
         if 0 <= index <= 26:
             try:
-                selected_item = player.inventory.items[index]
+                selected_item = player.inventory.items[index][0]
             except IndexError:
                 self.engine.message_log.add_message("Invalid entry.", color.invalid)
                 return None
@@ -620,6 +623,11 @@ CURSOR_Y_KEYS = {
     tcod.event.KeySym.PAGEDOWN: 10,
 }
 
+CURSOR_X_KEYS = {
+    tcod.event.KeySym.LEFT: -1,
+    tcod.event.KeySym.RIGHT: 1,
+}
+
 
 class HistoryViewer(EventHandler):
     """Print the history on a larger window which can be navigated."""
@@ -692,30 +700,42 @@ def print_menu(console: tcod.console.Console, items: List[str], x: int, y: int, 
         console.print(x=x, y=y + i, fg=fg, bg=bg, string=f"({key}) {item}")
 
 
-class CutsceneEventHandler(EventHandler):
+class CutsceneEventHandler(BaseEventHandler):
     text: str
     time_to_hold: float
+    cutscene_skip: bool
 
-    def __init__(self, engine: Engine):
-        super().__init__(engine)
+    def __init__(self):
         self.chars_printed = 0
         self.start = time.time()
         self.now = self.start
+        self.cutscene_skip = False
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> None:
-        self.engine.cutscene_skip = True
+        self.cutscene_skip = True
 
     def ev_mousebuttondown(self, event: tcod.event.MouseButtonDown) -> None:
-        self.engine.cutscene_skip = True
+        self.cutscene_skip = True
 
     def ev_quit(self, event: tcod.event.Quit) -> Optional[Action]:
         raise exceptions.QuiteWithoutSaving()
 
 
+def wrap(text: str, width: int):
+    """"Returns 'text' split into lines up to the given width"""
+    # Taken from https://stackoverflow.com/questions/1166317/python-textwrap-library-how-to-preserve-line-breaks
+    return '\n'.join(['\n'.join(textwrap.wrap(line,
+                                              width,
+                                              break_long_words=False,
+                                              replace_whitespace=False
+                                              )
+                                ) for line in text.splitlines()])
+
+
 class IntroEventHandler(CutsceneEventHandler):
 
-    def __init__(self, engine: Engine):
-        super().__init__(engine)
+    def __init__(self):
+        super().__init__()
         self.time_to_hold = 5  # Seconds to wait after printing the whole message.
         self.text = ("A sudden jolt wakes you from your sleep. Your cage seems to have fallen, and the lid has come" +
                      " loose." + "\n\nYou are free.\n\n" + "You are a python. You've spent your whole life in this " +
@@ -733,18 +753,12 @@ class IntroEventHandler(CutsceneEventHandler):
         x = console.width // 4
         y = console.height // 4
 
-        if self.engine.cutscene_skip:
+        if self.cutscene_skip:
             self.chars_printed = len(self.text)
-            self.engine.cutscene_skip = False
+            self.cutscene_skip = False
 
         end = self.chars_printed
-        # Taken from https://stackoverflow.com/questions/1166317/python-textwrap-library-how-to-preserve-line-breaks
-        self.text = '\n'.join(['\n'.join(textwrap.wrap(line,
-                                                       console.width // 2,
-                                                       break_long_words=False,
-                                                       replace_whitespace=False
-                                                       )
-                                         ) for line in self.text.splitlines()])
+        self.text = wrap(self.text, console.width // 2)
 
         for line in self.text.splitlines():
             if end > len(line):
@@ -764,15 +778,15 @@ class IntroEventHandler(CutsceneEventHandler):
             self.start = self.now
             self.chars_printed += 1
         if self.chars_printed >= self.total_length and self.now - self.start > self.time_to_hold:
-            return MainGameEventHandler(self.engine)
+            return ClassSelectEventHandler()
         else:
             return self
 
     def handle_events(self, event: tcod.event.Event) -> BaseEventHandler:
         self.dispatch(event)
-        if self.chars_printed >= len(self.text):
-            if self.engine.cutscene_skip or self.now - self.start > self.time_to_hold:
-                return MainGameEventHandler(self.engine)
+        if self.chars_printed >= self.total_length:
+            if self.cutscene_skip or self.now - self.start > self.time_to_hold:
+                return ClassSelectEventHandler()
         return self
 
 
@@ -1030,3 +1044,241 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
     def on_slot_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
         self.engine.player.equipment.unequip_from_slot(slot, add_message=True)
         return actions.EquipAction(self.engine.player, self.item, slot)
+
+
+class ClassSelectEventHandler(BaseEventHandler):
+
+    def __init__(self):
+        self.cursor = 1  # Start with Rogue highlighted
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
+
+        console.draw_frame(
+            x=0,
+            y=0,
+            width=WINDOW_WIDTH,
+            height=WINDOW_HEIGHT * 2 // 3,
+            title="Choose a class",
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        # TODO: Draw sprites instead of frames
+        console.draw_frame(
+            x=WINDOW_WIDTH // 8,
+            y=WINDOW_HEIGHT // 8,
+            width=WINDOW_WIDTH // 8,
+            height=WINDOW_WIDTH // 4,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        console.draw_frame(
+            x=WINDOW_WIDTH // 2 - WINDOW_WIDTH // 16,
+            y=WINDOW_HEIGHT // 8,
+            width=WINDOW_WIDTH // 8,
+            height=WINDOW_WIDTH // 4,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        console.draw_frame(
+            x=WINDOW_WIDTH * 6 // 8,
+            y=WINDOW_HEIGHT // 8,
+            width=WINDOW_WIDTH // 8,
+            height=WINDOW_WIDTH // 4,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        if self.cursor == 0:
+            fg = (0, 0, 0)
+            bg = (255, 255, 255)
+        else:
+            fg = (255, 255, 255)
+            bg = (0, 0, 0)
+
+        console.print(
+            x=WINDOW_WIDTH // 8,
+            y=WINDOW_HEIGHT // 8 + WINDOW_WIDTH // 4 + 2,
+            string='[W]arrior',
+            fg=fg,
+            bg=bg,
+        )
+
+        if self.cursor == 1:
+            fg = (0, 0, 0)
+            bg = (255, 255, 255)
+        else:
+            fg = (255, 255, 255)
+            bg = (0, 0, 0)
+
+        console.print(
+            x=WINDOW_WIDTH // 2 - WINDOW_WIDTH // 16,
+            y=WINDOW_HEIGHT // 8 + WINDOW_WIDTH // 4 + 2,
+            string='[R]ogue',
+            fg=fg,
+            bg=bg,
+        )
+
+        if self.cursor == 2:
+            fg = (0, 0, 0)
+            bg = (255, 255, 255)
+        else:
+            fg = (255, 255, 255)
+            bg = (0, 0, 0)
+
+        console.print(
+            x=WINDOW_WIDTH * 6 // 8,
+            y=WINDOW_HEIGHT // 8 + WINDOW_WIDTH // 4 + 2,
+            string='[M]age',
+            fg=fg,
+            bg=bg,
+        )
+
+        console.draw_frame(
+            x=0,
+            y=WINDOW_HEIGHT * 2 // 3,
+            height=WINDOW_HEIGHT // 3,
+            width=WINDOW_WIDTH,
+            title="Class Description:",
+            fg=(255, 255, 255),
+            bg=(0, 0, 0)
+        )
+
+        class_descriptions = [
+            ("The warrior prefers using brute strength in combat to vanquish their enemies. Being less agile than" +
+             " most, they tend to use heavy armor and shields for protection. They are proficient with all " +
+             "strength-based and finesse weapons, and they have abilities that can take down multiple enemies " +
+             "at once.\n\nPREFERRED STAT: Strength.\n\nPROFICIENCIES: Swords, Axes, Maces."),
+            ("The rogue is a cunning fighter, using their speed and a few nasty tricks to take down individual " +
+             "enemies very quickly. They use their incredible agility to avoid incoming attacks and strike their " +
+             "enemies where they are weakest. They are proficient with agility-based and finesse weapons. " +
+             "\n\nPREFERRED STAT: Agility.\n\nPROFICIENCIES: Short Sword, Dagger, Rapier, Scimitar."),
+            ("Wielders of powerful arcane forces, the mage their spells to control the battlefield and " +
+             "dispose of their enemies. They can freeze their foes, set the aflame, or strike them with " +
+             "lightning. They need to spend mana to cast their spells, but they are also more proficient than " +
+             "others at using scrolls to cast spells.\n\nPREFERRED STAT: Magic.\n\nPROFICIENCIES: Wands, Staves," +
+             " Scrolls.")
+        ]
+        console.print(
+            x=1,
+            y=WINDOW_HEIGHT * 2 // 3 + 2,
+            string=wrap(class_descriptions[self.cursor], WINDOW_WIDTH - 2),
+            fg=(255, 255, 255),
+            bg=(0, 0, 0)
+        )
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[BaseEventHandler]:
+        from setup_game import new_game
+        key = event.sym
+        if key in CURSOR_X_KEYS:
+            self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % 3
+        elif key in CONFIRM_KEYS:
+            return MainGameEventHandler(new_game(self.cursor))
+        elif key == tcod.event.KeySym.ESCAPE:
+            return MainMenu()
+        elif key == tcod.event.KeySym.w:
+            return MainGameEventHandler(new_game(0))
+        elif key == tcod.event.KeySym.r:
+            return MainGameEventHandler(new_game(1))
+        elif key == tcod.event.KeySym.m:
+            return MainGameEventHandler(new_game(2))
+
+
+def load_game(filename: str) -> Engine:
+    """Load an engine instance from a file."""
+    with open(filename, "rb") as f:
+        engine = pickle.loads(lzma.decompress(f.read()))
+    assert isinstance(engine, Engine)
+    return engine
+
+
+class MainMenu(BaseEventHandler):
+    """Handle the main menu rendering and input."""
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        from setup_game import background_image
+        """Render the main menu on a background image."""
+        console.draw_semigraphics(background_image, 0, 0)
+
+        console.print(
+            console.width // 2,
+            console.height // 2 - 4,
+            "ROGUE PYTHON",
+            fg=color.menu_title,
+            alignment=libtcodpy.CENTER,
+        )
+        console.print(
+            console.width // 2,
+            console.height - 2,
+            "By Nadav Nevo",
+            fg=color.menu_title,
+            alignment=libtcodpy.CENTER,
+        )
+
+        menu_width = 24
+        for i, text in enumerate(
+            ["[N] Play a new game", "[C] Continue last game", "[Q] Quit"]
+        ):
+            console.print(
+                console.width // 2,
+                console.height // 2 - 2 + i,
+                text.ljust(menu_width),
+                fg=color.menu_text,
+                bg=color.black,
+                alignment=libtcodpy.CENTER,
+                bg_blend=libtcodpy.BKGND_ALPHA(64),
+            )
+
+        return self
+
+    def ev_keydown(
+            self, event: tcod.event.KeyDown
+    ) -> Optional[BaseEventHandler]:
+        if event.sym in (tcod.event.KeySym.q, tcod.event.KeySym.ESCAPE):
+            raise SystemExit()
+        elif event.sym == tcod.event.KeySym.c:
+            try:
+                return MainGameEventHandler(load_game("savegame.sav"))
+            except FileNotFoundError:
+                return PopupMessage(self, "No saved game to load.")
+            except Exception as exc:
+                traceback.print_exc()  # Print to stderr.
+                return PopupMessage(self, f"Failed to load save:\n{exc}")
+        elif event.sym == tcod.event.KeySym.n:
+            return IntroEventHandler()
+
+        return None
+
+
+if __name__ == "__main__":
+    screen_width = 128
+    screen_height = 80
+
+    handler = ClassSelectEventHandler()
+
+    tileset = tcod.tileset.load_tilesheet(
+        "dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD
+    )
+    with tcod.context.new_terminal(
+            screen_width,
+            screen_height,
+            tileset=tileset,
+            title="Yet Another Roguelike Tutorial",
+            vsync=True,
+    ) as context:
+        root_console = tcod.console.Console(screen_width, screen_height, order="F")
+        try:
+            while True:
+                root_console.clear()
+                handler = handler.on_render(console=root_console)
+                context.present(root_console)
+                for test_event in tcod.event.wait():
+                    test_event = context.convert_event(test_event)
+                    handler = handler.handle_events(test_event)
+        except SystemExit:
+            raise

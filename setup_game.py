@@ -2,9 +2,6 @@
 from __future__ import annotations
 
 import copy
-import lzma
-import pickle
-import traceback
 from typing import Optional
 
 import tcod
@@ -22,10 +19,10 @@ from equipment_slots import EquipmentSlot
 background_image = tcod.image.load("menu_background.png")[:, :, :3]
 
 WINDOW_WIDTH = 128
-WINDOW_HEIGHT = 72
+WINDOW_HEIGHT = 80
 
 
-def new_game() -> Engine:
+def new_game(player_class: int) -> Engine:
     """Return a brand new game session as an engine instance."""
     map_width = WINDOW_WIDTH * 2 // 3
     map_height = WINDOW_HEIGHT * 2 // 3
@@ -64,68 +61,3 @@ def new_game() -> Engine:
     player.equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
 
     return engine
-
-
-def load_game(filename: str) -> Engine:
-    """Load an engine instance from a file."""
-    with open(filename, "rb") as f:
-        engine = pickle.loads(lzma.decompress(f.read()))
-    assert isinstance(engine, Engine)
-    return engine
-
-
-class MainMenu(input_handlers.BaseEventHandler):
-    """Handle the main menu rendering and input."""
-
-    def on_render(self, console: tcod.console.Console) -> input_handlers.BaseEventHandler:
-        """Render the main menu on a background image."""
-        console.draw_semigraphics(background_image, 0, 0)
-
-        console.print(
-            console.width // 2,
-            console.height // 2 - 4,
-            "ROGUE PYTHON",
-            fg=color.menu_title,
-            alignment=libtcodpy.CENTER,
-        )
-        console.print(
-            console.width // 2,
-            console.height - 2,
-            "By Nadav Nevo",
-            fg=color.menu_title,
-            alignment=libtcodpy.CENTER,
-        )
-
-        menu_width = 24
-        for i, text in enumerate(
-            ["[N] Play a new game", "[C] Continue last game", "[Q] Quit"]
-        ):
-            console.print(
-                console.width // 2,
-                console.height // 2 - 2 + i,
-                text.ljust(menu_width),
-                fg=color.menu_text,
-                bg=color.black,
-                alignment=libtcodpy.CENTER,
-                bg_blend=libtcodpy.BKGND_ALPHA(64),
-            )
-
-        return self
-
-    def ev_keydown(
-            self, event: tcod.event.KeyDown
-    ) -> Optional[input_handlers.BaseEventHandler]:
-        if event.sym in (tcod.event.KeySym.q, tcod.event.KeySym.ESCAPE):
-            raise SystemExit()
-        elif event.sym == tcod.event.KeySym.c:
-            try:
-                return input_handlers.MainGameEventHandler(load_game("savegame.sav"))
-            except FileNotFoundError:
-                return input_handlers.PopupMessage(self, "No saved game to load.")
-            except Exception as exc:
-                traceback.print_exc()  # Print to stderr.
-                return input_handlers.PopupMessage(self, f"Failed to load save:\n{exc}")
-        elif event.sym == tcod.event.KeySym.n:
-            return input_handlers.IntroEventHandler(new_game())
-
-        return None
