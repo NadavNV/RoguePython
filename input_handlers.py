@@ -916,7 +916,7 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
         title = "Select weapon to replace"
 
         width = max(len(title), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
-        height = 3
+        height = 4
         x = (WINDOW_WIDTH - width) // 2
         y = (WINDOW_HEIGHT - height) // 2
 
@@ -940,7 +940,7 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
                 bg = (0, 0, 0)
 
             console.print(
-                x=x,
+                x=x + 1,
                 y=y + 1 + i,
                 string=equipped_weapons[i],
                 fg=fg,
@@ -952,7 +952,7 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
         if key in (tcod.event.KeySym.DOWN, tcod.event.KeySym.UP):
-            self.cursor = self.cursor + CURSOR_Y_KEYS[key] % 2
+            self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % 2
         elif key in CONFIRM_KEYS:
             if self.cursor == 0:
                 slot = EquipmentSlot.MAINHAND
@@ -982,7 +982,7 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
         title = "Select trinket to replace"
 
         width = max(len(title), len(equipped_trinkets[0]), len(equipped_trinkets[1])) + 2
-        height = 3
+        height = 4
         x = (WINDOW_WIDTH - width) // 2
         y = (WINDOW_HEIGHT - height) // 2
 
@@ -1006,7 +1006,7 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
                 bg = (0, 0, 0)
 
             console.print(
-                x=x,
+                x=x + 1,
                 y=y + 1 + i,
                 string=equipped_trinkets[i],
                 fg=fg,
@@ -1018,7 +1018,7 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
         if key in (tcod.event.KeySym.DOWN, tcod.event.KeySym.UP):
-            self.cursor = self.cursor + CURSOR_Y_KEYS[key] % 2
+            self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % 2
         elif key in CONFIRM_KEYS:
             if self.cursor == 0:
                 slot = EquipmentSlot.TRINKET1
