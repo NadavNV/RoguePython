@@ -37,7 +37,7 @@ class Consumable(BaseComponent):
         entity = self.parent
         inventory = entity.parent
         if isinstance(inventory, components.inventory.Inventory):
-            inventory.items.remove(entity)
+            inventory.remove_item(entity)
 
 
 class ConfusionConsumable(Consumable):

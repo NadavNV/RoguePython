@@ -62,9 +62,10 @@ class Equipment(BaseComponent):
         if current_item is not None:
             self.unequip_from_slot(slot, add_message)
 
-        if item in self.parent.inventory.items:
-            self.parent.inventory.items.remove(item)
+        if self.parent.inventory.has_item(item):
+            self.parent.inventory.remove_item(item)
 
+        item.parent = self
         self.items[slot] = item
 
         if (
@@ -80,13 +81,14 @@ class Equipment(BaseComponent):
     def unequip_from_slot(self, slot: EquipmentSlot, add_message: bool) -> None:
         current_item = self.items.pop(slot)
         self.items[slot] = None
-        self.parent.inventory.items.append(current_item)
+        self.parent.inventory.add_item(current_item)
+        current_item.parent.parent = self.parent.inventory
 
         if add_message:
             self.unequip_message(current_item.name)
 
     def toggle_equip(self, slot: EquipmentSlot, item_to_equip: Item, add_message: bool = True) -> None:
-        """Unequips the item currently in 'slot' and equips 'item_to_equip' instead."""
+        """Unequip the item currently in 'slot' and equip 'item_to_equip' instead."""
         self.unequip_from_slot(slot, add_message)
         self.equip_to_slot(slot, item_to_equip, add_message)
 

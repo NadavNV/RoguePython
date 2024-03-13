@@ -63,6 +63,10 @@ def new_game() -> Engine:
     player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
     player.equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
 
+    for i in range(98):
+        potion = copy.deepcopy(entity_factories.health_potion)
+        player.inventory.add_item(potion)
+
     return engine
 
 

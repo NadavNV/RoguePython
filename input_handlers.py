@@ -379,7 +379,7 @@ class InventoryEventHandler(AskUserEventHandler):
                 self.cursor += adjust
         elif key in CONFIRM_KEYS:
             try:
-                selected_item = player.inventory.items[self.cursor]
+                selected_item = player.inventory.items[self.cursor][0]
             except IndexError:
                 self.engine.message_log.add_message("Invalid entry.", color.invalid)
                 return None
