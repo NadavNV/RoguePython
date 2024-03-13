@@ -86,11 +86,9 @@ class Equipment(BaseComponent):
             self.unequip_message(current_item.name)
 
     def toggle_equip(self, slot: EquipmentSlot, item_to_equip: Item, add_message: bool = True) -> None:
-
-        if self.items[slot] is not None:
-            self.unequip_from_slot(slot, add_message)
-        elif item_to_equip is not None:
-            self.equip_to_slot(slot, item_to_equip, add_message)
+        """Unequips the item currently in 'slot' and equips 'item_to_equip' instead."""
+        self.unequip_from_slot(slot, add_message)
+        self.equip_to_slot(slot, item_to_equip, add_message)
 
     def list_equipped_items(self) -> List[str]:
         result = []

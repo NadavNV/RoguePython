@@ -92,7 +92,10 @@ class EquipAction(Action):
         self.slot = slot
 
     def perform(self) -> None:
-        self.entity.equipment.equip_to_slot(slot=self.slot, item=self.item, add_message=True)
+        if self.entity.equipment.item_is_equipped(self.slot):
+            self.entity.equipment.unequip_from_slot(self.slot, add_message=True)
+        else:
+            self.entity.equipment.equip_to_slot(slot=self.slot, item=self.item, add_message=True)
 
 
 class WaitAction(Action):

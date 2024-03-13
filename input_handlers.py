@@ -398,17 +398,33 @@ class InventoryActivateHandler(InventoryEventHandler):
     TITLE = "Select an item to use"
 
     def on_item_selected(self, item: Item) -> Optional[ActionOrHandler]:
+        player = self.engine.player
         if item.consumable:
             # Return the action for the selected item.
             return item.consumable.get_action(self.engine.player)
         elif item.equippable:
             if item.equippable.equipment_type == EquipmentType.WEAPON:
-                return EquipWeaponEventHandler(self.engine, item, self)
+                if (
+                        not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND)
+                        or not item.equippable.offhand
+                        or player.equipment.items[EquipmentSlot.MAINHAND].equippable.two_handed
+                ):
+                    return actions.EquipAction(player, item=item, slot=EquipmentSlot.MAINHAND)
+                elif player.equipment.items[EquipmentSlot.OFFHAND] is None:
+                    return actions.EquipAction(player, item=item, slot=EquipmentSlot.OFFHAND)
+                else:
+                    return EquipWeaponEventHandler(self.engine, item, self)
             elif item.equippable.equipment_type == EquipmentType.TRINKET:
+                if not player.equipment.item_is_equipped(EquipmentSlot.TRINKET1):
+                    player.equipment.equip_to_slot(EquipmentSlot.TRINKET1, item, add_message=True)
+                    return MainGameEventHandler(self.engine)
+                elif not player.equipment.item_is_equipped(EquipmentSlot.TRINKET2):
+                    player.equipment.equip_to_slot(EquipmentSlot.TRINKET2, item, add_message=True)
+                    return MainGameEventHandler(self.engine)
                 return EquipTrinketEventHandler(self.engine, item, self)
             else:
                 slot = EquipmentSlot(item.equippable.equipment_type)
-                return actions.EquipAction(self.engine.player, item=item, slot=slot)
+                return actions.EquipAction(player, item=item, slot=slot)
         else:
             return None
 
@@ -863,71 +879,73 @@ class UnequipEventHandler(EquipmentEventHandler):
             return actions.EquipAction(entity=self.engine.player, item=item, slot=slot)
 
 
-class EquipWeaponEventHandler(AskUserEventHandler):
+class ChooseSlotEventHandler(AskUserEventHandler):
     def __init__(self, engine: Engine, item: Item, parent: EventHandler):
         super().__init__(engine)
         self.item = item
         self.parent = parent
         self.cursor = 0
 
+    def on_slot_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
+        """Called when the user selects a slot."""
+        raise NotImplementedError()
+
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        player = self.engine.player
+        # Renders the previews UI but dimmed
+        self.parent.on_render(console)
+        console.rgb["fg"] //= 8
+        console.rgb["bg"] //= 8
+
+        return self
+
+
+class EquipWeaponEventHandler(ChooseSlotEventHandler):
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
-        if (
-                not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND)
-                or not self.item.equippable.offhand
-                or player.equipment.items[EquipmentSlot.MAINHAND].equippable.two_handed
-        ):
-            player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, self.item, add_message=True)
-            return MainGameEventHandler(self.engine)
-        elif player.equipment.items[EquipmentSlot.OFFHAND] is None:
-            player.equipment.equip_to_slot(EquipmentSlot.OFFHAND, self.item, add_message=True)
-            return MainGameEventHandler(self.engine)
-        else:
-            super().on_render(console)
-            console.rgb["fg"] //= 8
-            console.rgb["bg"] //= 8
+        player = self.engine.player
+        super().on_render(console)
 
-            equipped_weapons = [
-                player.equipment.items[EquipmentSlot.MAINHAND].name,
-                player.equipment.items[EquipmentSlot.OFFHAND].name
-            ]
+        equipped_weapons = [
+            player.equipment.items[EquipmentSlot.MAINHAND].name,
+            player.equipment.items[EquipmentSlot.OFFHAND].name
+        ]
 
-            title = "Select weapon to replace"
+        title = "Select weapon to replace"
 
-            width = max(len(title), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
-            height = 3
-            x = (WINDOW_WIDTH - width) // 2
-            y = (WINDOW_HEIGHT - height) // 2
+        width = max(len(title), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
+        height = 3
+        x = (WINDOW_WIDTH - width) // 2
+        y = (WINDOW_HEIGHT - height) // 2
 
-            console.draw_frame(
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            title=title,
+            clear=True,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        for i in range(2):
+            if self.cursor == i:
+                fg = (0, 0, 0)
+                bg = (255, 255, 255)
+            else:
+                fg = (255, 255, 255)
+                bg = (0, 0, 0)
+
+            console.print(
                 x=x,
-                y=y,
-                width=width,
-                height=height,
-                title=title,
-                clear=True,
-                fg=(255, 255, 255),
-                bg=(0, 0, 0),
+                y=y + 1 + i,
+                string=equipped_weapons[i],
+                fg=fg,
+                bg=bg,
             )
 
-            for i in range(2):
-                if self.cursor == i:
-                    fg = (0, 0, 0)
-                    bg = (255, 255, 255)
-                else:
-                    fg = (255, 255, 255)
-                    bg = (0, 0, 0)
-
-                console.print(
-                    x=x,
-                    y=y + 1 + i,
-                    string=equipped_weapons[i],
-                    fg=fg,
-                    bg=bg,
-                )
-
-            return self
+        return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
@@ -938,73 +956,62 @@ class EquipWeaponEventHandler(AskUserEventHandler):
                 slot = EquipmentSlot.MAINHAND
             else:
                 slot = EquipmentSlot.OFFHAND
-            self.engine.player.equipment.equip_to_slot(slot=slot, item=self.item, add_message=True)
-            return MainGameEventHandler(self.engine)
+            return self.on_slot_selected(slot)
         elif key == tcod.event.KeySym.ESCAPE:
             return self.parent
 
+    def on_slot_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
+        self.engine.player.equipment.unequip_from_slot(slot, add_message=True)
+        return actions.EquipAction(self.engine.player, self.item, slot)
 
-class EquipTrinketEventHandler(AskUserEventHandler):
-    def __init__(self, engine: Engine, item: Item, parent: EventHandler):
-        super().__init__(engine)
-        self.item = item
-        self.parent = parent
-        self.cursor = 0
+
+class EquipTrinketEventHandler(ChooseSlotEventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        player = self.engine.player
         from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
-        if not player.equipment.item_is_equipped(EquipmentSlot.TRINKET1):
-            player.equipment.equip_to_slot(EquipmentSlot.TRINKET1, self.item, add_message=True)
-            return MainGameEventHandler(self.engine)
-        elif not player.equipment.item_is_equipped(EquipmentSlot.TRINKET2):
-            player.equipment.equip_to_slot(EquipmentSlot.TRINKET2, self.item, add_message=True)
-            return MainGameEventHandler(self.engine)
-        else:
-            super().on_render(console)
-            console.rgb["fg"] //= 8
-            console.rgb["bg"] //= 8
+        player = self.engine.player
+        super().on_render(console)
 
-            equipped_weapons = [
-                player.equipment.items[EquipmentSlot.TRINKET1].name,
-                player.equipment.items[EquipmentSlot.TRINKET2].name
-            ]
+        equipped_trinkets = [
+            player.equipment.items[EquipmentSlot.TRINKET1].name,
+            player.equipment.items[EquipmentSlot.TRINKET2].name
+        ]
 
-            title = "Select trinket to replace"
+        title = "Select trinket to replace"
 
-            width = max(len(title), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
-            height = 3
-            x = (WINDOW_WIDTH - width) // 2
-            y = (WINDOW_HEIGHT - height) // 2
+        width = max(len(title), len(equipped_trinkets[0]), len(equipped_trinkets[1])) + 2
+        height = 3
+        x = (WINDOW_WIDTH - width) // 2
+        y = (WINDOW_HEIGHT - height) // 2
 
-            console.draw_frame(
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            title=title,
+            clear=True,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        for i in range(2):
+            if self.cursor == i:
+                fg = (0, 0, 0)
+                bg = (255, 255, 255)
+            else:
+                fg = (255, 255, 255)
+                bg = (0, 0, 0)
+
+            console.print(
                 x=x,
-                y=y,
-                width=width,
-                height=height,
-                title=title,
-                clear=True,
-                fg=(255, 255, 255),
-                bg=(0, 0, 0),
+                y=y + 1 + i,
+                string=equipped_trinkets[i],
+                fg=fg,
+                bg=bg,
             )
 
-            for i in range(2):
-                if self.cursor == i:
-                    fg = (0, 0, 0)
-                    bg = (255, 255, 255)
-                else:
-                    fg = (255, 255, 255)
-                    bg = (0, 0, 0)
-
-                console.print(
-                    x=x,
-                    y=y + 1 + i,
-                    string=equipped_weapons[i],
-                    fg=fg,
-                    bg=bg,
-                )
-
-            return self
+        return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
@@ -1015,7 +1022,10 @@ class EquipTrinketEventHandler(AskUserEventHandler):
                 slot = EquipmentSlot.TRINKET1
             else:
                 slot = EquipmentSlot.TRINKET2
-            self.engine.player.equipment.equip_to_slot(slot=slot, item=self.item, add_message=True)
-            return MainGameEventHandler(self.engine)
+            return self.on_slot_selected(slot)
         elif key == tcod.event.KeySym.ESCAPE:
             return self.parent
+
+    def on_slot_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
+        self.engine.player.equipment.unequip_from_slot(slot, add_message=True)
+        return actions.EquipAction(self.engine.player, self.item, slot)
