@@ -114,7 +114,7 @@ class Equipment(BaseComponent):
 
     def list_equipped_items(self) -> List[str]:
         result = []
-        for slot, item in self.items.items():
+        for slot, item in sorted(self.items.items()):
             if item is None:
                 name = "None"
             else:

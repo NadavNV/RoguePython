@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from components.base_component import BaseComponent
+from components.base_component import BaseComponent, roll_dice
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -51,7 +51,11 @@ class Level(BaseComponent):
 
         self.current_level += 1
 
-        self.parent.fighter.proficiency = 1 + self.current_level % 4
+        fighter = self.parent.fighter
+        fighter.proficiency = 1 + self.current_level % 4
+        new_hp = roll_dice(fighter.hit_dice) + fighter.perseverance // 2
+        fighter.max_hp += new_hp
+        fighter.hp += new_hp
 
     def increase_max_hp(self, amount: int = 20) -> None:
         self.parent.fighter.max_hp += amount

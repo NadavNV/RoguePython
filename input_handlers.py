@@ -22,6 +22,7 @@ import color
 import exceptions
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
+from player_classes import PlayerClass
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -1176,17 +1177,17 @@ class ClassSelectEventHandler(BaseEventHandler):
         from setup_game import new_game
         key = event.sym
         if key in CURSOR_X_KEYS:
-            self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % 3
+            self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % len(PlayerClass)
         elif key in CONFIRM_KEYS:
-            return MainGameEventHandler(new_game(self.cursor))
+            return MainGameEventHandler(new_game(PlayerClass(self.cursor + 1)))
         elif key == tcod.event.KeySym.ESCAPE:
             return MainMenu()
         elif key == tcod.event.KeySym.w:
-            return MainGameEventHandler(new_game(0))
+            return MainGameEventHandler(new_game(PlayerClass.WARRIOR))
         elif key == tcod.event.KeySym.r:
-            return MainGameEventHandler(new_game(1))
+            return MainGameEventHandler(new_game(PlayerClass.ROGUE))
         elif key == tcod.event.KeySym.m:
-            return MainGameEventHandler(new_game(2))
+            return MainGameEventHandler(new_game(PlayerClass.MAGE))
 
 
 def load_game(filename: str) -> Engine:
@@ -1256,8 +1257,8 @@ class MainMenu(BaseEventHandler):
 
 
 if __name__ == "__main__":
-    screen_width = 128
-    screen_height = 80
+    screen_width = 112
+    screen_height = 70
 
     handler = ClassSelectEventHandler()
 
