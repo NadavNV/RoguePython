@@ -357,6 +357,7 @@ class InventoryEventHandler(AskUserEventHandler):
         return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        # TODO: Handle stacked items correctly
         player = self.engine.player
         key = event.sym
         index = key - tcod.event.KeySym.a
@@ -404,11 +405,14 @@ class InventoryActivateHandler(InventoryEventHandler):
             return item.consumable.get_action(self.engine.player)
         elif item.equippable:
             if item.equippable.equipment_type == EquipmentType.WEAPON:
-                if (
-                        not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND)
-                        or not item.equippable.offhand
+
+                if not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND):
+                    return actions.EquipAction(player, item=item, slot=EquipmentSlot.MAINHAND)
+                elif (
+                        not item.equippable.offhand
                         or player.equipment.items[EquipmentSlot.MAINHAND].equippable.two_handed
                 ):
+                    player.equipment.unequip_from_slot(EquipmentSlot.MAINHAND, add_message=True)
                     return actions.EquipAction(player, item=item, slot=EquipmentSlot.MAINHAND)
                 elif player.equipment.items[EquipmentSlot.OFFHAND] is None:
                     return actions.EquipAction(player, item=item, slot=EquipmentSlot.OFFHAND)
@@ -416,11 +420,9 @@ class InventoryActivateHandler(InventoryEventHandler):
                     return EquipWeaponEventHandler(self.engine, item, self)
             elif item.equippable.equipment_type == EquipmentType.TRINKET:
                 if not player.equipment.item_is_equipped(EquipmentSlot.TRINKET1):
-                    player.equipment.equip_to_slot(EquipmentSlot.TRINKET1, item, add_message=True)
-                    return MainGameEventHandler(self.engine)
+                    return actions.EquipAction(player, item, EquipmentSlot.TRINKET1)
                 elif not player.equipment.item_is_equipped(EquipmentSlot.TRINKET2):
-                    player.equipment.equip_to_slot(EquipmentSlot.TRINKET2, item, add_message=True)
-                    return MainGameEventHandler(self.engine)
+                    return actions.EquipAction(player, item, EquipmentSlot.TRINKET2)
                 return EquipTrinketEventHandler(self.engine, item, self)
             else:
                 slot = EquipmentSlot(item.equippable.equipment_type)
