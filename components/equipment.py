@@ -67,7 +67,11 @@ class Equipment(BaseComponent):
 
         self.items[slot] = item
 
-        if slot == EquipmentSlot.MAINHAND and item.equippable.two_handed and self.items[EquipmentSlot.OFFHAND] is not None:
+        if (
+                slot == EquipmentSlot.MAINHAND and
+                item.equippable.two_handed and
+                self.items[EquipmentSlot.OFFHAND] is not None
+        ):
             self.unequip_from_slot(EquipmentSlot.OFFHAND, add_message)
 
         if add_message:

@@ -81,21 +81,18 @@ class ItemAction(Action):
 
 class DropItem(ItemAction):
     def perform(self) -> None:
-        if self.entity.equipment.item_is_equipped(self.item):
-            self.entity.equipment.toggle_equip(self.item)
-
         self.entity.inventory.drop(self.item)
 
 
 class EquipAction(Action):
-    def __init__(self, entity: Actor, item: Item, slot:EquipmentSlot):
+    def __init__(self, entity: Actor, item: Item, slot: EquipmentSlot):
         super().__init__(entity)
 
         self.item = item
         self.slot = slot
 
     def perform(self) -> None:
-        self.entity.equipment.toggle_equip(slot=self.slot, item_to_equip=self.item)
+        self.entity.equipment.equip_to_slot(slot=self.slot, item=self.item, add_message=True)
 
 
 class WaitAction(Action):
@@ -145,6 +142,7 @@ class ActionWithDirection(Action):
 
 class MeleeAction(ActionWithDirection):
     def perform(self) -> None:
+        # TODO: Replace - roll for attack and damage
         target = self.target_actor
         if not target:
             raise exceptions.Impossible("Nothing to attack.")

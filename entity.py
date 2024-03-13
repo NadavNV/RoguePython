@@ -58,7 +58,6 @@ class Entity:
         clone = copy.deepcopy(self)
         if hasattr(clone, 'fighter'):
             clone.fighter.roll_hit_dice()
-            print(f"Spawned a {clone.name} with {clone.fighter.hp} hit points.")
         clone.x = x
         clone.y = y
         clone.parent = game_map
