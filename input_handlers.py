@@ -407,7 +407,8 @@ class InventoryActivateHandler(InventoryEventHandler):
             elif item.equippable.equipment_type == EquipmentType.TRINKET:
                 return EquipTrinketEventHandler(self.engine, item, self)
             else:
-                return actions.EquipAction(self.engine.player, item)
+                slot = EquipmentSlot(item.equippable.equipment_type)
+                return actions.EquipAction(self.engine.player, item=item, slot=slot)
         else:
             return None
 
@@ -816,7 +817,6 @@ class EquipmentEventHandler(AskUserEventHandler):
         return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
-        player = self.engine.player
         key = event.sym
         index = key - tcod.event.KeySym.a
 
@@ -844,7 +844,7 @@ class EquipmentEventHandler(AskUserEventHandler):
             return self.on_item_selected(selected_item)
         elif key == tcod.event.KeySym.ESCAPE:
             return MainGameEventHandler(self.engine)
-        return None  # super().ev_keydown(event)
+        return None
 
     def on_item_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
         """Called when the user selects a valid item."""
@@ -873,9 +873,10 @@ class EquipWeaponEventHandler(AskUserEventHandler):
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         player = self.engine.player
         from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
-        if (not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND)
-            or not self.item.equippable.offhand
-            or player.equipment.items[EquipmentSlot.MAINHAND].equippable.two_handed
+        if (
+                not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND)
+                or not self.item.equippable.offhand
+                or player.equipment.items[EquipmentSlot.MAINHAND].equippable.two_handed
         ):
             player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, self.item, add_message=True)
             return MainGameEventHandler(self.engine)
