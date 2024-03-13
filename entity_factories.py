@@ -24,10 +24,10 @@ player = Actor(
     level=Level(level_up_base=200),
 )
 
-orc = Actor(
-    char="o",
+janitor = Actor(
+    char="j",
     color=(63, 127, 63),
-    name="Orc",
+    name="Janitor",
     ai_cls=HostileEnemy,
     equipment=Equipment(items=None),
     fighter=Fighter(
@@ -36,10 +36,10 @@ orc = Actor(
     inventory=Inventory(capacity=0),
     level=Level(xp_given=35),
 )
-troll = Actor(
-    char="T",
+Lumberjack = Actor(
+    char="L",
     color=(0, 127, 0),
-    name="Troll",
+    name="Lumberjack",
     ai_cls=HostileEnemy,
     equipment=Equipment(items=None),
     fighter=Fighter(

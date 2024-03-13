@@ -24,6 +24,26 @@ class Equipment(BaseComponent):
                 self.items[slot] = item
 
     @property
+    def armor_bonus(self) -> int:
+        bonus = 0
+
+        for slot, item in self.items.items():
+            if item is not None and item.equippable is not None:
+                bonus += item.equippable.armor_bonus
+
+        return bonus
+
+    @property
+    def attack_bonus(self) -> int:
+        bonus = 0
+
+        for slot, item in self.items.items():
+            if item is not None and item.equippable is not None:
+                bonus += item.equippable.attack_bonus
+
+        return bonus
+
+    @property
     def defense_bonus(self) -> int:
         bonus = 0
 

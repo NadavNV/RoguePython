@@ -357,7 +357,6 @@ class InventoryEventHandler(AskUserEventHandler):
         return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
-        # TODO: Handle stacked items correctly
         player = self.engine.player
         key = event.sym
         index = key - tcod.event.KeySym.a

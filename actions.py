@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Optional, Tuple, TYPE_CHECKING
 
+import sys
+
 import color
 import exceptions
 from equipment_slots import EquipmentSlot
@@ -150,14 +152,27 @@ class MeleeAction(ActionWithDirection):
         if not target:
             raise exceptions.Impossible("Nothing to attack.")
 
-        damage = self.entity.fighter.power - target.fighter.defense
-
         attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
+
+        attack = self.entity.fighter.roll_weapon_attack()
+        if attack == sys.maxsize:  # Critical hit
+            attack_desc = f"{attack_desc} and critically hits"
+            damage = self.entity.fighter.power
+        else:
+            damage = 0
+            attack -= target.fighter.avoidance
+
+        damage += self.entity.fighter.power - target.fighter.armor
+
         if self.entity is self.engine.player:
             attack_color = color.player_atk
         else:
             attack_color = color.enemy_atk
-        if damage > 0:
+        if attack < 0:
+            self.engine.message_log.add_message(
+                f"{attack_desc} but misses.", attack_color
+            )
+        elif damage > 0:
             self.engine.message_log.add_message(
                 f"{attack_desc} for {damage} hit points.", attack_color
             )

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING
 
 import random
-import math
 
 import color
 from components.base_component import BaseComponent, roll_dice
@@ -11,6 +11,8 @@ from render_order import RenderOrder
 
 if TYPE_CHECKING:
     from entity import Actor
+
+BASE_AVOIDANCE = 10
 
 
 class Fighter(BaseComponent):
@@ -84,17 +86,17 @@ class Fighter(BaseComponent):
         self._mana = max(0, min(value, self.max_mana))
 
     @property
-    def defense(self) -> int:
-        return self.base_defense + self.defense_bonus
+    def armor(self) -> int:
+        return self.base_defense + self.armor_bonus
 
     @property
     def power(self) -> int:
         return self.base_power + self.power_bonus
 
     @property
-    def defense_bonus(self) -> int:
+    def armor_bonus(self) -> int:
         if self.parent.equipment:
-            return self.parent.equipment.defense_bonus
+            return self.parent.equipment.armor_bonus
         else:
             return 0
 
@@ -104,6 +106,27 @@ class Fighter(BaseComponent):
             return self.parent.equipment.power_bonus
         else:
             return 0
+
+    @property
+    def weapon_attack_bonus(self) -> int:
+        bonus = self.agility // 2
+        if self.parent.equipment:
+            bonus += self.parent.equipment.attack_bonus
+        return bonus
+
+    @property
+    def spell_attack_bonus(self) -> int:
+        bonus = self.magic // 2
+        if self.parent.equipment:
+            bonus += self.parent.equipment.attack_bonus
+        return bonus
+
+    @property
+    def avoidance(self) -> int:
+        avoidance = BASE_AVOIDANCE + self.agility // 2
+        if self.parent.equipment:
+            avoidance += self.parent.equipment.defense_bonus
+        return avoidance
 
     def die(self) -> None:
         if self.engine.player is self.parent:
@@ -163,7 +186,7 @@ class Fighter(BaseComponent):
         if advantage:
             roll = max(roll, random.randint(1, 20))
         if roll >= crit_threshold:
-            return int(math.inf)
+            return sys.maxsize
         else:
             return roll + attack_bonus
 
