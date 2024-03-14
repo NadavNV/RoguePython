@@ -1263,7 +1263,7 @@ if __name__ == "__main__":
     handler = ClassSelectEventHandler()
 
     tileset = tcod.tileset.load_tilesheet(
-        "dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD
+        "images/dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD
     )
     with tcod.context.new_terminal(
             screen_width,

@@ -13,7 +13,7 @@ from player_classes import PlayerClass
 
 
 # Load the background image and remove the alpha channel.
-background_image = tcod.image.load("menu_background.png")[:, :, :3]
+background_image = tcod.image.load("images/menu_background.png")[:, :, :3]
 
 WINDOW_WIDTH = 128
 WINDOW_HEIGHT = 72
