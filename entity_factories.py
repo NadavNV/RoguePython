@@ -5,6 +5,7 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
 from entity import Actor, Item
+from fighter_classes import FighterClass
 
 SCROLL_CHAR = '~'
 POTION_CHAR = '!'
@@ -16,9 +17,17 @@ player = Actor(
     color=(255, 255, 255),
     name="Player",
     ai_cls=HostileEnemy,
-    equipment=Equipment(items=None),
+    equipment=Equipment(),
     fighter=Fighter(
-        strength=1, perseverance=1, agility=1, magic=1, hit_dice="2d10", hp=30, base_defense=1, base_power=2, mana=20
+        player_class=FighterClass.ROGUE,
+        strength=1,
+        perseverance=1,
+        agility=1,
+        magic=1,
+        hit_dice="2d10",
+        base_defense=1,
+        base_power=2,
+        mana=20
     ),
     inventory=Inventory(capacity=26),
     level=Level(level_up_base=200),
@@ -29,9 +38,9 @@ janitor = Actor(
     color=(63, 127, 63),
     name="Janitor",
     ai_cls=HostileEnemy,
-    equipment=Equipment(items=None),
+    equipment=Equipment(),
     fighter=Fighter(
-        strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d8", hp=10, base_defense=0, base_power=3
+        player_class=FighterClass.ROGUE, strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d8", base_defense=0, base_power=3
     ),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=35),
@@ -41,9 +50,9 @@ Lumberjack = Actor(
     color=(0, 127, 0),
     name="Lumberjack",
     ai_cls=HostileEnemy,
-    equipment=Equipment(items=None),
+    equipment=Equipment(),
     fighter=Fighter(
-        strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d10", hp=16, base_defense=1, base_power=4
+        player_class=FighterClass.WARRIOR, strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d10", base_defense=1, base_power=4
     ),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),

@@ -8,6 +8,9 @@ import random
 import color
 from components.base_component import BaseComponent, roll_dice
 from render_order import RenderOrder
+from fighter_classes import FighterClass
+from equipment_slots import EquipmentSlot
+from weapon_types import WeaponType
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -40,7 +43,7 @@ class Fighter(BaseComponent):
             agility: int,
             magic: int,
             hit_dice: str,
-            hp: int,
+            fighter_class: FighterClass,
             base_defense: int,
             base_power: int,
             mana: int = 0,
@@ -49,11 +52,11 @@ class Fighter(BaseComponent):
             has_weapon_advantage: bool = False,
             has_spell_advantage: bool = False,
     ):
+        self.fighter_class = fighter_class
         self.strength = strength
         self.perseverance = perseverance
         self.agility = agility
         self.magic = magic
-        # self.max_hp = hp
         self.hit_dice = hit_dice
         self.max_hp = roll_dice(hit_dice) + self.perseverance // 2
         self._hp = self.max_hp
@@ -66,6 +69,13 @@ class Fighter(BaseComponent):
         self.has_weapon_advantage = has_weapon_advantage
         self.has_spell_advantage = has_spell_advantage
         self.proficiency = 1
+
+        self.parent.equipment.mainhand_attack_bonus = self.strength // 2
+        self.parent.equipment.mainhand_min_damage = self.strength // 2
+        self.parent.equipment.mainhand_max_damage = self.strength // 2
+        self.parent.equipment.offhand_attack_bonus = self.strength // 2
+        self.parent.equipment.offhand_min_damage = self.strength // 2
+        self.parent.equipment.offhand_max_damage = self.strength // 2
 
     @property
     def hp(self) -> int:
@@ -87,46 +97,54 @@ class Fighter(BaseComponent):
 
     @property
     def armor(self) -> int:
-        return self.base_defense + self.armor_bonus
-
-    @property
-    def power(self) -> int:
-        return self.base_power + self.power_bonus
-
-    @property
-    def armor_bonus(self) -> int:
         if self.parent.equipment:
             return self.parent.equipment.armor_bonus
         else:
             return 0
 
     @property
-    def power_bonus(self) -> int:
+    def avoidance(self) -> int:
+        avoidance = BASE_AVOIDANCE + self.agility // 2
         if self.parent.equipment:
-            return self.parent.equipment.power_bonus
-        else:
-            return 0
+            avoidance += self.parent.equipment.avoidance_bonus
+        return avoidance
 
     @property
-    def weapon_attack_bonus(self) -> int:
-        bonus = self.agility // 2
+    def mainhand_attack_bonus(self) -> int:
+        bonus = self.weapon_base_attack_bonus(EquipmentSlot.MAINHAND)
         if self.parent.equipment:
-            bonus += self.parent.equipment.attack_bonus
+            bonus += self.parent.equipment.mainhand_attack_bonus
+        return bonus
+
+    @property
+    def offhand_attack_bonus(self) -> int:
+        bonus = self.weapon_base_attack_bonus(EquipmentSlot.OFFHAND)
+        if self.parent.equipment:
+            bonus += self.parent.equipment.offhand_attack_bonus
         return bonus
 
     @property
     def spell_attack_bonus(self) -> int:
         bonus = self.magic // 2
-        if self.parent.equipment:
-            bonus += self.parent.equipment.attack_bonus
+        if self.fighter_class == FighterClass.MAGE:
+            bonus += self.proficiency
         return bonus
 
-    @property
-    def avoidance(self) -> int:
-        avoidance = BASE_AVOIDANCE + self.agility // 2
-        if self.parent.equipment:
-            avoidance += self.parent.equipment.defense_bonus
-        return avoidance
+    def weapon_base_attack_bonus(self, slot: EquipmentSlot):
+        weapon = self.parent.equipment.items[slot]
+        if weapon is not None and hasattr(weapon, 'weapon_type'):
+            if weapon.weapon_type == WeaponType.AGILITY:
+                return self.agility // 2
+            elif weapon.weapon_type == WeaponType.STRENGTH:
+                return self.strength // 2
+            elif weapon.weapon_type == WeaponType.MAGIC:
+                return self.magic // 2
+            elif weapon.weapon_type == WeaponType.FINESSE:
+                return max(self.agility, self.strength) // 2
+            else:
+                return 0
+        else:
+            return 0
 
     def die(self) -> None:
         if self.engine.player is self.parent:
@@ -190,10 +208,10 @@ class Fighter(BaseComponent):
         else:
             return roll + attack_bonus
 
-    def roll_weapon_attack(self) -> int:
+    def roll_mainhand_attack(self) -> int:
         return self.roll_attack(
             self.weapon_crit_threshold,
-            self.weapon_attack_bonus,
+            self.mainhand_attack_bonus,
             self.has_weapon_advantage
         )
 

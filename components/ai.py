@@ -69,25 +69,28 @@ class ConfusedEnemy(BaseAI):
             )
             self.entity.ai = self.previous_ai
         else:
-            # Pick a random direction
-            direction_x, direction_y = random.choice(
-                [
-                    (-1, -1),  # Northwest
-                    (0, -1),  # North
-                    (1, -1),  # Northeast
-                    (-1, 0),  # West
-                    (1, 0),  # East
-                    (-1, 1),  # Southwest
-                    (0, 1),  # South
-                    (1, 1),  # Southeast
-                ]
-            )
+            if not self.engine.in_combat:
+                # Pick a random direction
+                direction_x, direction_y = random.choice(
+                    [
+                        (-1, -1),  # Northwest
+                        (0, -1),  # North
+                        (1, -1),  # Northeast
+                        (-1, 0),  # West
+                        (1, 0),  # East
+                        (-1, 1),  # Southwest
+                        (0, 1),  # South
+                        (1, 1),  # Southeast
+                    ]
+                )
 
-            self.turns_remaining -= 1
+                self.turns_remaining -= 1
 
-            # The actor will either try to move or attack in a chosen random direction.
-            # It's possible the actor will just bump into the wall, wasting a turn.
-            return BumpAction(self.entity, direction_x, direction_y).perform()
+                # The actor will either try to move or attack in a chosen random direction.
+                # It's possible the actor will just bump into the wall, wasting a turn.
+                return BumpAction(self.entity, direction_x, direction_y).perform()
+            else:
+                return MeleeAction(self.entity).perform()
 
 
 class HostileEnemy(BaseAI):

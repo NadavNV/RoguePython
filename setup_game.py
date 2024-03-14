@@ -9,7 +9,7 @@ from engine import Engine
 import entity_factories
 from game_map import GameWorld
 from equipment_slots import EquipmentSlot
-from player_classes import PlayerClass
+from fighter_classes import FighterClass
 
 
 # Load the background image and remove the alpha channel.
@@ -19,7 +19,7 @@ WINDOW_WIDTH = 128
 WINDOW_HEIGHT = 72
 
 
-def new_game(player_class: PlayerClass) -> Engine:
+def new_game(player_class: FighterClass) -> Engine:
     """Return a brand new game session as an engine instance."""
     map_width = WINDOW_WIDTH * 2 // 3
     map_height = WINDOW_HEIGHT * 2 // 3
@@ -30,8 +30,9 @@ def new_game(player_class: PlayerClass) -> Engine:
 
     player = copy.deepcopy(entity_factories.player)
 
-    if player_class == PlayerClass.WARRIOR:
+    if player_class == FighterClass.WARRIOR:
         print("Creating warrior")
+        player.fighter.fighter_class = FighterClass.WARRIOR
         player.fighter.strength = 6
         player.fighter.agility = 3
 
@@ -44,8 +45,9 @@ def new_game(player_class: PlayerClass) -> Engine:
         player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, sword, add_message=False)
         player.equipment.equip_to_slot(EquipmentSlot.ARMOR, armor, add_message=False)
 
-    elif player_class == PlayerClass.ROGUE:
+    elif player_class == FighterClass.ROGUE:
         print("Creating rogue")
+        player.fighter.fighter_class = FighterClass.ROGUE
         player.fighter.strength = 3
         player.fighter.agility = 6
 
@@ -58,8 +60,9 @@ def new_game(player_class: PlayerClass) -> Engine:
         player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
         player.equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
 
-    elif player_class == PlayerClass.MAGE:
+    elif player_class == FighterClass.MAGE:
         print("Creating mage")
+        player.fighter.fighter_class = FighterClass.MAGE
         player.fighter.magic = 6
         player.fighter.agility = 3
 

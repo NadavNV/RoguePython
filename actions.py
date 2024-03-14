@@ -145,7 +145,7 @@ class ActionWithDirection(Action):
         raise NotImplementedError()
 
 
-class MeleeAction(ActionWithDirection):
+class MeleeAction(Action):
     def perform(self) -> None:
         # TODO: Replace - roll for attack and damage
         target = self.target_actor

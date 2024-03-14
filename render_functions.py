@@ -89,3 +89,97 @@ def render_names_at_mouse_location(
     )
 
     console.print(x=x, y=y, string=names_at_mouse_location)
+
+
+def render_combat_ui(console: Console) -> None:
+    console.draw_frame(
+        x=0,
+        y=0,
+        width=console.width * 2 // 3,
+        height=console.height * 2 // 3,
+        clear=True,
+        fg=(255, 255, 255),
+        bg=(0, 0, 0)
+    )
+
+    frame_x = console.width // 3
+    frame_y = console.height * 2 // 3
+    width = console.width // 3 + 1
+    height = console.height // 3
+    console.draw_frame(
+        x=frame_x,
+        y=frame_y,
+        width=width,
+        height=height,
+        clear=True,
+        fg=(255, 255, 255),
+        bg=(0, 0, 0),
+    )
+
+    console.print(
+        x=frame_x + width // 5,
+        y=frame_y + height // 5,
+        string="Attack"
+    )
+
+    console.print(
+        x=frame_x + width // 5,
+        y=frame_y + height * 3 // 5,
+        string="Run"
+    )
+
+    console.print(
+        x=frame_x + width * 3 // 5,
+        y=frame_y + height // 5,
+        string="Use ability"
+    )
+
+    console.print(
+        x=frame_x + width * 3 // 5,
+        y=frame_y + height * 3 // 5,
+        string="Use item"
+    )
+
+
+def render_dungeon_ui(console: Console) -> None:
+    frame_x = console.width // 3 + 1
+    frame_y = console.height * 2 // 3 + 1
+    console.draw_frame(
+        x=frame_x,
+        y=frame_y,
+        width=console.width // 3 - 1,
+        height=console.height // 3 - 2,
+        title="Keyboard Commands",
+        clear=True,
+        fg=(255, 255, 255),
+        bg=(0, 0, 0),
+    )
+
+    console.print(x=frame_x + 1, y=frame_y + 1, string="Use item from bags:              i")
+    console.print(x=frame_x + 1, y=frame_y + 2, string="Drop item:                       d")
+    console.print(x=frame_x + 1, y=frame_y + 3, string="Unequip item:                    u")
+    console.print(x=frame_x + 1, y=frame_y + 4, string="Character information:           c")
+    console.print(x=frame_x + 1, y=frame_y + 5, string="Expand message log:              v")
+    console.print(x=frame_x + 1, y=frame_y + 6, string="Descend stairs:          shift + .")
+    console.print(x=frame_x + 1, y=frame_y + 7, string="Movement:              Numpad keys")
+    console.print(x=frame_x + 1, y=frame_y + 8, string="Wait:                     Numpad 5")
+
+    frame_x = console.width * 2 // 3 + 1
+    frame_y = console.height * 2 // 3 + 1
+    console.draw_frame(
+        x=frame_x,
+        y=frame_y,
+        width=console.width // 3 - 1,
+        height=console.height // 3 - 2,
+        title="Map Legend",
+        clear=True,
+        fg=(255, 255, 255),
+        bg=(0, 0, 0),
+    )
+
+    console.print(x=frame_x + 1, y=frame_y + 1, string="@: Player / Trader")
+    console.print(x=frame_x + 1, y=frame_y + 2, string=">: Stairs down")
+    console.print(x=frame_x + 1, y=frame_y + 3, string="/: Weapon")
+    console.print(x=frame_x + 1, y=frame_y + 4, string="[: Armor")
+    console.print(x=frame_x + 1, y=frame_y + 5, string="!: Potion")
+    console.print(x=frame_x + 1, y=frame_y + 6, string="~: Scroll")

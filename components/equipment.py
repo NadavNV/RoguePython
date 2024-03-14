@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING
 
 from components.base_component import BaseComponent
 from components.equippable import Equippable
@@ -12,56 +12,38 @@ if TYPE_CHECKING:
 
 
 class Equipment(BaseComponent):
+    items: Dict[EquipmentSlot, Equippable]
     parent: Actor
 
-    def __init__(self, items: Optional[Dict[EquipmentSlot, Equippable]]):
-        self.items = {}
-        for slot in EquipmentSlot:
-            self.items[slot] = None
+    armor_bonus: int
 
-        if items is not None:
-            for slot, item in items:
-                self.items[slot] = item
+    mainhand_attack_bonus: int
+    mainhand_min_damage: int
+    mainhand_max_damage: int
 
-    @property
-    def armor_bonus(self) -> int:
-        bonus = 0
+    offhand_attack_bonus: int
+    offhand_min_damage: int
+    offhand_max_damage: int
 
-        for slot, item in self.items.items():
-            if item is not None and item.equippable is not None:
-                bonus += item.equippable.armor_bonus
+    spell_attack_bonus: int
 
-        return bonus
+    strength_bonus: int
+    perseverance_bonus: int
+    agility_bonus: int
+    magic_bonus: int
 
-    @property
-    def attack_bonus(self) -> int:
-        bonus = 0
+    avoidance_bonus: int
 
-        for slot, item in self.items.items():
-            if item is not None and item.equippable is not None:
-                bonus += item.equippable.attack_bonus
+    def __init__(self):
+        self.items = {slot: None for slot in EquipmentSlot}
 
-        return bonus
-
-    @property
-    def defense_bonus(self) -> int:
-        bonus = 0
-
-        for slot, item in self.items.items():
-            if item is not None and item.equippable is not None:
-                bonus += item.equippable.defense_bonus
-
-        return bonus
-
-    @property
-    def power_bonus(self) -> int:
-        bonus = 0
-
-        for slot, item in self.items.items():
-            if item is not None and item.equippable is not None:
-                bonus += item.equippable.power_bonus
-
-        return bonus
+        self.strength_bonus = 0
+        self.perseverance_bonus = 0
+        self.agility_bonus = 0
+        self.magic_bonus = 0
+        self.armor_bonus = 0
+        self.avoidance_bonus = 0
+        self.spell_attack_bonus = 0
 
     def item_is_equipped(self, slot: EquipmentSlot) -> bool:
         return self.items[slot] is not None
@@ -86,7 +68,18 @@ class Equipment(BaseComponent):
             self.parent.inventory.remove_item(item)
 
         item.parent = self
-        self.items[slot] = item
+        self.items[slot] = item.equippable
+
+        item.equippable.on_equip(self)
+
+        if slot == EquipmentSlot.MAINHAND:
+            self.mainhand_max_damage = item.equippable.max_damage + item.equippable.damage_bonus
+            self.mainhand_min_damage = item.equippable.min_damage + item.equippable.damage_bonus
+            self.mainhand_attack_bonus = item.equippable.attack_bonus
+        elif slot == EquipmentSlot.OFFHAND:
+            self.offhand_max_damage = item.equippable.max_damage + item.equippable.damage_bonus
+            self.offhand_min_damage = item.equippable.min_damage + item.equippable.damage_bonus
+            self.offhand_attack_bonus = item.equippable.attack_bonus
 
         if (
                 slot == EquipmentSlot.MAINHAND and
@@ -99,13 +92,24 @@ class Equipment(BaseComponent):
             self.equip_message(item.name)
 
     def unequip_from_slot(self, slot: EquipmentSlot, add_message: bool) -> None:
-        current_item = self.items.pop(slot)
-        self.items[slot] = None
-        self.parent.inventory.add_item(current_item)
-        current_item.parent.parent = self.parent.inventory
+        current_item = self.items[slot]
+        if current_item is not None:
+            self.items[slot] = None
+            self.parent.inventory.add_item(current_item.parent)
+            current_item.parent.parent = self.parent.inventory
 
-        if add_message:
-            self.unequip_message(current_item.name)
+            current_item.on_unequip(self)
+            if slot == EquipmentSlot.MAINHAND:
+                self.mainhand_max_damage = self.parent.fighter.strength // 2
+                self.mainhand_min_damage = self.parent.fighter.strength // 2
+                self.mainhand_attack_bonus = self.parent.fighter.strength // 2
+            elif slot == EquipmentSlot.OFFHAND:
+                self.offhand_max_damage = self.parent.fighter.strength // 2
+                self.offhand_min_damage = self.parent.fighter.strength // 2
+                self.offhand_attack_bonus = self.parent.fighter.strength // 2
+
+            if add_message:
+                self.unequip_message(current_item.parent.name)
 
     def toggle_equip(self, slot: EquipmentSlot, item_to_equip: Item, add_message: bool = True) -> None:
         """Unequip the item currently in 'slot' and equip 'item_to_equip' instead."""
@@ -118,7 +122,7 @@ class Equipment(BaseComponent):
             if item is None:
                 name = "None"
             else:
-                name = item.name
+                name = item.parent.name
             result.append(f"{slot.name.capitalize() + ':': <9} {name}")
         return result
 

@@ -22,7 +22,7 @@ import color
 import exceptions
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
-from player_classes import PlayerClass
+from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -184,11 +184,10 @@ class CharacterScreenEventHandler(AskUserEventHandler):
     TITLE = "Character Information"
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        from setup_game import WINDOW_WIDTH
         super().on_render(console)
 
-        if self.engine.player.x <= WINDOW_WIDTH // 2 - 10:
-            x = WINDOW_WIDTH // 2
+        if self.engine.player.x <= console.width // 2 - 10:
+            x = console.width // 2
         else:
             x = 1
 
@@ -918,7 +917,6 @@ class ChooseSlotEventHandler(AskUserEventHandler):
 class EquipWeaponEventHandler(ChooseSlotEventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
         player = self.engine.player
         super().on_render(console)
 
@@ -931,8 +929,8 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
 
         width = max(len(title), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
         height = 4
-        x = (WINDOW_WIDTH - width) // 2
-        y = (WINDOW_HEIGHT - height) // 2
+        x = (console.width - width) // 2
+        y = (console.height - height) // 2
 
         console.draw_frame(
             x=x,
@@ -984,7 +982,6 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
 class EquipTrinketEventHandler(ChooseSlotEventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
         player = self.engine.player
         super().on_render(console)
 
@@ -997,8 +994,8 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
 
         width = max(len(title), len(equipped_trinkets[0]), len(equipped_trinkets[1])) + 2
         height = 4
-        x = (WINDOW_WIDTH - width) // 2
-        y = (WINDOW_HEIGHT - height) // 2
+        x = (console.width - width) // 2
+        y = (console.height - height) // 2
 
         console.draw_frame(
             x=x,
@@ -1053,13 +1050,12 @@ class ClassSelectEventHandler(BaseEventHandler):
         self.cursor = 1  # Start with Rogue highlighted
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        from setup_game import WINDOW_WIDTH, WINDOW_HEIGHT
 
         console.draw_frame(
             x=0,
             y=0,
-            width=WINDOW_WIDTH,
-            height=WINDOW_HEIGHT * 2 // 3,
+            width=console.width,
+            height=console.height * 2 // 3,
             title="Choose a class",
             fg=(255, 255, 255),
             bg=(0, 0, 0),
@@ -1067,28 +1063,28 @@ class ClassSelectEventHandler(BaseEventHandler):
 
         # TODO: Draw sprites instead of frames
         console.draw_frame(
-            x=WINDOW_WIDTH // 8,
-            y=WINDOW_HEIGHT // 8,
-            width=WINDOW_WIDTH // 8,
-            height=WINDOW_WIDTH // 4,
+            x=console.width // 8,
+            y=console.height // 8,
+            width=console.width // 8,
+            height=console.width // 4,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
         )
 
         console.draw_frame(
-            x=WINDOW_WIDTH // 2 - WINDOW_WIDTH // 16,
-            y=WINDOW_HEIGHT // 8,
-            width=WINDOW_WIDTH // 8,
-            height=WINDOW_WIDTH // 4,
+            x=console.width // 2 - console.width // 16,
+            y=console.height // 8,
+            width=console.width // 8,
+            height=console.width // 4,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
         )
 
         console.draw_frame(
-            x=WINDOW_WIDTH * 6 // 8,
-            y=WINDOW_HEIGHT // 8,
-            width=WINDOW_WIDTH // 8,
-            height=WINDOW_WIDTH // 4,
+            x=console.width * 6 // 8,
+            y=console.height // 8,
+            width=console.width // 8,
+            height=console.width // 4,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
         )
@@ -1101,8 +1097,8 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg = (0, 0, 0)
 
         console.print(
-            x=WINDOW_WIDTH // 8,
-            y=WINDOW_HEIGHT // 8 + WINDOW_WIDTH // 4 + 2,
+            x=console.width // 8,
+            y=console.height // 8 + console.width // 4 + 2,
             string='[W]arrior',
             fg=fg,
             bg=bg,
@@ -1116,8 +1112,8 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg = (0, 0, 0)
 
         console.print(
-            x=WINDOW_WIDTH // 2 - WINDOW_WIDTH // 16,
-            y=WINDOW_HEIGHT // 8 + WINDOW_WIDTH // 4 + 2,
+            x=console.width // 2 - console.width // 16,
+            y=console.height // 8 + console.width // 4 + 2,
             string='[R]ogue',
             fg=fg,
             bg=bg,
@@ -1131,8 +1127,8 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg = (0, 0, 0)
 
         console.print(
-            x=WINDOW_WIDTH * 6 // 8,
-            y=WINDOW_HEIGHT // 8 + WINDOW_WIDTH // 4 + 2,
+            x=console.width * 6 // 8,
+            y=console.height // 8 + console.width // 4 + 2,
             string='[M]age',
             fg=fg,
             bg=bg,
@@ -1140,9 +1136,9 @@ class ClassSelectEventHandler(BaseEventHandler):
 
         console.draw_frame(
             x=0,
-            y=WINDOW_HEIGHT * 2 // 3,
-            height=WINDOW_HEIGHT // 3,
-            width=WINDOW_WIDTH,
+            y=console.height * 2 // 3,
+            height=console.height // 3,
+            width=console.width,
             title="Class Description:",
             fg=(255, 255, 255),
             bg=(0, 0, 0)
@@ -1165,8 +1161,8 @@ class ClassSelectEventHandler(BaseEventHandler):
         ]
         console.print(
             x=1,
-            y=WINDOW_HEIGHT * 2 // 3 + 2,
-            string=wrap(class_descriptions[self.cursor], WINDOW_WIDTH - 2),
+            y=console.height * 2 // 3 + 2,
+            string=wrap(class_descriptions[self.cursor], console.width - 2),
             fg=(255, 255, 255),
             bg=(0, 0, 0)
         )
@@ -1177,17 +1173,17 @@ class ClassSelectEventHandler(BaseEventHandler):
         from setup_game import new_game
         key = event.sym
         if key in CURSOR_X_KEYS:
-            self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % len(PlayerClass)
+            self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % len(FighterClass)
         elif key in CONFIRM_KEYS:
-            return MainGameEventHandler(new_game(PlayerClass(self.cursor + 1)))
+            return MainGameEventHandler(new_game(FighterClass(self.cursor + 1)))
         elif key == tcod.event.KeySym.ESCAPE:
             return MainMenu()
         elif key == tcod.event.KeySym.w:
-            return MainGameEventHandler(new_game(PlayerClass.WARRIOR))
+            return MainGameEventHandler(new_game(FighterClass.WARRIOR))
         elif key == tcod.event.KeySym.r:
-            return MainGameEventHandler(new_game(PlayerClass.ROGUE))
+            return MainGameEventHandler(new_game(FighterClass.ROGUE))
         elif key == tcod.event.KeySym.m:
-            return MainGameEventHandler(new_game(PlayerClass.MAGE))
+            return MainGameEventHandler(new_game(FighterClass.MAGE))
 
 
 def load_game(filename: str) -> Engine:
@@ -1269,7 +1265,7 @@ if __name__ == "__main__":
             screen_width,
             screen_height,
             tileset=tileset,
-            title="Yet Another Roguelike Tutorial",
+            title="Rogue Python",
             vsync=True,
     ) as context:
         root_console = tcod.console.Console(screen_width, screen_height, order="F")
