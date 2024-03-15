@@ -412,7 +412,7 @@ class InventoryActivateHandler(InventoryEventHandler):
                     return actions.EquipAction(player, item=item, slot=EquipmentSlot.MAINHAND)
                 elif (
                         not item.equippable.offhand
-                        or player.equipment.items[EquipmentSlot.MAINHAND].equippable.two_handed
+                        or player.equipment.items[EquipmentSlot.MAINHAND].two_handed
                 ):
                     player.equipment.unequip_from_slot(EquipmentSlot.MAINHAND, add_message=True)
                     return actions.EquipAction(player, item=item, slot=EquipmentSlot.MAINHAND)
@@ -1045,6 +1045,9 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
 
 
 class ClassSelectEventHandler(BaseEventHandler):
+    warrior_icon = tcod.image.load("images/warrior_icon.png")[:, :, :3]
+    rogue_icon = tcod.image.load("images/rogue_icon.png")[:, :, :3]
+    mage_icon = tcod.image.load("images/mage_icon.png")[:, :, :3]
 
     def __init__(self):
         self.cursor = 1  # Start with Rogue highlighted
@@ -1062,31 +1065,22 @@ class ClassSelectEventHandler(BaseEventHandler):
         )
 
         # TODO: Draw sprites instead of frames
-        console.draw_frame(
-            x=console.width // 8,
-            y=console.height // 8,
-            width=console.width // 8,
-            height=console.width // 4,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+        console.draw_semigraphics(
+            ClassSelectEventHandler.warrior_icon,
+            x=console.width // 4 - console.width // 16,
+            y=console.height // 8
         )
 
-        console.draw_frame(
-            x=console.width // 2 - console.width // 16,
-            y=console.height // 8,
-            width=console.width // 8,
-            height=console.width // 4,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+        console.draw_semigraphics(
+            ClassSelectEventHandler.rogue_icon,
+            x=console.width // 2 - console.width // 16 + 1,
+            y=console.height // 8
         )
 
-        console.draw_frame(
-            x=console.width * 6 // 8,
-            y=console.height // 8,
-            width=console.width // 8,
-            height=console.width // 4,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+        console.draw_semigraphics(
+            ClassSelectEventHandler.mage_icon,
+            x=console.width * 3 // 4 - console.width // 16,
+            y=console.height // 8
         )
 
         if self.cursor == 0:
@@ -1097,11 +1091,12 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg = (0, 0, 0)
 
         console.print(
-            x=console.width // 8,
-            y=console.height // 8 + console.width // 4 + 2,
+            x=console.width // 4,
+            y=console.height // 8 + console.width // 4 - 5,
             string='[W]arrior',
             fg=fg,
             bg=bg,
+            alignment=libtcodpy.CENTER
         )
 
         if self.cursor == 1:
@@ -1112,11 +1107,12 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg = (0, 0, 0)
 
         console.print(
-            x=console.width // 2 - console.width // 16,
-            y=console.height // 8 + console.width // 4 + 2,
+            x=console.width // 2,
+            y=console.height // 8 + console.width // 4 - 5,
             string='[R]ogue',
             fg=fg,
             bg=bg,
+            alignment=libtcodpy.CENTER
         )
 
         if self.cursor == 2:
@@ -1127,11 +1123,12 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg = (0, 0, 0)
 
         console.print(
-            x=console.width * 6 // 8,
-            y=console.height // 8 + console.width // 4 + 2,
+            x=console.width * 3 // 4,
+            y=console.height // 8 + console.width // 4  - 5,
             string='[M]age',
             fg=fg,
             bg=bg,
+            alignment=libtcodpy.CENTER
         )
 
         console.draw_frame(
@@ -1196,26 +1193,12 @@ def load_game(filename: str) -> Engine:
 
 class MainMenu(BaseEventHandler):
     """Handle the main menu rendering and input."""
+    # Load the background image and remove the alpha channel.
+    background_image = tcod.image.load("images/menu_background.png")[:, :, :3]
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        from setup_game import background_image
         """Render the main menu on a background image."""
-        console.draw_semigraphics(background_image, 0, 0)
-
-        console.print(
-            console.width // 2,
-            console.height // 2 - 4,
-            "ROGUE PYTHON",
-            fg=color.menu_title,
-            alignment=libtcodpy.CENTER,
-        )
-        console.print(
-            console.width // 2,
-            console.height - 2,
-            "By Nadav Nevo",
-            fg=color.menu_title,
-            alignment=libtcodpy.CENTER,
-        )
+        console.draw_semigraphics(MainMenu.background_image, 0, 0)
 
         menu_width = 24
         for i, text in enumerate(
@@ -1225,8 +1208,8 @@ class MainMenu(BaseEventHandler):
                 console.width // 2,
                 console.height // 2 - 2 + i,
                 text.ljust(menu_width),
-                fg=color.menu_text,
-                bg=color.black,
+                fg=color.black,
+                bg=color.white,
                 alignment=libtcodpy.CENTER,
                 bg_blend=libtcodpy.BKGND_ALPHA(64),
             )

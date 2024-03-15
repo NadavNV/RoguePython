@@ -25,6 +25,10 @@ class Equippable(BaseComponent):
         """What to do when unequipping this item, e.g. remove a strength bonus"""
         pass
 
+    @property
+    def name(self) -> str:
+        return self.parent.name
+
 
 class Weapon(Equippable):
     attack_bonus: int
@@ -51,7 +55,7 @@ class Weapon(Equippable):
 
 
 class Armor(Equippable):
-    armor_bonus:int
+    armor_bonus: int
 
     def __init__(
             self,

@@ -19,7 +19,7 @@ player = Actor(
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fighter=Fighter(
-        player_class=FighterClass.ROGUE,
+        fighter_class=FighterClass.ROGUE,
         strength=1,
         perseverance=1,
         agility=1,
@@ -40,7 +40,7 @@ janitor = Actor(
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fighter=Fighter(
-        player_class=FighterClass.ROGUE, strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d8", base_defense=0, base_power=3
+        fighter_class=FighterClass.ROGUE, strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d8", base_defense=0, base_power=3
     ),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=35),
@@ -52,7 +52,7 @@ Lumberjack = Actor(
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fighter=Fighter(
-        player_class=FighterClass.WARRIOR, strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d10", base_defense=1, base_power=4
+        fighter_class=FighterClass.WARRIOR, strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d10", base_defense=1, base_power=4
     ),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),

@@ -70,12 +70,12 @@ class Fighter(BaseComponent):
         self.has_spell_advantage = has_spell_advantage
         self.proficiency = 1
 
-        self.parent.equipment.mainhand_attack_bonus = self.strength // 2
-        self.parent.equipment.mainhand_min_damage = self.strength // 2
-        self.parent.equipment.mainhand_max_damage = self.strength // 2
-        self.parent.equipment.offhand_attack_bonus = self.strength // 2
-        self.parent.equipment.offhand_min_damage = self.strength // 2
-        self.parent.equipment.offhand_max_damage = self.strength // 2
+        # self.parent.equipment.mainhand_attack_bonus = self.strength // 2
+        # self.parent.equipment.mainhand_min_damage = self.strength // 2
+        # self.parent.equipment.mainhand_max_damage = self.strength // 2
+        # self.parent.equipment.offhand_attack_bonus = self.strength // 2
+        # self.parent.equipment.offhand_min_damage = self.strength // 2
+        # self.parent.equipment.offhand_max_damage = self.strength // 2
 
     @property
     def hp(self) -> int:
