@@ -26,7 +26,7 @@ class Engine:
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.player = player
-        self.in_combat = True
+        self.in_combat = False
         self.active_enemies = []
 
     def handle_enemy_turns(self) -> None:

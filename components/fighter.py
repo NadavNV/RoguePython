@@ -124,13 +124,37 @@ class Fighter(BaseComponent):
         return bonus
 
     @property
+    def mainhand_damage_bonus(self) -> int:
+        return self.weapon_base_damage_bonus(EquipmentSlot.MAINHAND)
+
+    @property
+    def offhand_damage_bonus(self) -> int:
+        return self.weapon_base_damage_bonus(EquipmentSlot.OFFHAND)
+
+    @property
     def spell_attack_bonus(self) -> int:
         bonus = self.magic // 2
         if self.fighter_class == FighterClass.MAGE:
             bonus += self.proficiency
         return bonus
 
-    def weapon_base_attack_bonus(self, slot: EquipmentSlot):
+    def weapon_base_attack_bonus(self, slot: EquipmentSlot) -> int:
+        weapon = self.parent.equipment.items[slot]
+        if weapon is not None and hasattr(weapon, 'weapon_type'):
+            if weapon.weapon_type == WeaponType.AGILITY:
+                return self.agility // 2
+            elif weapon.weapon_type == WeaponType.STRENGTH:
+                return self.strength // 2
+            elif weapon.weapon_type == WeaponType.MAGIC:
+                return self.magic // 2
+            elif weapon.weapon_type == WeaponType.FINESSE:
+                return max(self.agility, self.strength) // 2
+            else:
+                return 0
+        else:
+            return 0
+
+    def weapon_base_damage_bonus(self, slot: EquipmentSlot) -> int:
         weapon = self.parent.equipment.items[slot]
         if weapon is not None and hasattr(weapon, 'weapon_type'):
             if weapon.weapon_type == WeaponType.AGILITY:

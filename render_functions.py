@@ -158,7 +158,7 @@ def render_dungeon_ui(console: Console) -> None:
     console.print(x=frame_x + 1, y=frame_y + 1, string="Use item from bags:              i")
     console.print(x=frame_x + 1, y=frame_y + 2, string="Drop item:                       d")
     console.print(x=frame_x + 1, y=frame_y + 3, string="Unequip item:                    u")
-    console.print(x=frame_x + 1, y=frame_y + 4, string="Character information:           c")
+    console.print(x=frame_x + 1, y=frame_y + 4, string="Character & Equipment info:      c")
     console.print(x=frame_x + 1, y=frame_y + 5, string="Expand message log:              v")
     console.print(x=frame_x + 1, y=frame_y + 6, string="Descend stairs:          shift + .")
     console.print(x=frame_x + 1, y=frame_y + 7, string="Movement:              Numpad keys")

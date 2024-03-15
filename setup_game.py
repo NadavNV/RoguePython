@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import copy
 import tcod
+import pickle
+import lzma
 
 import color
 from engine import Engine
@@ -17,6 +19,14 @@ background_image = tcod.image.load("images/menu_background.png")[:, :, :3]
 
 WINDOW_WIDTH = 128
 WINDOW_HEIGHT = 72
+
+
+def load_game(filename: str) -> Engine:
+    """Load an engine instance from a file."""
+    with open(filename, "rb") as f:
+        engine = pickle.loads(lzma.decompress(f.read()))
+    assert isinstance(engine, Engine)
+    return engine
 
 
 def new_game(player_class: FighterClass) -> Engine:

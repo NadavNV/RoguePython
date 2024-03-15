@@ -7,8 +7,6 @@ from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 import tcod
 from tcod import libtcodpy
 import textwrap
-import lzma
-import pickle
 import traceback
 
 import actions
@@ -25,8 +23,8 @@ from equipment_types import EquipmentType
 from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
-    from engine import Engine
     from entity import Item
+    from engine import Engine
 
 MOVE_KEYS = {
     tcod.event.KeySym.KP_1: (-1, 1),
@@ -185,48 +183,173 @@ class CharacterScreenEventHandler(AskUserEventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         super().on_render(console)
+        console.rgb["fg"] //= 8
+        console.rgb["bg"] //= 8
 
-        if self.engine.player.x <= console.width // 2 - 10:
-            x = console.width // 2
-        else:
-            x = 1
-
-        y = 1
+        player = self.engine.player
 
         width = len(self.TITLE) + 4
+
+        x = console.width // 2 - width
+        y = 1
 
         console.draw_frame(
             x=x,
             y=y,
             width=width,
-            height=8,
+            height=11,
             title=self.TITLE,
             clear=True,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
         )
 
+        console.print(x=x + 1, y=y + 1, string="Strength:")
+
+        if player.equipment.strength_bonus > 0:
+            text_color = color.buff
+        elif player.equipment.strength_bonus < 0:
+            text_color = color.debuff
+        else:
+            text_color = color.white
+
         console.print(
-            x=x + 1, y=y + 1, string=f"Level: {self.engine.player.level.current_level}"
+            x=x + 15,
+            y=y + 1,
+            string=f"{player.fighter.strength}",
+            fg=text_color,
+            bg=color.black,
         )
+
+        console.print(x=x + 1, y=y + 2, string="Perseverance:")
+
+        if player.equipment.perseverance_bonus > 0:
+            text_color = color.buff
+        elif player.equipment.perseverance_bonus < 0:
+            text_color = color.debuff
+        else:
+            text_color = color.white
+
         console.print(
-            x=x + 1, y=y + 2, string=f"XP: {self.engine.player.level.current_xp}"
+            x=x + 15,
+            y=y + 2,
+            string=f"{player.fighter.perseverance}",
+            fg=text_color,
+            bg=color.black,
         )
+
+        console.print(x=x + 1, y=y + 3, string="Agility:")
+
+        if player.equipment.agility_bonus > 0:
+            text_color = color.buff
+        elif player.equipment.agility_bonus < 0:
+            text_color = color.debuff
+        else:
+            text_color = color.white
+
         console.print(
-            x=x + 1,
+            x=x + 15,
             y=y + 3,
-            string=f"XP for next Level: {self.engine.player.level.experience_to_next_level}",
+            string=f"{player.fighter.agility}",
+            fg=text_color,
+            bg=color.black,
         )
+
+        console.print(x=x + 1, y=y + 4, string="Magic:")
+
+        if player.equipment.magic_bonus > 0:
+            text_color = color.buff
+        elif player.equipment.magic_bonus < 0:
+            text_color = color.debuff
+        else:
+            text_color = color.white
+
         console.print(
-            x=x + 1, y=y + 4, string=f"Proficiency Bonus: {self.engine.player.fighter.proficiency}",
+            x=x + 15,
+            y=y + 4,
+            string=f"{player.fighter.magic}",
+            fg=text_color,
+            bg=color.black,
         )
 
         console.print(
-            x=x + 1, y=y + 5, string=f"Attack: {self.engine.player.fighter.power}"
+            x=x + 1, y=y + 6, string=f"Level: {self.engine.player.level.current_level}"
         )
         console.print(
-            x=x + 1, y=y + 6, string=f"Defense: {self.engine.player.fighter.armor}"
+            x=x + 1, y=y + 7, string=f"XP: {self.engine.player.level.current_xp}"
         )
+        console.print(
+            x=x + 1,
+            y=y + 8,
+            string=f"XP for next Level: {self.engine.player.level.experience_to_next_level}",
+        )
+        console.print(
+            x=x + 1, y=y + 9, string=f"Proficiency Bonus: {self.engine.player.fighter.proficiency}",
+        )
+
+        # Longest line in this window
+        width = len(f"Mainhand Attack Bonus: {player.fighter.mainhand_attack_bonus:+}") + 2
+
+        x = console.width // 2
+        y = 1
+
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=14,
+            title="Equipment",
+            clear=True,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        equipment = player.equipment.list_equipped_items()
+        for i in range(len(equipment)):
+            console.print(
+                x=x + 1,
+                y=y + 1 + i,
+                string=equipment[i],
+                fg=color.white,
+                bg=color.black
+            )
+
+        console.print(
+            x=x + 1,
+            y=y + len(equipment) + 3,
+            string=f"Mainhand Attack Bonus: {player.fighter.mainhand_attack_bonus:+}",
+            fg=color.white,
+            bg=color.black
+        )
+
+        console.print(
+            x=x + 1,
+            y=y + len(equipment) + 4,
+            string=(
+                    f"Mainhand Damage: {player.fighter.mainhand_damage_bonus + player.equipment.mainhand_min_damage}"
+                    + f" - {player.fighter.mainhand_damage_bonus + player.equipment.mainhand_max_damage}"
+            ),
+            fg=color.white,
+            bg=color.black
+        )
+
+        console.print(
+            x=x + 1,
+            y=y + len(equipment) + 5,
+            string=f"Offhand Attack Bonus: {player.fighter.offhand_attack_bonus:+}",
+            fg=color.white,
+            bg=color.black
+        )
+
+        console.print(
+            x=x + 1,
+            y=y + len(equipment) + 6,
+            string=(f"Offhand Damage: {player.fighter.offhand_damage_bonus + player.equipment.offhand_min_damage}" +
+                    f" - {player.fighter.offhand_damage_bonus + player.equipment.offhand_max_damage}"),
+            fg=color.white,
+            bg=color.black
+        )
+
         return self
 
 
@@ -891,7 +1014,7 @@ class UnequipEventHandler(EquipmentEventHandler):
             self.engine.message_log.add_message("Nothing to unequip.", color.invalid)
             return self
         else:
-            return actions.EquipAction(entity=self.engine.player, item=item, slot=slot)
+            return actions.EquipAction(entity=self.engine.player, item=item.parent, slot=slot)
 
 
 class ChooseSlotEventHandler(AskUserEventHandler):
@@ -1064,7 +1187,6 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg=(0, 0, 0),
         )
 
-        # TODO: Draw sprites instead of frames
         console.draw_semigraphics(
             ClassSelectEventHandler.warrior_icon,
             x=console.width // 4 - console.width // 16,
@@ -1083,7 +1205,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             y=console.height // 8
         )
 
-        if self.cursor == 0:
+        if self.cursor + 1 == FighterClass.WARRIOR.value:
             fg = (0, 0, 0)
             bg = (255, 255, 255)
         else:
@@ -1099,7 +1221,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             alignment=libtcodpy.CENTER
         )
 
-        if self.cursor == 1:
+        if self.cursor + 1 == FighterClass.ROGUE.value:
             fg = (0, 0, 0)
             bg = (255, 255, 255)
         else:
@@ -1115,7 +1237,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             alignment=libtcodpy.CENTER
         )
 
-        if self.cursor == 2:
+        if self.cursor + 1 == FighterClass.MAGE.value:
             fg = (0, 0, 0)
             bg = (255, 255, 255)
         else:
@@ -1124,7 +1246,7 @@ class ClassSelectEventHandler(BaseEventHandler):
 
         console.print(
             x=console.width * 3 // 4,
-            y=console.height // 8 + console.width // 4  - 5,
+            y=console.height // 8 + console.width // 4 - 5,
             string='[M]age',
             fg=fg,
             bg=bg,
@@ -1183,14 +1305,6 @@ class ClassSelectEventHandler(BaseEventHandler):
             return MainGameEventHandler(new_game(FighterClass.MAGE))
 
 
-def load_game(filename: str) -> Engine:
-    """Load an engine instance from a file."""
-    with open(filename, "rb") as f:
-        engine = pickle.loads(lzma.decompress(f.read()))
-    assert isinstance(engine, Engine)
-    return engine
-
-
 class MainMenu(BaseEventHandler):
     """Handle the main menu rendering and input."""
     # Load the background image and remove the alpha channel.
@@ -1219,6 +1333,7 @@ class MainMenu(BaseEventHandler):
     def ev_keydown(
             self, event: tcod.event.KeyDown
     ) -> Optional[BaseEventHandler]:
+        from setup_game import load_game
         if event.sym in (tcod.event.KeySym.q, tcod.event.KeySym.ESCAPE):
             raise SystemExit()
         elif event.sym == tcod.event.KeySym.c:
