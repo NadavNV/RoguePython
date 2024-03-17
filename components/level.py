@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 from components.base_component import BaseComponent, roll_dice
 
 if TYPE_CHECKING:
-    from mapentity import Actor
+    from components.fighter import Fighter
 
 
 class Level(BaseComponent):
-    parent: Actor
+    parent: Fighter
 
     def __init__(
             self,
@@ -51,30 +51,32 @@ class Level(BaseComponent):
 
         self.current_level += 1
 
-        fighter = self.parent.fighter
+        fighter = self.parent
         fighter.proficiency = 1 + self.current_level % 4
-        new_hp = roll_dice(fighter.hit_dice) + fighter.perseverance // 2
-        fighter.max_hp += new_hp
-        fighter.hp += new_hp
+        fighter.roll_hitpoints()
 
     def increase_max_hp(self, amount: int = 20) -> None:
-        self.parent.fighter.max_hp += amount
-        self.parent.fighter.hp += amount
+        self.parent.max_hp += amount
+        self.parent.hp += amount
 
         self.engine.message_log.add_message("Your health improves!")
 
         self.increase_level()
 
     def increase_power(self, amount: int = 1) -> None:
-        self.parent.fighter.base_power += amount
+        self.parent.base_power += amount
 
         self.engine.message_log.add_message("Your feel stronger!")
 
         self.increase_level()
 
     def increase_defense(self, amount: int = 1) -> None:
-        self.parent.fighter.base_defense += amount
+        self.parent.base_defense += amount
 
         self.engine.message_log.add_message("Your movements are getting swifter!")
 
         self.increase_level()
+
+    @property
+    def proficiency(self) -> int:
+        return 1 + self.current_level % 4

@@ -1,11 +1,11 @@
 import colors
-from components.ai import HostileEnemy
+from components.ai import RoamingEnemy
 from components import consumable, equippable
 from components.equipment import Equipment
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
-from mapentity import Actor, Item
+from mapentity import FighterGroup, Item
 from fighter_classes import FighterClass
 
 SCROLL_CHAR = '~'
@@ -13,46 +13,56 @@ POTION_CHAR = '!'
 WEAPON_CHAR = '/'
 ARMOR_CHAR = '['
 
-player = Actor(
-    char="@",
-    color=(255, 255, 255),
-    name="Player",
-    ai_cls=HostileEnemy,
-    equipment=Equipment(),
-    fighter=Fighter(
-        fighter_class=FighterClass.ROGUE,
+player = FighterGroup(
+    x=0,
+    y=0,
+    fighters=[Fighter(
         strength=1,
         perseverance=1,
         agility=1,
         magic=1,
-        hit_dice="2d10",
-        mana=20
-    ),
-    inventory=Inventory(capacity=26),
-    level=Level(level_up_base=200),
+        min_hp_per_level=5,
+        max_hp_per_level=15,
+        fighter_class=FighterClass.ROGUE,
+        char="@",
+        color=colors.player_icon,
+        name="Player",
+        ai_cls=RoamingEnemy,
+        inventory=Inventory(capacity=26),
+        level=Level(level_up_base=200),
+    )],
+    ai_cls=RoamingEnemy
 )
 
-janitor = Actor(
+janitor = Fighter(
+    strength=2,
+    perseverance=1,
+    agility=4,
+    magic=1,
+    min_hp_per_level=3,
+    max_hp_per_level=8,
+    fighter_class=FighterClass.ROGUE,
     char="j",
-    color=(63, 127, 63),
+    color=colors.janitor_icon,
     name="Janitor",
-    ai_cls=HostileEnemy,
+    ai_cls=RoamingEnemy,
     equipment=Equipment(),
-    fighter=Fighter(
-        fighter_class=FighterClass.ROGUE, strength=1, perseverance=2, agility=4, magic=1, hit_dice="1d8",
-    ),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=35),
 )
-lumberjack = Actor(
+lumberjack = Fighter(
+    strength=5,
+    perseverance=3,
+    agility=3,
+    magic=1,
+    min_hp_per_level=6,
+    max_hp_per_level=12,
+    fighter_class=FighterClass.WARRIOR,
     char="L",
-    color=(0, 127, 0),
+    color=colors.lumberjack_icon,
     name="Lumberjack",
-    ai_cls=HostileEnemy,
+    ai_cls=RoamingEnemy,
     equipment=Equipment(),
-    fighter=Fighter(
-        fighter_class=FighterClass.WARRIOR, strength=5, perseverance=3, agility=3, magic=1, hit_dice="1d10",
-    ),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),
 )
@@ -77,7 +87,7 @@ health_potion = Item(
     char=POTION_CHAR,
     color=(127, 0, 255),
     name="Health Potion",
-    consumable=consumable.HealingConsumable(amount=4),
+    consumable=consumable.HealingConsumable(min_amount=4, max_amount=10),
     stackable=True
 )
 

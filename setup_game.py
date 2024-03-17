@@ -40,6 +40,7 @@ def new_game(player_class: FighterClass) -> Engine:
 
     player = copy.deepcopy(entity_factories.player)
 
+    # TODO: player is now a FighterGroup, fix accordingly
     if player_class == FighterClass.WARRIOR:
         print("Creating warrior")
         player.fighter.fighter_class = FighterClass.WARRIOR

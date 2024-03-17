@@ -12,7 +12,7 @@ from message_log import MessageLog
 import render_functions
 
 if TYPE_CHECKING:
-    from mapentity import Actor
+    from mapentity import FighterGroup
     from game_map import GameMap, GameWorld
 
 
@@ -20,14 +20,14 @@ class Engine:
     game_map: GameMap
     game_world: GameWorld
     in_combat: bool
-    active_enemies: List[Actor]
+    active_enemies: Optional[FighterGroup]
 
-    def __init__(self, player: Actor):
+    def __init__(self, player: FighterGroup):
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.player = player
         self.in_combat = False
-        self.active_enemies = []
+        self.active_enemies = None
 
     def handle_enemy_turns(self) -> None:
         if not self.in_combat:
@@ -35,10 +35,12 @@ class Engine:
                 if entity.ai:
                     try:
                         entity.ai.perform()
+                        if self.in_combat:
+                            break
                     except exceptions.Impossible:
                         pass  # Ignore impossible action exceptions from AI.
         else:
-            for entity in self.active_enemies:
+            for entity in self.active_enemies.fighters:
                 if entity.ai:
                     entity.ai.perform()
 
@@ -59,7 +61,7 @@ class Engine:
 
         render_functions.render_bars(
             console=console,
-            player=self.player.fighter,
+            player=self.player.fighters[0],
             total_width=console.width // 3 - 2,
         )
 

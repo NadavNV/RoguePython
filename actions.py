@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple, TYPE_CHECKING
-
-import sys
+from typing import Optional, Tuple, TYPE_CHECKING, Union
 
 import colors
 import exceptions
 from equipment_slots import EquipmentSlot
+from mapentity import FighterGroup, Item
+from components.fighter import Fighter
 
 if TYPE_CHECKING:
     from engine import Engine
-    from mapentity import Actor, MapEntity, Item
+    from mapentity import Item
+
+Actor = Union[Fighter, FighterGroup]
 
 
 class Action:
@@ -21,7 +23,7 @@ class Action:
     @property
     def engine(self) -> Engine:
         """Return the engine this action belongs to."""
-        return self.entity.parent.engine
+        return self.entity.engine
 
     def perform(self) -> None:
         """Perform this action with the objects needed to determine its scope.
@@ -51,7 +53,7 @@ class PickupAction(Action):
                     raise exceptions.Impossible("Your inventory is full.")
 
                 self.engine.game_map.entities.remove(item)
-                item.parent = self.entity.inventory
+                item.parent = inventory
                 inventory.add_item(item)
 
                 self.engine.message_log.add_message(f"You picked up the {item.name}!")
@@ -113,7 +115,7 @@ class TakeStairsAction(Action):
         if (self.entity.x, self.entity.y) == self.engine.game_map.downstairs_location:
             self.engine.game_world.generate_floor()
             self.engine.message_log.add_message(
-                "You descend the staircase.", color.descend
+                "You descend the staircase.", colors.descend
             )
         else:
             raise exceptions.Impossible("There are no stairs here.")
@@ -132,7 +134,7 @@ class ActionWithDirection(Action):
         return self.entity.x + self.dx, self.entity.y + self.dy
 
     @property
-    def blocking_entity(self) -> Optional[MapEntity]:
+    def blocking_entity(self) -> Optional[FighterGroup]:
         """Return the blocking entity at this action's destination."""
         return self.engine.game_map.get_blocking_entity_at_location(*self.dest_xy)
 
@@ -143,44 +145,6 @@ class ActionWithDirection(Action):
 
     def perform(self) -> None:
         raise NotImplementedError()
-
-
-class MeleeAction(Action):
-    def perform(self) -> None:
-        # TODO: Replace - roll for attack and damage
-        target = self.target_actor
-        if not target:
-            raise exceptions.Impossible("Nothing to attack.")
-
-        attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
-
-        attack = self.entity.fighter.roll_weapon_attack()
-        if attack == sys.maxsize:  # Critical hit
-            attack_desc = f"{attack_desc} and critically hits"
-            damage = self.entity.fighter.power
-        else:
-            damage = 0
-            attack -= target.fighter.avoidance
-
-        damage += self.entity.fighter.power - target.fighter.armor
-
-        if self.entity is self.engine.player:
-            attack_color = color.player_atk
-        else:
-            attack_color = color.enemy_atk
-        if attack < 0:
-            self.engine.message_log.add_message(
-                f"{attack_desc} but misses.", attack_color
-            )
-        elif damage > 0:
-            self.engine.message_log.add_message(
-                f"{attack_desc} for {damage} hit points.", attack_color
-            )
-            target.fighter.hp -= damage
-        else:
-            self.engine.message_log.add_message(
-                f"{attack_desc} but does no damage.", attack_color
-            )
 
 
 class MovementAction(ActionWithDirection):
@@ -204,8 +168,19 @@ class MovementAction(ActionWithDirection):
 class BumpAction(ActionWithDirection):
     def perform(self) -> None:
         if self.target_actor:
-            # TODO: Replace - transition into instanced combat
-            return MeleeAction(self.entity, self.dx, self.dy).perform()
+            self.engine.in_combat = True
+            if (
+                    self.target_actor is not self.engine.player and
+                    self.entity is not self.engine.player
+            ):
+                return
+            else:
+                self.engine.in_combat = True
+                if self.entity is self.engine.player:
+                    self.engine.active_enemies = self.target_actor
+                else:
+                    self.engine.active_enemies = self.entity
+                return
 
         else:
             return MovementAction(self.entity, self.dx, self.dy).perform()

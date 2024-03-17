@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import random
-from typing import Dict, Iterator, List, Tuple, TYPE_CHECKING
+from typing import Dict, Iterator, List, Tuple, TYPE_CHECKING, Union
 
 import tcod
 
 import entity_factories
 from game_map import GameMap
+from components.ai import RoamingEnemy
 import tile_types
-
 
 if TYPE_CHECKING:
     from engine import Engine
-    from mapentity import MapEntity
+    from mapentity import MapEntity, FighterGroup
+    from components.fighter import Fighter
 
+Entity = Union[MapEntity, Fighter]
 
 max_items_by_floor = [
     (1, 1),
@@ -21,10 +23,16 @@ max_items_by_floor = [
     (4, 3),
 ]
 
-max_monsters_by_floor = [
+max_groups_by_floor = [
     (1, 2),
     (4, 3),
     (6, 5),
+]
+
+max_enemies_per_group_by_floor = [
+    (1, 1),
+    (3, 2),
+    (6, 3)
 ]
 
 item_chances: Dict[int, List[Tuple[MapEntity, int]]] = {
@@ -34,11 +42,11 @@ item_chances: Dict[int, List[Tuple[MapEntity, int]]] = {
     6: [(entity_factories.fireball_scroll, 25), (entity_factories.chain_mail, 15)],
 }
 
-enemy_chances: Dict[int, List[Tuple[MapEntity, int]]] = {
+enemy_chances: Dict[int, List[Tuple[Fighter, int]]] = {
     0: [(entity_factories.janitor, 80)],
-    3: [(entity_factories.Lumberjack, 15)],
-    5: [(entity_factories.Lumberjack, 30)],
-    7: [(entity_factories.Lumberjack, 60)],
+    3: [(entity_factories.lumberjack, 15)],
+    5: [(entity_factories.lumberjack, 30)],
+    7: [(entity_factories.lumberjack, 60)],
 }
 
 
@@ -56,11 +64,25 @@ def get_max_value_for_floor(
     return current_value
 
 
+def generate_fighter_groups(
+        number_of_groups: int,
+        floor: int,
+) -> List[FighterGroup]:
+    groups = []
+    for i in range(number_of_groups):
+        number_of_monsters = random.randint(1, get_max_value_for_floor(max_enemies_per_group_by_floor, floor))
+        fighters = get_entities_at_random(enemy_chances, number_of_entities=number_of_monsters, floor=floor)
+        for fighter in fighters:
+            fighter.roll_hitpoints()
+        groups.append(FighterGroup(fighters=fighters, ai_cls=RoamingEnemy))
+    return groups
+
+
 def get_entities_at_random(
-        weighted_chances_by_floor: Dict[int, List[Tuple[MapEntity, int]]],
+        weighted_chances_by_floor: Dict[int, List[Tuple[Entity, int]]],
         number_of_entities: int,
         floor: int,
-) -> List[MapEntity]:
+) -> List[Entity]:
     entity_weighted_chances = {}
 
     for key, values in weighted_chances_by_floor.items():
@@ -105,15 +127,15 @@ class RectangularRoom:
     def intersects(self, other: RectangularRoom) -> bool:
         """Return True if this room overlaps with another RectangularRoom."""
         return (
-            self.x1 <= other.x2
-            and self.x2 >= other.x1
-            and self.y1 <= other.y2
-            and self.y2 >= other.y1
+                self.x1 <= other.x2
+                and self.x2 >= other.x1
+                and self.y1 <= other.y2
+                and self.y2 >= other.y1
         )
 
 
 def tunnel_between(
-    start: Tuple[int, int], end: Tuple[int, int]
+        start: Tuple[int, int], end: Tuple[int, int]
 ) -> Iterator[Tuple[int, int]]:
     """Return an L-shaped tunnel between these two points."""
     x1, y1 = start
@@ -133,12 +155,12 @@ def tunnel_between(
 
 
 def generate_dungeon(
-    max_rooms: int,
-    room_min_size: int,
-    room_max_size: int,
-    map_width: int,
-    map_height: int,
-    engine: Engine,
+        max_rooms: int,
+        room_min_size: int,
+        room_max_size: int,
+        map_width: int,
+        map_height: int,
+        engine: Engine,
 ) -> GameMap:
     """Generate a new dungeon map."""
     player = engine.player
@@ -188,15 +210,15 @@ def generate_dungeon(
 
 
 def place_entities(room: RectangularRoom, dungeon: GameMap, floor_number: int) -> None:
-    number_of_monsters = random.randint(
-        0, get_max_value_for_floor(max_monsters_by_floor, floor_number)
+    number_of_groups = random.randint(
+        0, get_max_value_for_floor(max_groups_by_floor, floor_number)
     )
     number_of_items = random.randint(
         0, get_max_value_for_floor(max_items_by_floor, floor_number)
     )
 
-    monsters: List[MapEntity] = get_entities_at_random(
-        enemy_chances, number_of_monsters, floor_number
+    monsters: List[MapEntity] = generate_fighter_groups(
+        number_of_groups, floor_number
     )
     items: List[MapEntity] = get_entities_at_random(
         item_chances, number_of_items, floor_number

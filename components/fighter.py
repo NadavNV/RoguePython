@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING, Union
 
 import random
 
@@ -11,15 +11,20 @@ from render_order import RenderOrder
 from fighter_classes import FighterClass
 from equipment_slots import EquipmentSlot
 from weapon_types import WeaponType
+from components.inventory import Inventory
+from components.equipment import Equipment
+from components.level import Level
 
 if TYPE_CHECKING:
-    from mapentity import Actor
+    from engine import Engine
+    from mapentity import FighterGroup
+    from components.ability import Ability
 
 BASE_AVOIDANCE = 10
 
 
 class Fighter(BaseComponent):
-    parent: Actor
+    parent: FighterGroup
     """
     Strength - Affects damage with weapons and block amount with shields.
     Perseverance - Affects max hp.
@@ -42,36 +47,48 @@ class Fighter(BaseComponent):
             perseverance: int,
             agility: int,
             magic: int,
-            hit_dice: str,
+            min_hp_per_level: int,
+            max_hp_per_level: int,
             fighter_class: FighterClass,
+            ai_cls,
+            inventory: Inventory = Inventory(26),
+            equipment: Equipment = Equipment(),
+            level: Level = Level(),
+            abilities: List[Ability] = None,
             mana: int = 0,
             weapon_crit_threshold: int = 20,
             spell_crit_threshold: int = 20,
-            has_weapon_advantage: bool = False,
-            has_spell_advantage: bool = False,
+            char: str = "?",
+            color: Tuple[int, int, int] = colors.white,
+            name: str = "<Unnamed>",
     ):
+        self.char = char
+        self.name = name
+        self.color = color
+
         self.fighter_class = fighter_class
+
         self.strength = strength
         self.perseverance = perseverance
         self.agility = agility
         self.magic = magic
-        self.hit_dice = hit_dice
-        self.max_hp = roll_dice(hit_dice) + self.perseverance // 2
-        self._hp = self.max_hp
+
+        self.max_hp_per_level = max_hp_per_level
+        self.min_hp_per_level = min_hp_per_level
+        self._hp = 0
+        self.max_hp = 0
+
         self.max_mana = mana
         self._mana = mana
+
+        self.equipment = equipment
+        self.inventory = inventory
+        self.level = level
+        self.abilities = [] if abilities is None else abilities
+        self.ai = ai_cls(self)
+
         self.weapon_crit_threshold = weapon_crit_threshold
         self.spell_crit_threshold = spell_crit_threshold
-        self.has_weapon_advantage = has_weapon_advantage
-        self.has_spell_advantage = has_spell_advantage
-        self.proficiency = 1
-
-        # self.parent.equipment.mainhand_attack_bonus = self.strength // 2
-        # self.parent.equipment.mainhand_min_damage = self.strength // 2
-        # self.parent.equipment.mainhand_max_damage = self.strength // 2
-        # self.parent.equipment.offhand_attack_bonus = self.strength // 2
-        # self.parent.equipment.offhand_min_damage = self.strength // 2
-        # self.parent.equipment.offhand_max_damage = self.strength // 2
 
     @property
     def hp(self) -> int:
@@ -93,99 +110,64 @@ class Fighter(BaseComponent):
 
     @property
     def armor(self) -> int:
-        if self.parent.equipment:
-            return self.parent.equipment.armor_bonus
+        if self.equipment:
+            return self.equipment.armor_bonus
         else:
             return 0
 
     @property
     def avoidance(self) -> int:
-        avoidance = BASE_AVOIDANCE + self.agility // 2
-        if self.parent.equipment:
-            avoidance += self.parent.equipment.avoidance_bonus
-        return avoidance
+        return BASE_AVOIDANCE + self.agility // 2 + self.equipment.avoidance_bonus
 
     @property
     def mainhand_attack_bonus(self) -> int:
-        bonus = self.weapon_base_attack_bonus(EquipmentSlot.MAINHAND)
-        if self.parent.equipment:
-            bonus += self.parent.equipment.mainhand_attack_bonus
-        return bonus
+        return self.weapon_base_attack_bonus(EquipmentSlot.MAINHAND) + self.equipment.mainhand_attack_bonus
 
     @property
     def offhand_attack_bonus(self) -> int:
-        bonus = self.weapon_base_attack_bonus(EquipmentSlot.OFFHAND)
-        if self.parent.equipment:
-            bonus += self.parent.equipment.offhand_attack_bonus
-        return bonus
-
-    @property
-    def mainhand_damage_bonus(self) -> int:
-        return self.weapon_base_damage_bonus(EquipmentSlot.MAINHAND)
-
-    @property
-    def offhand_damage_bonus(self) -> int:
-        return self.weapon_base_damage_bonus(EquipmentSlot.OFFHAND)
+        return self.weapon_base_attack_bonus(EquipmentSlot.OFFHAND) + self.equipment.offhand_attack_bonus
 
     @property
     def spell_attack_bonus(self) -> int:
         bonus = self.magic // 2
         if self.fighter_class == FighterClass.MAGE:
-            bonus += self.proficiency
+            bonus += self.level.proficiency
         return bonus
 
     def weapon_base_attack_bonus(self, slot: EquipmentSlot) -> int:
-        # TODO: Change to agility + proficiency
-        weapon = self.parent.equipment.items[slot]
+        weapon = self.equipment.items[slot]
+        bonus = self.agility // 2
         if weapon is not None and hasattr(weapon, 'weapon_type'):
-            if weapon.weapon_type == WeaponType.AGILITY:
-                return self.agility // 2
-            elif weapon.weapon_type == WeaponType.STRENGTH:
-                return self.strength // 2
-            elif weapon.weapon_type == WeaponType.MAGIC:
-                return self.magic // 2
-            elif weapon.weapon_type == WeaponType.FINESSE:
-                return max(self.agility, self.strength) // 2
-            else:
-                return 0
-        else:
-            return 0
-
-    def weapon_base_damage_bonus(self, slot: EquipmentSlot) -> int:
-        # TODO: Change to strength + proficiency
-        weapon = self.parent.equipment.items[slot]
-        if weapon is not None and hasattr(weapon, 'weapon_type'):
-            if weapon.weapon_type == WeaponType.AGILITY:
-                return self.agility // 2
-            elif weapon.weapon_type == WeaponType.STRENGTH:
-                return self.strength // 2
-            elif weapon.weapon_type == WeaponType.MAGIC:
-                return self.magic // 2
-            elif weapon.weapon_type == WeaponType.FINESSE:
-                return max(self.agility, self.strength) // 2
-            else:
-                return 0
-        else:
-            return 0
+            if self.fighter_class == FighterClass.ROGUE and (
+                    weapon.weapon_type == WeaponType.AGILITY or
+                    weapon.weapon_type == WeaponType.FINESSE
+            ):
+                bonus += self.level.proficiency
+            elif self.fighter_class == FighterClass.WARRIOR and (
+                    weapon.weapon_type == WeaponType.STRENGTH or
+                    weapon.weapon_type == WeaponType.FINESSE
+            ):
+                bonus += self.level.proficiency
+            elif self.fighter_class == FighterClass.MAGE and weapon.weapon_type == WeaponType.MAGIC:
+                bonus += self.level.proficiency
+        return bonus
 
     def die(self) -> None:
         if self.engine.player is self.parent:
             death_message = "You died!"
             death_message_color = colors.player_die
         else:
-            death_message = f"{self.parent.name} is dead!"
+            death_message = f"{self.name} is dead!"
             death_message_color = colors.enemy_die
 
-        self.parent.char = "%"
-        self.parent.color = (191, 0, 0)
-        self.parent.blocks_movement = False
-        self.parent.ai = None
-        self.parent.name = f"remains of {self.parent.name}"
-        self.parent.render_order = RenderOrder.CORPSE
+        self.char = "%"
+        self.color = (191, 0, 0)
+        self.ai = None
+        self.name = f"Dead {self.parent.name}"
 
         self.engine.message_log.add_message(death_message, death_message_color)
 
-        self.engine.player.level.add_xp(self.parent.level.xp_given)
+        self.engine.player.level.add_xp(self.level.xp_given)
 
     def heal(self, amount: int) -> int:
         if self.hp == self.max_hp:
@@ -234,16 +216,38 @@ class Fighter(BaseComponent):
         return self.roll_attack(
             self.weapon_crit_threshold,
             self.mainhand_attack_bonus,
-            self.has_weapon_advantage
+        )
+
+    def roll_offhand_attack(self) -> int:
+        return self.roll_attack(
+            self.weapon_crit_threshold,
+            self.offhand_attack_bonus,
         )
 
     def roll_spell_attack(self) -> int:
         return self.roll_attack(
             self.spell_crit_threshold,
             self.spell_attack_bonus,
-            self.has_spell_advantage
         )
 
-    def roll_hit_dice(self) -> None:
-        self.max_hp = roll_dice(self.hit_dice) + self.perseverance // 2
-        self._hp = self.max_hp
+    def roll_hitpoints(self) -> None:
+        new_hp = random.randint(self.min_hp_per_level, self.max_hp_per_level) + self.perseverance // 2
+        self.max_hp += new_hp
+        self._hp += new_hp
+
+    @property
+    def is_alive(self) -> bool:
+        """Returns True as long as this fighter can perform actions."""
+        return bool(self.ai)
+
+    @property
+    def engine(self) -> Engine:
+        return self.parent.engine
+
+    def roll_mainhand_damage(self) -> int:
+        return (self.strength // 2 +
+                random.randint(self.equipment.mainhand_min_damage, self.equipment.mainhand_max_damage))
+    
+    def roll_offhand_damage(self) -> int:
+        return (self.strength // 2 +
+                random.randint(self.equipment.offhand_min_damage, self.equipment.offhand_max_damage))

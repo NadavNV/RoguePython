@@ -8,12 +8,13 @@ from equipment_types import EquipmentType
 from equipment_slots import EquipmentSlot
 
 if TYPE_CHECKING:
+    from components.fighter import Fighter
     from mapentity import Actor, Item
 
 
 class Equipment(BaseComponent):
     items: Dict[EquipmentSlot, Equippable]
-    parent: Actor
+    parent: Fighter
 
     armor_bonus: int
 

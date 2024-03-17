@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 
+import random
+
 import actions
 import colors
 import components.ai
@@ -15,13 +17,14 @@ from input_handlers import (
 )
 
 if TYPE_CHECKING:
-    from mapentity import Actor, Item
+    from mapentity import Item
+    from components.fighter import Fighter
 
 
 class Consumable(BaseComponent):
     parent: Item
 
-    def get_action(self, consumer: Actor) -> Optional[ActionOrHandler]:
+    def get_action(self, consumer: Fighter) -> Optional[ActionOrHandler]:
         """Try to return the action for this item"""
         return actions.ItemAction(consumer, self.parent)
 
@@ -44,7 +47,7 @@ class ConfusionConsumable(Consumable):
     def __init__(self, number_of_turns: int):
         self.number_of_turns = number_of_turns
 
-    def get_action(self, consumer: Actor) -> Optional[ActionOrHandler]:
+    def get_action(self, consumer: Fighter) -> Optional[ActionOrHandler]:
         self.engine.message_log.add_message(
             "Select a target location.", colors.needs_target
         )
@@ -79,7 +82,7 @@ class FireballDamageConsumable(Consumable):
         self.damage = damage
         self.radius = radius
 
-    def get_action(self, consumer: Actor) -> Optional[ActionOrHandler]:
+    def get_action(self, consumer: Fighter) -> Optional[ActionOrHandler]:
         self.engine.message_log.add_message(
             "Select a target location.", colors.needs_target
         )
@@ -110,12 +113,14 @@ class FireballDamageConsumable(Consumable):
 
 
 class HealingConsumable(Consumable):
-    def __init__(self, amount: int):
-        self.amount = amount
+    def __init__(self, min_amount: int, max_amount):
+        self.min_amount = min_amount
+        self.max_amount = max_amount
 
     def activate(self, action: actions.ItemAction) -> None:
         consumer = action.entity
-        amount_recovered = consumer.fighter.heal(self.amount)
+        amount = random.randint(self.min_amount, self.max_amount)
+        amount_recovered = consumer.heal(amount)
 
         if amount_recovered > 0:
             self.engine.message_log.add_message(
@@ -133,12 +138,12 @@ class ManaConsumable(Consumable):
 
     def activate(self, action: actions.ItemAction) -> None:
         consumer = action.entity
-        amount_recovered = consumer.fighter.restore_mana(self.amount)
+        amount_recovered = consumer.restore_mana(self.amount)
 
         if amount_recovered > 0:
             self.engine.message_log.add_message(
                 f"You consume the {self.parent.name}, and recover {amount_recovered} mana!",
-                color.health_recovered,
+                colors.health_recovered,
             )
             self.consume()
         else:

@@ -6,10 +6,10 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 import numpy as np   # type: ignore
 import tcod
 
-from actions import Action, BumpAction, MeleeAction, MovementAction, WaitAction
+from actions import Action, BumpAction, MovementAction, WaitAction
 
 if TYPE_CHECKING:
-    from mapentity import Actor
+    from mapentity import FighterGroup
 
 
 class BaseAI(Action):
@@ -47,54 +47,54 @@ class BaseAI(Action):
         return [(index[0], index[1]) for index in path]
 
 
-class ConfusedEnemy(BaseAI):
-    """
-    A confused enemy will stumble around aimlessly for a given number of turns, then revert back to its previous AI.
-    If an actor occupies a tile it is randomly moving into, it will attack.
-    """
+# class ConfusedEnemy(BaseAI):
+#     """
+#     A confused enemy will stumble around aimlessly for a given number of turns, then revert back to its previous AI.
+#     If an actor occupies a tile it is randomly moving into, it will attack.
+#     """
+#
+#     def __init__(
+#         self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int,
+#     ):
+#         super().__init__(entity)
+#
+#         self.previous_ai = previous_ai
+#         self.turns_remaining = turns_remaining
+#
+#     def perform(self) -> None:
+#         # Revert the AI back to the original state if the effect has run its course.
+#         if self.turns_remaining <= 0:
+#             self.engine.message_log.add_message(
+#                 f"The {self.entity.name} is no longer confused."
+#             )
+#             self.entity.ai = self.previous_ai
+#         else:
+#             if not self.engine.in_combat:
+#                 # Pick a random direction
+#                 direction_x, direction_y = random.choice(
+#                     [
+#                         (-1, -1),  # Northwest
+#                         (0, -1),  # North
+#                         (1, -1),  # Northeast
+#                         (-1, 0),  # West
+#                         (1, 0),  # East
+#                         (-1, 1),  # Southwest
+#                         (0, 1),  # South
+#                         (1, 1),  # Southeast
+#                     ]
+#                 )
+#
+#                 self.turns_remaining -= 1
+#
+#                 # The actor will either try to move or attack in a chosen random direction.
+#                 # It's possible the actor will just bump into the wall, wasting a turn.
+#                 return BumpAction(self.entity, direction_x, direction_y).perform()
+#             else:
+#                 return MeleeAttack(self.entity).perform()
 
-    def __init__(
-        self, entity: Actor, previous_ai: Optional[BaseAI], turns_remaining: int,
-    ):
-        super().__init__(entity)
 
-        self.previous_ai = previous_ai
-        self.turns_remaining = turns_remaining
-
-    def perform(self) -> None:
-        # Revert the AI back to the original state if the effect has run its course.
-        if self.turns_remaining <= 0:
-            self.engine.message_log.add_message(
-                f"The {self.entity.name} is no longer confused."
-            )
-            self.entity.ai = self.previous_ai
-        else:
-            if not self.engine.in_combat:
-                # Pick a random direction
-                direction_x, direction_y = random.choice(
-                    [
-                        (-1, -1),  # Northwest
-                        (0, -1),  # North
-                        (1, -1),  # Northeast
-                        (-1, 0),  # West
-                        (1, 0),  # East
-                        (-1, 1),  # Southwest
-                        (0, 1),  # South
-                        (1, 1),  # Southeast
-                    ]
-                )
-
-                self.turns_remaining -= 1
-
-                # The actor will either try to move or attack in a chosen random direction.
-                # It's possible the actor will just bump into the wall, wasting a turn.
-                return BumpAction(self.entity, direction_x, direction_y).perform()
-            else:
-                return MeleeAction(self.entity).perform()
-
-
-class HostileEnemy(BaseAI):
-    def __init__(self, entity: Actor):
+class RoamingEnemy(BaseAI):
+    def __init__(self, entity: FighterGroup):
         super().__init__(entity)
         self.path: List[Tuple[int, int]] = []
 
@@ -106,7 +106,7 @@ class HostileEnemy(BaseAI):
 
         if self.engine.game_map.visible[self.entity.x, self.entity.y]:
             if distance <= 1:
-                return MeleeAction(self.entity, dx, dy).perform()
+                return BumpAction(self.entity, dx, dy).perform()
 
             self.path = self.get_path_to(target.x, target.y)
 

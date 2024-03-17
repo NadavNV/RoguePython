@@ -10,15 +10,13 @@ from render_order import RenderOrder
 if TYPE_CHECKING:
     from components.ai import BaseAI
     from components.consumable import Consumable
-    from components.enemy import Enemy
-    from components.equipment import Equipment
     from components.equippable import Equippable
     from components.fighter import Fighter
     from components.inventory import Inventory
-    from components.level import Level
     from game_map import GameMap
+    from engine import Engine
 
-T = TypeVar("T", bound="Entity")
+T = TypeVar("T", bound="MapEntity")
 
 
 class MapEntity:
@@ -75,27 +73,39 @@ class MapEntity:
             self.parent = game_map
             game_map.entities.add(self)
 
+    @property
+    def engine(self) -> Engine:
+        return self.parent.engine
 
-class Mover(MapEntity):
-    """A generic class for objects that can move around the map, i.e. the player and enemy groups"""
+
+class FighterGroup(MapEntity):
     def __init__(
-        self,
-        *,
-        x: int = 0,
-        y: int = 0,
-        char: str = "?",
-        color: Tuple[int, int, int] = (255, 255, 255),
-        name: str = "<Unnamed>",
+            self,
+            *,
+            x: int = 0,
+            y: int = 0,
+            fighters: List[Fighter],
+            ai_cls: Type[BaseAI],
     ):
         super().__init__(
             x=x,
             y=y,
-            char=char,
-            color=color,
-            name=name,
+            char=fighters[0].char,
+            color=fighters[0].color,
+            name=', '.join([enemy.name for enemy in fighters]),
             blocks_movement=True,
             render_order=RenderOrder.ACTOR,
         )
+        self.fighters = fighters
+        self.ai = ai_cls(self)
+
+    @property
+    def is_alive(self) -> bool:
+        """Returns True as long as there are any living fighters in this group."""
+        for fighter in self.fighters:
+            if fighter.is_alive:
+                return True
+        return False
 
     def distance(self, x: int, y: int) -> float:
         """
@@ -108,68 +118,10 @@ class Mover(MapEntity):
         self.x += dx
         self.y += dy
 
-
-class EnemyGroup(Mover):
-    def __init__(
-            self,
-            *,
-            x: int = 0,
-            y: int = 0,
-            enemies: List[Enemy],
-            ai_cls: Type[BaseAI],
-    ):
-        super().__init__(
-            x=x,
-            y=y,
-            char=enemies[0].char,
-            color=enemies[0].color,
-            name=', '.join([enemy.name for enemy in enemies]),
-        )
-        self.enemies = enemies
-        self.ai = ai_cls(self)
-
-
-class Player(Mover):
-    def __init__(
-        self,
-        *,
-        x: int = 0,
-        y: int = 0,
-        char: str = "?",
-        color: Tuple[int, int, int] = (255, 255, 255),
-        name: str = "<Unnamed>",
-        ai_cls: Type[BaseAI],
-        equipment: Equipment,
-        fighter: Fighter,
-        inventory: Inventory,
-        level: Level,
-    ):
-        super().__init__(
-            x=x,
-            y=y,
-            char=char,
-            color=color,
-            name=name,
-        )
-
-        self.ai: Optional[BaseAI] = ai_cls(self)
-
-        self.equipment: Equipment = equipment
-        self.equipment.parent = self
-
-        self.fighter = fighter
-        self.fighter.parent = self
-
-        self.inventory = inventory
-        self.inventory.parent = self
-
-        self.level = level
-        self.level.parent = self
-
     @property
-    def is_alive(self) -> bool:
-        """Returns True as long as this actor can perform actions."""
-        return bool(self.ai)
+    def inventory(self) -> Inventory:
+        """Return the player's inventory. Should only be used by the player group."""
+        return self.fighters[0].inventory
 
 
 class Item(MapEntity):
