@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Tuple, TYPE_CHECKING
 
-import color
+import colors
 import setup_game
 from components.fighter import Fighter
 
@@ -37,7 +37,7 @@ def render_bars(
             width=total_width,
             height=1,
             ch=1,
-            bg=color.bar_empty
+            bg=colors.bar_empty
         )
 
         if bar_width > 0:
@@ -46,7 +46,7 @@ def render_bars(
             )
 
             console.print(
-                x=2, y=y, string=f"{name}: {current_value}/{maximum_value}", fg=color.bar_text
+                x=2, y=y, string=f"{name}: {current_value}/{maximum_value}", fg=colors.bar_text
             )
 
     render_bar(
@@ -54,7 +54,7 @@ def render_bars(
         player.max_hp,
         x=1,
         y=setup_game.WINDOW_HEIGHT * 2 // 3 + 2,
-        bar_color=color.bar_hp_filled,
+        bar_color=colors.bar_hp_filled,
         name="HP"
     )
 
@@ -63,7 +63,7 @@ def render_bars(
         player.max_mana,
         x=1,
         y=setup_game.WINDOW_HEIGHT * 2 // 3 + 4,
-        bar_color=color.bar_mana_filled,
+        bar_color=colors.bar_mana_filled,
         name="Mana"
     )
 
@@ -155,7 +155,7 @@ def render_dungeon_ui(console: Console) -> None:
         bg=(0, 0, 0),
     )
 
-    console.print(x=frame_x + 1, y=frame_y + 1, string="Use item from bags:              i")
+    console.print(x=frame_x + 1, y=frame_y + 1, string="Use item from inventory:         i")
     console.print(x=frame_x + 1, y=frame_y + 2, string="Drop item:                       d")
     console.print(x=frame_x + 1, y=frame_y + 3, string="Unequip item:                    u")
     console.print(x=frame_x + 1, y=frame_y + 4, string="Character & Equipment info:      c")

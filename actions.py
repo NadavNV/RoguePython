@@ -4,13 +4,13 @@ from typing import Optional, Tuple, TYPE_CHECKING
 
 import sys
 
-import color
+import colors
 import exceptions
 from equipment_slots import EquipmentSlot
 
 if TYPE_CHECKING:
     from engine import Engine
-    from entity import Actor, Entity, Item
+    from mapentity import Actor, MapEntity, Item
 
 
 class Action:
@@ -132,7 +132,7 @@ class ActionWithDirection(Action):
         return self.entity.x + self.dx, self.entity.y + self.dy
 
     @property
-    def blocking_entity(self) -> Optional[Entity]:
+    def blocking_entity(self) -> Optional[MapEntity]:
         """Return the blocking entity at this action's destination."""
         return self.engine.game_map.get_blocking_entity_at_location(*self.dest_xy)
 

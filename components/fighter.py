@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import random
 
-import color
+import colors
 from components.base_component import BaseComponent, roll_dice
 from render_order import RenderOrder
 from fighter_classes import FighterClass
@@ -13,7 +13,7 @@ from equipment_slots import EquipmentSlot
 from weapon_types import WeaponType
 
 if TYPE_CHECKING:
-    from entity import Actor
+    from mapentity import Actor
 
 BASE_AVOIDANCE = 10
 
@@ -24,7 +24,7 @@ class Fighter(BaseComponent):
     Strength - Affects damage with weapons and block amount with shields.
     Perseverance - Affects max hp.
     Agility - Affects chance to hit with weapons and chance to avoid attacks.
-    Magic - Affects damage and chance to hit with spells, magic resistence, and max mana.
+    Magic - Affects damage and chance to hit with spells, magic resistance, and max mana.
     
     Bonus = stat // 2
     
@@ -44,8 +44,6 @@ class Fighter(BaseComponent):
             magic: int,
             hit_dice: str,
             fighter_class: FighterClass,
-            base_defense: int,
-            base_power: int,
             mana: int = 0,
             weapon_crit_threshold: int = 20,
             spell_crit_threshold: int = 20,
@@ -62,8 +60,6 @@ class Fighter(BaseComponent):
         self._hp = self.max_hp
         self.max_mana = mana
         self._mana = mana
-        self.base_defense = base_defense
-        self.base_power = base_power
         self.weapon_crit_threshold = weapon_crit_threshold
         self.spell_crit_threshold = spell_crit_threshold
         self.has_weapon_advantage = has_weapon_advantage
@@ -139,6 +135,7 @@ class Fighter(BaseComponent):
         return bonus
 
     def weapon_base_attack_bonus(self, slot: EquipmentSlot) -> int:
+        # TODO: Change to agility + proficiency
         weapon = self.parent.equipment.items[slot]
         if weapon is not None and hasattr(weapon, 'weapon_type'):
             if weapon.weapon_type == WeaponType.AGILITY:
@@ -155,6 +152,7 @@ class Fighter(BaseComponent):
             return 0
 
     def weapon_base_damage_bonus(self, slot: EquipmentSlot) -> int:
+        # TODO: Change to strength + proficiency
         weapon = self.parent.equipment.items[slot]
         if weapon is not None and hasattr(weapon, 'weapon_type'):
             if weapon.weapon_type == WeaponType.AGILITY:
@@ -173,10 +171,10 @@ class Fighter(BaseComponent):
     def die(self) -> None:
         if self.engine.player is self.parent:
             death_message = "You died!"
-            death_message_color = color.player_die
+            death_message_color = colors.player_die
         else:
             death_message = f"{self.parent.name} is dead!"
-            death_message_color = color.enemy_die
+            death_message_color = colors.enemy_die
 
         self.parent.char = "%"
         self.parent.color = (191, 0, 0)

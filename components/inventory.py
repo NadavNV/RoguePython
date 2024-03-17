@@ -5,7 +5,7 @@ from typing import List, TYPE_CHECKING
 from components.base_component import BaseComponent
 
 if TYPE_CHECKING:
-    from entity import Actor, Item
+    from mapentity import Actor, Item
 
 MAX_STACK_SIZE = 99
 

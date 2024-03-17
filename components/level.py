@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from components.base_component import BaseComponent, roll_dice
 
 if TYPE_CHECKING:
-    from entity import Actor
+    from mapentity import Actor
 
 
 class Level(BaseComponent):

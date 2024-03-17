@@ -9,7 +9,7 @@ import tcod
 from actions import Action, BumpAction, MeleeAction, MovementAction, WaitAction
 
 if TYPE_CHECKING:
-    from entity import Actor
+    from mapentity import Actor
 
 
 class BaseAI(Action):

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 import actions
-import color
+import colors
 import components.ai
 import components.inventory
 from components.base_component import BaseComponent
@@ -15,7 +15,7 @@ from input_handlers import (
 )
 
 if TYPE_CHECKING:
-    from entity import Actor, Item
+    from mapentity import Actor, Item
 
 
 class Consumable(BaseComponent):
@@ -46,7 +46,7 @@ class ConfusionConsumable(Consumable):
 
     def get_action(self, consumer: Actor) -> Optional[ActionOrHandler]:
         self.engine.message_log.add_message(
-            "Select a target location.", color.needs_target
+            "Select a target location.", colors.needs_target
         )
         return SingleRangedAttackHandler(
             self.engine,
@@ -66,7 +66,7 @@ class ConfusionConsumable(Consumable):
 
         self.engine.message_log.add_message(
             f"The eyes of the {target.name} look vacant, as it starts to stumble around!",
-            color.status_effect_applied,
+            colors.status_effect_applied,
         )
         target.ai = components.ai.ConfusedEnemy(
             entity=target, previous_ai=target.ai, turns_remaining=self.number_of_turns
@@ -81,7 +81,7 @@ class FireballDamageConsumable(Consumable):
 
     def get_action(self, consumer: Actor) -> Optional[ActionOrHandler]:
         self.engine.message_log.add_message(
-            "Select a target location.", color.needs_target
+            "Select a target location.", colors.needs_target
         )
         return AreaRangedAttackHandler(
             self.engine,
@@ -120,7 +120,7 @@ class HealingConsumable(Consumable):
         if amount_recovered > 0:
             self.engine.message_log.add_message(
                 f"You consumer the {self.parent.name}, and recover {amount_recovered} HP!",
-                color.health_recovered,
+                colors.health_recovered,
             )
             self.consume()
         else:

@@ -16,14 +16,14 @@ from actions import (
     PickupAction,
     WaitAction,
 )
-import color
+import colors
 import exceptions
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
 from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
-    from entity import Item
+    from mapentity import Item
     from engine import Engine
 
 MOVE_KEYS = {
@@ -211,22 +211,22 @@ class CharacterScreenEventHandler(AskUserEventHandler):
         elif player.equipment.strength_bonus < 0:
             text_color = color.debuff
         else:
-            text_color = color.white
+            text_color = colors.white
 
         console.print(
             x=x + 15,
             y=y + 1,
             string=f"{player.fighter.strength}",
             fg=text_color,
-            bg=color.black,
+            bg=colors.black,
         )
 
         console.print(x=x + 1, y=y + 2, string="Perseverance:")
 
         if player.equipment.perseverance_bonus > 0:
-            text_color = color.buff
+            text_color = colors.buff
         elif player.equipment.perseverance_bonus < 0:
-            text_color = color.debuff
+            text_color = colors.debuff
         else:
             text_color = color.white
 
@@ -235,30 +235,30 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             y=y + 2,
             string=f"{player.fighter.perseverance}",
             fg=text_color,
-            bg=color.black,
+            bg=colors.black,
         )
 
         console.print(x=x + 1, y=y + 3, string="Agility:")
 
         if player.equipment.agility_bonus > 0:
-            text_color = color.buff
+            text_color = colors.buff
         elif player.equipment.agility_bonus < 0:
-            text_color = color.debuff
+            text_color = colors.debuff
         else:
-            text_color = color.white
+            text_color = colors.white
 
         console.print(
             x=x + 15,
             y=y + 3,
             string=f"{player.fighter.agility}",
             fg=text_color,
-            bg=color.black,
+            bg=colors.black,
         )
 
         console.print(x=x + 1, y=y + 4, string="Magic:")
 
         if player.equipment.magic_bonus > 0:
-            text_color = color.buff
+            text_color = colors.buff
         elif player.equipment.magic_bonus < 0:
             text_color = color.debuff
         else:
@@ -269,7 +269,7 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             y=y + 4,
             string=f"{player.fighter.magic}",
             fg=text_color,
-            bg=color.black,
+            bg=colors.black,
         )
 
         console.print(
@@ -318,8 +318,8 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             x=x + 1,
             y=y + len(equipment) + 3,
             string=f"Mainhand Attack Bonus: {player.fighter.mainhand_attack_bonus:+}",
-            fg=color.white,
-            bg=color.black
+            fg=colors.white,
+            bg=colors.black
         )
 
         console.print(
@@ -329,16 +329,16 @@ class CharacterScreenEventHandler(AskUserEventHandler):
                     f"Mainhand Damage: {player.fighter.mainhand_damage_bonus + player.equipment.mainhand_min_damage}"
                     + f" - {player.fighter.mainhand_damage_bonus + player.equipment.mainhand_max_damage}"
             ),
-            fg=color.white,
-            bg=color.black
+            fg=colors.white,
+            bg=colors.black
         )
 
         console.print(
             x=x + 1,
             y=y + len(equipment) + 5,
             string=f"Offhand Attack Bonus: {player.fighter.offhand_attack_bonus:+}",
-            fg=color.white,
-            bg=color.black
+            fg=colors.white,
+            bg=colors.black
         )
 
         console.print(
@@ -346,7 +346,7 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             y=y + len(equipment) + 6,
             string=(f"Offhand Damage: {player.fighter.offhand_damage_bonus + player.equipment.offhand_min_damage}" +
                     f" - {player.fighter.offhand_damage_bonus + player.equipment.offhand_max_damage}"),
-            fg=color.white,
+            fg=colors.white,
             bg=color.black
         )
 
@@ -506,7 +506,7 @@ class InventoryEventHandler(AskUserEventHandler):
             try:
                 selected_item = player.inventory.items[self.cursor][0]
             except IndexError:
-                self.engine.message_log.add_message("Invalid entry.", color.invalid)
+                self.engine.message_log.add_message("Invalid entry.", colors.invalid)
                 return None
             return self.on_item_selected(selected_item)
         elif key == tcod.event.KeySym.ESCAPE:
@@ -579,8 +579,8 @@ class SelectIndexHandler(AskUserEventHandler):
         """Highlight the tile under the cursor."""
         super().on_render(console)
         x, y = self.engine.mouse_location
-        console.rgb["bg"][x, y] = color.white
-        console.rgb["fg"][x, y] = color.black
+        console.rgb["bg"][x, y] = colors.white
+        console.rgb["fg"][x, y] = colors.black
 
         return self
 
@@ -671,7 +671,7 @@ class AreaRangedAttackHandler(SelectIndexHandler):
             y=y - self.radius - 1,
             width=self.radius ** 2,
             height=self.radius ** 2,
-            fg=color.red,
+            fg=colors.red,
             clear=False,
         )
 
@@ -813,11 +813,11 @@ def print_menu(console: tcod.console.Console, items: List[str], x: int, y: int, 
     """
     for i, item in enumerate(items):
         if i == cursor:
-            fg = color.black
-            bg = color.white
+            fg = colors.black
+            bg = colors.white
         else:
-            fg = color.white
-            bg = color.black
+            fg = colors.white
+            bg = colors.black
 
         key = chr(ord('a') + i)
         console.print(x=x, y=y + i, fg=fg, bg=bg, string=f"({key}) {item}")
@@ -978,7 +978,7 @@ class EquipmentEventHandler(AskUserEventHandler):
             try:
                 selected_item = index
             except IndexError:
-                self.engine.message_log.add_message("Invalid entry.", color.invalid)
+                self.engine.message_log.add_message("Invalid entry.", colors.invalid)
                 return None
             return self.on_item_selected(selected_item)
         elif key in (tcod.event.KeySym.UP, tcod.event.KeySym.DOWN):
@@ -993,7 +993,7 @@ class EquipmentEventHandler(AskUserEventHandler):
             try:
                 selected_item = EquipmentSlot(self.cursor + 1)
             except IndexError:
-                self.engine.message_log.add_message("Invalid entry.", color.invalid)
+                self.engine.message_log.add_message("Invalid entry.", colors.invalid)
                 return None
             return self.on_item_selected(selected_item)
         elif key == tcod.event.KeySym.ESCAPE:
@@ -1011,7 +1011,7 @@ class UnequipEventHandler(EquipmentEventHandler):
     def on_item_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
         item = self.engine.player.equipment.items[slot]
         if item is None:
-            self.engine.message_log.add_message("Nothing to unequip.", color.invalid)
+            self.engine.message_log.add_message("Nothing to unequip.", colors.invalid)
             return self
         else:
             return actions.EquipAction(entity=self.engine.player, item=item.parent, slot=slot)
@@ -1322,7 +1322,7 @@ class MainMenu(BaseEventHandler):
                 console.width // 2,
                 console.height // 2 - 2 + i,
                 text.ljust(menu_width),
-                fg=color.black,
+                fg=colors.black,
                 bg=color.white,
                 alignment=libtcodpy.CENTER,
                 bg_blend=libtcodpy.BKGND_ALPHA(64),

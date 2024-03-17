@@ -5,17 +5,17 @@ from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 import numpy as np  # type: ignore
 from tcod.console import Console
 
-from entity import Actor, Item
+from mapentity import Actor, Item
 import tile_types
 
 if TYPE_CHECKING:
     from engine import Engine
-    from entity import Entity
+    from mapentity import MapEntity
 
 
 class GameMap:
     def __init__(
-        self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()
+        self, engine: Engine, width: int, height: int, entities: Iterable[MapEntity] = ()
     ):
         self.engine = engine
         self.width, self.height = width, height
@@ -50,7 +50,7 @@ class GameMap:
 
     def get_blocking_entity_at_location(
             self, location_x: int, location_y: int,
-    ) -> Optional[Entity]:
+    ) -> Optional[MapEntity]:
         for entity in self.entities:
             if (
                 entity.blocks_movement
@@ -76,8 +76,8 @@ class GameMap:
         """
         Renders the map.
 
-        If a tile is in the "visible" array, then draw it with the "light" colors.
-        If it isn't, but it's in the "explored" array, then draw it with the "dark" colors.
+        If a tile is in the "visible" array, then draw it with the "light" color.
+        If it isn't, but it's in the "explored" array, then draw it with the "dark" color.
         Otherwise, the defaults is "SHROUD".
         """
         console.rgb[0:self.width, 0:self.height] = np.select(

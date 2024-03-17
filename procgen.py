@@ -12,7 +12,7 @@ import tile_types
 
 if TYPE_CHECKING:
     from engine import Engine
-    from entity import Entity
+    from mapentity import MapEntity
 
 
 max_items_by_floor = [
@@ -27,14 +27,14 @@ max_monsters_by_floor = [
     (6, 5),
 ]
 
-item_chances: Dict[int, List[Tuple[Entity, int]]] = {
+item_chances: Dict[int, List[Tuple[MapEntity, int]]] = {
     0: [(entity_factories.health_potion, 30), (entity_factories.mana_potion, 12)],
     2: [(entity_factories.confusion_scroll, 12), (entity_factories.dagger, 3)],
     4: [(entity_factories.lightning_scroll, 25), (entity_factories.short_sword, 5)],
     6: [(entity_factories.fireball_scroll, 25), (entity_factories.chain_mail, 15)],
 }
 
-enemy_chances: Dict[int, List[Tuple[Entity, int]]] = {
+enemy_chances: Dict[int, List[Tuple[MapEntity, int]]] = {
     0: [(entity_factories.janitor, 80)],
     3: [(entity_factories.Lumberjack, 15)],
     5: [(entity_factories.Lumberjack, 30)],
@@ -57,10 +57,10 @@ def get_max_value_for_floor(
 
 
 def get_entities_at_random(
-        weighted_chances_by_floor: Dict[int, List[Tuple[Entity, int]]],
+        weighted_chances_by_floor: Dict[int, List[Tuple[MapEntity, int]]],
         number_of_entities: int,
         floor: int,
-) -> List[Entity]:
+) -> List[MapEntity]:
     entity_weighted_chances = {}
 
     for key, values in weighted_chances_by_floor.items():
@@ -195,10 +195,10 @@ def place_entities(room: RectangularRoom, dungeon: GameMap, floor_number: int) -
         0, get_max_value_for_floor(max_items_by_floor, floor_number)
     )
 
-    monsters: List[Entity] = get_entities_at_random(
+    monsters: List[MapEntity] = get_entities_at_random(
         enemy_chances, number_of_monsters, floor_number
     )
-    items: List[Entity] = get_entities_at_random(
+    items: List[MapEntity] = get_entities_at_random(
         item_chances, number_of_items, floor_number
     )
 

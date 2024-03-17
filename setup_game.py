@@ -6,7 +6,7 @@ import tcod
 import pickle
 import lzma
 
-import color
+import colors
 from engine import Engine
 import entity_factories
 from game_map import GameWorld
@@ -91,7 +91,7 @@ def new_game(player_class: FighterClass) -> Engine:
     engine.update_fov()
 
     engine.message_log.add_message(
-        "Hello and welcome, adventurer, to yet another dungeon!", color.welcome_text
+        "Hello and welcome, adventurer, to yet another dungeon!", colors.welcome_text
     )
 
     return engine

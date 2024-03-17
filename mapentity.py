@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
+from typing import List, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
 
+import colors
 from render_order import RenderOrder
 
 if TYPE_CHECKING:
     from components.ai import BaseAI
     from components.consumable import Consumable
+    from components.enemy import Enemy
     from components.equipment import Equipment
     from components.equippable import Equippable
     from components.fighter import Fighter
@@ -19,9 +21,9 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound="Entity")
 
 
-class Entity:
+class MapEntity:
     """
-    A generic object to represent players, enemies, items, etc.
+    A generic object to represent any object that appears on the dungeon map.
     """
 
     parent: Union[GameMap, Inventory]
@@ -32,7 +34,7 @@ class Entity:
         x: int = 0,
         y: int = 0,
         char: str = "?",
-        color: Tuple[int, int, int] = (255, 255, 255),
+        color: Tuple[int, int, int] = colors.white,
         name: str = "<Unnamed>",
         blocks_movement: bool = False,
         render_order: RenderOrder = RenderOrder.CORPSE,
@@ -56,8 +58,6 @@ class Entity:
     def spawn(self: T, game_map: GameMap, x: int, y: int) -> T:
         """Spawn a copy of this instance at the given location."""
         clone = copy.deepcopy(self)
-        if hasattr(clone, 'fighter'):
-            clone.fighter.roll_hit_dice()
         clone.x = x
         clone.y = y
         clone.parent = game_map
@@ -75,6 +75,28 @@ class Entity:
             self.parent = game_map
             game_map.entities.add(self)
 
+
+class Mover(MapEntity):
+    """A generic class for objects that can move around the map, i.e. the player and enemy groups"""
+    def __init__(
+        self,
+        *,
+        x: int = 0,
+        y: int = 0,
+        char: str = "?",
+        color: Tuple[int, int, int] = (255, 255, 255),
+        name: str = "<Unnamed>",
+    ):
+        super().__init__(
+            x=x,
+            y=y,
+            char=char,
+            color=color,
+            name=name,
+            blocks_movement=True,
+            render_order=RenderOrder.ACTOR,
+        )
+
     def distance(self, x: int, y: int) -> float:
         """
         Return the distance between the current entity and the given (x, y) coordinate.
@@ -87,7 +109,27 @@ class Entity:
         self.y += dy
 
 
-class Actor(Entity):
+class EnemyGroup(Mover):
+    def __init__(
+            self,
+            *,
+            x: int = 0,
+            y: int = 0,
+            enemies: List[Enemy],
+            ai_cls: Type[BaseAI],
+    ):
+        super().__init__(
+            x=x,
+            y=y,
+            char=enemies[0].char,
+            color=enemies[0].color,
+            name=', '.join([enemy.name for enemy in enemies]),
+        )
+        self.enemies = enemies
+        self.ai = ai_cls(self)
+
+
+class Player(Mover):
     def __init__(
         self,
         *,
@@ -108,8 +150,6 @@ class Actor(Entity):
             char=char,
             color=color,
             name=name,
-            blocks_movement=True,
-            render_order=RenderOrder.ACTOR,
         )
 
         self.ai: Optional[BaseAI] = ai_cls(self)
@@ -132,7 +172,7 @@ class Actor(Entity):
         return bool(self.ai)
 
 
-class Item(Entity):
+class Item(MapEntity):
     def __init__(
         self,
         *,

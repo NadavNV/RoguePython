@@ -1,10 +1,11 @@
+import colors
 from components.ai import HostileEnemy
 from components import consumable, equippable
 from components.equipment import Equipment
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
-from entity import Actor, Item
+from mapentity import Actor, Item
 from fighter_classes import FighterClass
 
 SCROLL_CHAR = '~'
@@ -25,8 +26,6 @@ player = Actor(
         agility=1,
         magic=1,
         hit_dice="2d10",
-        base_defense=1,
-        base_power=2,
         mana=20
     ),
     inventory=Inventory(capacity=26),
@@ -40,19 +39,19 @@ janitor = Actor(
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fighter=Fighter(
-        fighter_class=FighterClass.ROGUE, strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d8", base_defense=0, base_power=3
+        fighter_class=FighterClass.ROGUE, strength=1, perseverance=2, agility=4, magic=1, hit_dice="1d8",
     ),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=35),
 )
-Lumberjack = Actor(
+lumberjack = Actor(
     char="L",
     color=(0, 127, 0),
     name="Lumberjack",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
     fighter=Fighter(
-        fighter_class=FighterClass.WARRIOR, strength=1, perseverance=1, agility=1, magic=1, hit_dice="1d10", base_defense=1, base_power=4
+        fighter_class=FighterClass.WARRIOR, strength=5, perseverance=3, agility=3, magic=1, hit_dice="1d10",
     ),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),

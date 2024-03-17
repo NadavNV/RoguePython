@@ -7,7 +7,7 @@ from equipment_types import EquipmentType
 from weapon_types import WeaponType
 
 if TYPE_CHECKING:
-    from entity import Item
+    from mapentity import Item
     from components.equipment import Equipment
 
 
