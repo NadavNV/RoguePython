@@ -16,25 +16,6 @@ class Equipment(BaseComponent):
     items: Dict[EquipmentSlot, Equippable]
     parent: Fighter
 
-    armor_bonus: int
-
-    mainhand_attack_bonus: int
-    mainhand_min_damage: int
-    mainhand_max_damage: int
-
-    offhand_attack_bonus: int
-    offhand_min_damage: int
-    offhand_max_damage: int
-
-    spell_attack_bonus: int
-
-    strength_bonus: int
-    perseverance_bonus: int
-    agility_bonus: int
-    magic_bonus: int
-
-    avoidance_bonus: int
-
     def __init__(self):
         self.items = {slot: None for slot in EquipmentSlot}
 

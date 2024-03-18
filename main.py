@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import traceback
+import faulthandler
 
 import tcod
 
@@ -19,6 +20,7 @@ def save_game(handler: input_handlers.BaseEventHandler, filename: str) -> None:
 
 
 def main() -> None:
+    print("Starting main()")
     screen_width = setup_game.WINDOW_WIDTH
     screen_height = setup_game.WINDOW_HEIGHT
 
@@ -28,9 +30,9 @@ def main() -> None:
 
     handler: input_handlers.BaseEventHandler = input_handlers.MainMenu()
 
-    with tcod.context.new_terminal(
-        screen_width,
-        screen_height,
+    with tcod.context.new(
+        columns=screen_width,
+        rows=screen_height,
         tileset=tileset,
         title="Rogue Python",
         vsync=True,
@@ -66,4 +68,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    print("Starting")
+    faulthandler.enable()
     main()

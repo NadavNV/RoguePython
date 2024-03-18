@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import Tuple, TYPE_CHECKING
+from typing import Optional, Tuple, TYPE_CHECKING
+
+import numpy as np
 
 import colors
-import setup_game
 from components.fighter import Fighter
 
 if TYPE_CHECKING:
-    from tcod import Console
+    from tcod.console import Console
     from engine import Engine
     from game_map import GameMap
 
@@ -23,46 +24,61 @@ def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
     return names.capitalize()
 
 
+def render_bar(
+        console: Console,
+        total_width: int,
+        current_value: int,
+        maximum_value: int,
+        x: int,
+        y: int, bar_color: Tuple[int, int, int], name: str
+):
+    if maximum_value == 0:
+        bar_width = 0
+    else:
+        bar_width = int(float(current_value) / maximum_value * total_width)
+
+    console.draw_rect(
+        x=x,
+        y=y,
+        width=total_width,
+        height=1,
+        ch=1,
+        bg=colors.bar_empty
+    )
+
+    if bar_width >= 0:
+        console.draw_rect(
+            x=x, y=y, width=bar_width, height=1, ch=1, bg=bar_color
+        )
+
+        console.print(
+            x=2, y=y, string=f"{name}: {current_value}/{maximum_value}", fg=colors.bar_text
+        )
+
+
 def render_bars(
         console: Console, player: Fighter, total_width: int
 ) -> None:
     """Render the player's hit points and mana as data bars."""
 
-    def render_bar(current_value: int, maximum_value: int, x: int, y: int, bar_color: Tuple[int, int, int], name: str):
-        bar_width = int(float(current_value) / maximum_value * total_width)
-
-        console.draw_rect(
-            x=x,
-            y=y,
-            width=total_width,
-            height=1,
-            ch=1,
-            bg=colors.bar_empty
-        )
-
-        if bar_width > 0:
-            console.draw_rect(
-                x=x, y=y, width=bar_width, height=1, ch=1, bg=bar_color
-            )
-
-            console.print(
-                x=2, y=y, string=f"{name}: {current_value}/{maximum_value}", fg=colors.bar_text
-            )
-
     render_bar(
-        player.hp,
-        player.max_hp,
+        console=console,
+        current_value=player.hp,
+        maximum_value=player.max_hp,
+        total_width=total_width,
         x=1,
-        y=setup_game.WINDOW_HEIGHT * 2 // 3 + 2,
+        y=console.height * 2 // 3 + 2,
         bar_color=colors.bar_hp_filled,
         name="HP"
     )
 
     render_bar(
-        player.mana,
-        player.max_mana,
+        console=console,
+        current_value=player.mana,
+        maximum_value=player.max_mana,
+        total_width=total_width,
         x=1,
-        y=setup_game.WINDOW_HEIGHT * 2 // 3 + 4,
+        y=console.height * 2 // 3 + 4,
         bar_color=colors.bar_mana_filled,
         name="Mana"
     )
@@ -80,7 +96,7 @@ def render_dungeon_level(
 
 
 def render_names_at_mouse_location(
-    console: Console, x: int, y: int, engine: Engine
+        console: Console, x: int, y: int, engine: Engine
 ) -> None:
     mouse_x, mouse_y = engine.mouse_location
 
@@ -91,15 +107,15 @@ def render_names_at_mouse_location(
     console.print(x=x, y=y, string=names_at_mouse_location)
 
 
-def render_combat_ui(console: Console) -> None:
+def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
     console.draw_frame(
         x=0,
         y=0,
         width=console.width * 2 // 3,
         height=console.height * 2 // 3,
         clear=True,
-        fg=(255, 255, 255),
-        bg=(0, 0, 0)
+        fg=colors.white,
+        bg=colors.black
     )
 
     frame_x = console.width // 3
@@ -112,32 +128,68 @@ def render_combat_ui(console: Console) -> None:
         width=width,
         height=height,
         clear=True,
-        fg=(255, 255, 255),
-        bg=(0, 0, 0),
+        fg=colors.white,
+        bg=colors.black,
     )
+
+    if cursor is not None and np.array_equal(cursor, [0, 0]):
+        fg = colors.black
+        bg = colors.white
+    else:
+        fg = colors.white
+        bg = colors.black
 
     console.print(
         x=frame_x + width // 5,
         y=frame_y + height // 5,
-        string="Attack"
+        string="Attack",
+        fg=fg,
+        bg=bg,
     )
+
+    if cursor is not None and np.array_equal(cursor, [0, 1]):
+        fg = colors.black
+        bg = colors.white
+    else:
+        fg = colors.white
+        bg = colors.black
 
     console.print(
         x=frame_x + width // 5,
         y=frame_y + height * 3 // 5,
-        string="Run"
+        string="Run",
+        fg=fg,
+        bg=bg,
     )
+
+    if cursor is not None and np.array_equal(cursor, [1, 0]):
+        fg = colors.black
+        bg = colors.white
+    else:
+        fg = colors.white
+        bg = colors.black
 
     console.print(
         x=frame_x + width * 3 // 5,
         y=frame_y + height // 5,
-        string="Use ability"
+        string="Use ability",
+        fg=fg,
+        bg=bg,
     )
+
+    if cursor is not None and np.array_equal(cursor, [1, 1]):
+        fg = colors.black
+        bg = colors.white
+    else:
+        fg = colors.white
+        bg = colors.black
 
     console.print(
         x=frame_x + width * 3 // 5,
         y=frame_y + height * 3 // 5,
-        string="Use item"
+        string="Use item",
+        fg=fg,
+        bg=bg,
     )
 
 
@@ -183,3 +235,18 @@ def render_dungeon_ui(console: Console) -> None:
     console.print(x=frame_x + 1, y=frame_y + 4, string="[: Armor")
     console.print(x=frame_x + 1, y=frame_y + 5, string="!: Potion")
     console.print(x=frame_x + 1, y=frame_y + 6, string="~: Scroll")
+
+
+def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
+    """Renders the given enemy's sprite and HP bar at the given xy coordinates"""
+    console.draw_semigraphics(enemy.sprite, x=x, y=y)
+    render_bar(
+        console=console,
+        x=x,
+        y=y,
+        bar_color=colors.bar_hp_filled,
+        name='HP',
+        current_value=enemy.hp,
+        maximum_value=enemy.max_hp,
+        total_width=console.width // 8
+    )

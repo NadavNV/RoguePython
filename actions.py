@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from typing import Optional, Tuple, TYPE_CHECKING, Union
 
+import sys
+
 import colors
 import exceptions
 from equipment_slots import EquipmentSlot
-from mapentity import FighterGroup, Item
+from equipment_types import EquipmentType
+from mapentity import FighterGroup
 from components.fighter import Fighter
 
 if TYPE_CHECKING:
@@ -184,3 +187,115 @@ class BumpAction(ActionWithDirection):
 
         else:
             return MovementAction(self.entity, self.dx, self.dy).perform()
+
+
+class Ability(Action):
+    def __init__(self, caster: Fighter, cooldown: int = 0, name: str = "<Unnamed>", description: str = "<None>"):
+        super().__init__(entity=caster)
+        self.name = name,
+        self.description = description
+        self.cooldown = cooldown
+        self.cooldown_remaining = 0
+
+    def reduce_cooldown(self) -> None:
+        self.cooldown_remaining = max(0, self.cooldown_remaining - 1)
+
+    def start_cooldown(self) -> None:
+        self.cooldown_remaining = self.cooldown
+
+
+class TargetedAbility(Ability):
+    def __init__(
+            self,
+            caster: Fighter,
+            target: Optional[Fighter],
+            cooldown: int = 0,
+            name: str = "<Unnamed>",
+            description: str = "<None>"
+    ):
+        super().__init__(caster=caster, cooldown=cooldown, name=name, description=description)
+        self.target = target
+
+
+class WeaponAttack(TargetedAbility):
+    def __init__(
+            self,
+            caster: Fighter,
+            target: Fighter,
+            slot: EquipmentSlot,
+            cooldown: int = 0,
+            with_advantage: bool = False,
+    ):
+        super().__init__(
+            caster=caster,
+            cooldown=cooldown,
+            target=target
+        )
+        self.with_advantage = with_advantage
+        self.slot = slot
+
+    def perform(self) -> None:
+        attack_desc = f"{self.entity.name.capitalize()} attacks {self.target.name}"
+
+        if self.slot == EquipmentSlot.MAINHAND:
+            attack = self.entity.roll_mainhand_attack()
+            if self.with_advantage:
+                attack = max(attack, self.entity.roll_mainhand_attack())
+            if attack == sys.maxsize:  # Critical hit
+                attack_desc = f"{attack_desc} and critically hits"
+                damage = self.entity.roll_mainhand_damage()
+            else:
+                damage = 0
+        else:
+            if (self.entity.equipment.item_is_equipped(EquipmentSlot.OFFHAND) and
+                    self.entity.equipment.items[EquipmentSlot.OFFHAND].equipment_type == EquipmentType.WEAPON):
+                attack = self.entity.roll_offhand_attack()
+                if self.with_advantage:
+                    attack = max(attack, self.entity.roll_offhand_attack())
+                if attack == sys.maxsize:  # Critical hit
+                    attack_desc = f"{attack_desc} and critically hits"
+                    damage = self.entity.roll_mainhand_damage()
+                else:
+                    damage = 0
+                attack -= self.target.avoidance
+            else:
+                return
+
+        damage -= self.target.armor
+
+        if self.entity.parent is self.engine.player:
+            attack_color = colors.player_atk
+        else:
+            attack_color = colors.enemy_atk
+        if attack < 0:
+            self.engine.message_log.add_message(
+                f"{attack_desc} but misses.", attack_color
+            )
+        elif damage > 0:
+            self.engine.message_log.add_message(
+                f"{attack_desc} for {damage} hit points.", attack_color
+            )
+            self.target.hp -= damage
+        else:
+            self.engine.message_log.add_message(
+                f"{attack_desc} but does no damage.", attack_color
+            )
+
+
+class MeleeAttack(TargetedAbility):
+
+    def __init__(
+            self,
+            caster: Fighter,
+            target: Optional[Fighter],
+    ):
+        super().__init__(
+            caster=caster,
+            target=target,
+            name="Weapon Attack",
+            description="Attack a single enemy with your equipped weapons."
+        )
+
+    def perform(self) -> None:
+        WeaponAttack(caster=self.entity, target=self.target, slot=EquipmentSlot.MAINHAND).perform()
+        WeaponAttack(caster=self.entity, target=self.target, slot=EquipmentSlot.OFFHAND).perform()

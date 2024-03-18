@@ -1,3 +1,7 @@
+from PIL import Image
+import numpy as np
+
+
 white = (0xFF, 0xFF, 0xFF)
 black = (0x0, 0x0, 0x0)
 red = (0xFF, 0x0, 0x0)
@@ -30,3 +34,10 @@ bar_empty = (0x40, 0x10, 0x10)
 
 buff = (0x93, 0xC4, 0x7D)
 debuff = (0xE0, 0x66, 0x66)
+
+
+def image_to_rgb(filename: str) -> np.ndarray:
+    with Image.open(filename) as im:
+        data = im.convert('RGB').getdata()
+        data = np.array([(data[i], data[i+1], data[i+2]) for i in range(0, len(data), 3)])
+        return data.reshape(im.size)

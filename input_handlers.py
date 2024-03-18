@@ -4,17 +4,21 @@ import os.path
 import time
 from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 
+import numpy as np
+from PIL import Image
 import tcod
 from tcod import libtcodpy
 import textwrap
 import traceback
 
 import actions
+import render_functions
 from actions import (
     Action,
     BumpAction,
     PickupAction,
     WaitAction,
+    TargetedAbility
 )
 import colors
 import exceptions
@@ -35,6 +39,18 @@ MOVE_KEYS = {
     tcod.event.KeySym.KP_7: (-1, -1),
     tcod.event.KeySym.KP_8: (0, -1),
     tcod.event.KeySym.KP_9: (1, -1),
+}
+
+CURSOR_Y_KEYS = {
+    tcod.event.KeySym.UP: -1,
+    tcod.event.KeySym.DOWN: 1,
+    tcod.event.KeySym.PAGEUP: -10,
+    tcod.event.KeySym.PAGEDOWN: 10,
+}
+
+CURSOR_X_KEYS = {
+    tcod.event.KeySym.LEFT: -1,
+    tcod.event.KeySym.RIGHT: 1,
 }
 
 WAIT_KEYS = {
@@ -116,8 +132,11 @@ class EventHandler(BaseEventHandler):
                 # The player was killed some time during or after the action
                 return GameOverEventHandler(self.engine)
             elif self.engine.player.fighters[0].level.requires_level_up:
-                return LevelUpEventHandler(self.engine)
-            return MainGameEventHandler(self.engine)  # Return to the main handler.
+                return LevelUpEventHandler(self.engine, parent=self)
+            elif self.engine.in_combat:
+                return CombatEventHandler(self.engine)
+            else:
+                return MainGameEventHandler(self.engine)  # Return to the main handler.
         return self
 
     def handle_action(self, action: Optional[Action]) -> bool:
@@ -151,6 +170,10 @@ class EventHandler(BaseEventHandler):
 class AskUserEventHandler(EventHandler):
     """Handles user input for actions which require special input."""
 
+    def __init__(self, engine: Engine, parent: EventHandler):
+        super().__init__(engine)
+        self.parent = parent
+
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         """By default, any key exits this input handler."""
         if event.sym in {  # Ignore modifier keys.
@@ -175,7 +198,7 @@ class AskUserEventHandler(EventHandler):
 
         By default, this returns to the main event handler.
         """
-        return MainGameEventHandler(self.engine)
+        return self.parent
 
 
 class CharacterScreenEventHandler(AskUserEventHandler):
@@ -373,8 +396,8 @@ class LevelUpEventHandler(AskUserEventHandler):
             height=8,
             title=self.TITlE,
             clear=True,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+            fg=colors.white,
+            bg=colors.black,
         )
 
         console.print(x=x + 1, y=1, string="Congratulations! You level up!")
@@ -432,8 +455,8 @@ class InventoryEventHandler(AskUserEventHandler):
 
     TITLE = "<missing title>"
 
-    def __init__(self, engine: Engine):
-        super().__init__(engine)
+    def __init__(self, engine: Engine, parent: EventHandler):
+        super().__init__(engine, parent=parent)
         self.cursor = 0
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
@@ -512,7 +535,7 @@ class InventoryEventHandler(AskUserEventHandler):
                 return None
             return self.on_item_selected(selected_item)
         elif key == tcod.event.KeySym.ESCAPE:
-            return MainGameEventHandler(self.engine)
+            return self.parent
         return None  # super().ev_keydown(event)
 
     def on_item_selected(self, item: Item) -> Optional[ActionOrHandler]:
@@ -571,9 +594,9 @@ class InventoryDropHandler(InventoryEventHandler):
 class SelectIndexHandler(AskUserEventHandler):
     """Handles asking the user for an index on the map."""
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: Engine, parent: EventHandler):
         """Sets the curser to the player when this handler is constructed."""
-        super().__init__(engine)
+        super().__init__(engine, parent=parent)
         player = self.engine.player
         engine.mouse_location = player.x, player.y
 
@@ -637,9 +660,9 @@ class SingleRangedAttackHandler(SelectIndexHandler):
     """Handles targeting a single enemy. Only the enemy selected will be affected."""
 
     def __init__(
-            self, engine: Engine, callback: Callable[[Tuple[int, int]], Optional[Action]]
+            self, engine: Engine, callback: Callable[[Tuple[int, int]], Optional[Action]], parent: EventHandler
     ):
-        super().__init__(engine)
+        super().__init__(engine, parent)
 
         self.callback = callback
 
@@ -655,8 +678,9 @@ class AreaRangedAttackHandler(SelectIndexHandler):
             engine: Engine,
             radius: int,
             callback: Callable[[Tuple[int, int]], Optional[Action]],
+            parent: EventHandler,
     ):
-        super().__init__(engine)
+        super().__init__(engine, parent)
 
         self.radius = radius
         self.callback = callback
@@ -712,15 +736,15 @@ class MainGameEventHandler(EventHandler):
             action = PickupAction(player)
 
         elif key == tcod.event.KeySym.i:
-            return InventoryActivateHandler(self.engine)
+            return InventoryActivateHandler(self.engine, parent=self)
         elif key == tcod.event.KeySym.d:
-            return InventoryDropHandler(self.engine)
+            return InventoryDropHandler(self.engine, parent=self)
         elif key == tcod.event.KeySym.c:
-            return CharacterScreenEventHandler(self.engine)
+            return CharacterScreenEventHandler(self.engine, parent=self)
         elif key == tcod.event.KeySym.SLASH:
-            return LookHandler(self.engine)
+            return LookHandler(self.engine, parent=self)
         elif key == tcod.event.KeySym.u:
-            return UnequipEventHandler(self.engine)
+            return UnequipEventHandler(self.engine, parent=self)
 
         # No valid key was pressed
         return action
@@ -739,19 +763,6 @@ class GameOverEventHandler(EventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> None:
         if event.sym == tcod.event.KeySym.ESCAPE:
             self.on_quit()
-
-
-CURSOR_Y_KEYS = {
-    tcod.event.KeySym.UP: -1,
-    tcod.event.KeySym.DOWN: 1,
-    tcod.event.KeySym.PAGEUP: -10,
-    tcod.event.KeySym.PAGEDOWN: 10,
-}
-
-CURSOR_X_KEYS = {
-    tcod.event.KeySym.LEFT: -1,
-    tcod.event.KeySym.RIGHT: 1,
-}
 
 
 class HistoryViewer(EventHandler):
@@ -887,12 +898,12 @@ class IntroEventHandler(CutsceneEventHandler):
 
         for line in self.text.splitlines():
             if end > len(line):
-                console.print(x=x, y=y, string=line, fg=(255, 255, 255), bg=(0, 0, 0))
+                console.print(x=x, y=y, string=line, fg=colors.white, bg=colors.black)
                 end -= len(line)
                 x = console.width // 4
                 y += 1
             elif end > 0:
-                console.print(x=x, y=y, string=line[:end], fg=(255, 255, 255), bg=(0, 0, 0))
+                console.print(x=x, y=y, string=line[:end], fg=colors.white, bg=colors.black)
                 end = 0
             elif len(line) == 0:
                 y += 1
@@ -923,8 +934,8 @@ class EquipmentEventHandler(AskUserEventHandler):
 
     TITLE = "<missing title>"
 
-    def __init__(self, engine: Engine):
-        super().__init__(engine)
+    def __init__(self, engine: Engine, parent: EventHandler):
+        super().__init__(engine, parent)
         self.cursor = 0
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
@@ -1021,9 +1032,8 @@ class UnequipEventHandler(EquipmentEventHandler):
 
 class ChooseSlotEventHandler(AskUserEventHandler):
     def __init__(self, engine: Engine, item: Item, parent: EventHandler):
-        super().__init__(engine)
+        super().__init__(engine, parent)
         self.item = item
-        self.parent = parent
         self.cursor = 0
 
     def on_slot_selected(self, slot: EquipmentSlot) -> Optional[ActionOrHandler]:
@@ -1170,9 +1180,9 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
 
 
 class ClassSelectEventHandler(BaseEventHandler):
-    warrior_icon = tcod.image.load("images/warrior_icon.png")[:, :, :3]
-    rogue_icon = tcod.image.load("images/rogue_icon.png")[:, :, :3]
-    mage_icon = tcod.image.load("images/mage_icon.png")[:, :, :3]
+    warrior_icon = "images/warrior_icon.png"
+    rogue_icon = "images/rogue_icon.png"
+    mage_icon = "images/mage_icon.png"
 
     def __init__(self):
         self.cursor = 1  # Start with Rogue highlighted
@@ -1189,20 +1199,29 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg=(0, 0, 0),
         )
 
+        with Image.open(ClassSelectEventHandler.warrior_icon) as im:
+            sprite = np.array(im.convert('RGB').getdata()).reshape(im.size)
+
         console.draw_semigraphics(
-            ClassSelectEventHandler.warrior_icon,
+            sprite,
             x=console.width // 4 - console.width // 16,
             y=console.height // 8
         )
 
+        with Image.open(ClassSelectEventHandler.rogue_icon) as im:
+            sprite = np.array(im.convert('RGB').getdata()).reshape(im.size)
+
         console.draw_semigraphics(
-            ClassSelectEventHandler.rogue_icon,
+            sprite,
             x=console.width // 2 - console.width // 16 + 1,
             y=console.height // 8
         )
 
+        with Image.open(ClassSelectEventHandler.mage_icon) as im:
+            sprite = np.array(im.convert('RGB').getdata()).reshape(im.size)
+
         console.draw_semigraphics(
-            ClassSelectEventHandler.mage_icon,
+            sprite,
             x=console.width * 3 // 4 - console.width // 16,
             y=console.height // 8
         )
@@ -1309,8 +1328,9 @@ class ClassSelectEventHandler(BaseEventHandler):
 
 class MainMenu(BaseEventHandler):
     """Handle the main menu rendering and input."""
+
     # Load the background image and remove the alpha channel.
-    background_image = tcod.image.load("images/menu_background.png")[:, :, :3]
+    background_image = colors.image_to_rgb('images/menu_background.png')
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         """Render the main menu on a background image."""
@@ -1318,7 +1338,7 @@ class MainMenu(BaseEventHandler):
 
         menu_width = 24
         for i, text in enumerate(
-            ["[N] Play a new game", "[C] Continue last game", "[Q] Quit"]
+                ["[N] Play a new game", "[C] Continue last game", "[Q] Quit"]
         ):
             console.print(
                 console.width // 2,
@@ -1350,6 +1370,185 @@ class MainMenu(BaseEventHandler):
             return IntroEventHandler()
 
         return None
+
+
+class CombatEventHandler(EventHandler):
+    cursor: np.ndarray = np.array([0, 0])
+
+    def __init__(self, engine: Engine):
+        super().__init__(engine)
+        self.cursor = np.array([0, 0])
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        render_functions.render_combat_ui(console=console, cursor=self.cursor)
+
+        number_of_enemies = len(self.engine.active_enemies)
+
+        for i in range(number_of_enemies):
+            render_functions.render_enemy(
+                enemy=self.engine.active_enemies.fighters[i],
+                console=console,
+                x=console.width * (i + 1) // (number_of_enemies + 1),
+                y=console.height // 8,
+            )
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[BaseEventHandler]:
+        key = event.sym
+
+        if key in CURSOR_X_KEYS:
+            self.cursor[0] = (self.cursor[0] + CURSOR_X_KEYS[key]) % 2
+        elif key in CURSOR_Y_KEYS:
+            self.cursor[1] = (self.cursor[1] + CURSOR_Y_KEYS[key]) % 2
+        elif key == tcod.event.KeySym.ESCAPE:
+            raise SystemExit()
+        elif key in CONFIRM_KEYS:
+            if np.array_equal(self.cursor, (0, 1)):
+                return PopupMessage(parent_handler=self, text="You can't run, you don't have legs!")
+            elif np.array_equal(self.cursor, (0, 0)):
+                return SelectTargetEventHandler(
+                    engine=self.engine,
+                    action=self.engine.player.fighters[0].abilities[-1],  # Melee attack is always the least priority
+                    parent=self,
+                )
+            elif np.array_equal(self.cursor, (1, 0)):
+                return SelectAbilityEventHandler(self.engine, parent=self)
+            elif np.array_equal(self.cursor, (1, 1)):
+                return InventoryActivateHandler(self.engine, parent=self)
+
+
+class SelectTargetEventHandler(AskUserEventHandler):
+
+    def __init__(self, engine: Engine, parent: EventHandler, action: TargetedAbility):
+        super().__init__(engine, parent)
+        self.cursor = 0
+        self.number_of_enemies = len(self.engine.active_enemies)
+        self.engine.message_log.add_message(text="Select an enemy to target", stack=False)
+        self.action = action
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        self.parent.on_render(console)
+
+        for i in range(self.number_of_enemies):
+            console.draw_frame(
+                x=console.width * (i + 1) // (self.number_of_enemies + 1) - 1,
+                y=console.height // 8 - 1,
+                width=console.height // 8 + 2,
+                height=console.height // 4 + 2,
+                clear=False,
+                fg=colors.white,
+                bg=colors.black,
+            )
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+
+        if key in CURSOR_X_KEYS:
+            self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % self.number_of_enemies
+        elif key in CONFIRM_KEYS:
+            try:
+                self.action.target = self.engine.active_enemies[self.cursor]
+                return self.action
+            except IndexError:
+                self.engine.message_log.add_message("Invalid entry.", colors.invalid)
+                return self
+        elif key == tcod.event.KeySym.ESCAPE:
+            return self.parent
+
+
+class SelectAbilityEventHandler(AskUserEventHandler):
+    TITLE = "Select an ability to use"
+
+    def __init__(self, engine: Engine, parent: EventHandler):
+        super().__init__(engine, parent)
+        self.cursor = 0
+        self.number_of_abilities = len(self.engine.player[0].abilities)
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        self.parent.on_render(console)
+        console.rgb['fg'] //= 8
+        console.rgb['bg'] //= 8
+
+        self.number_of_abilities = len(self.engine.player[0].abilities)
+
+        if self.number_of_abilities == 0:
+            width = len(self.TITLE) + 4
+            height = 3
+        else:
+            width = len(self.TITLE) + 4
+            for ability in self.engine.player[0].abilities:
+                width = max(width, len(ability.name) + 2)
+            height = len(self.engine.player[0].abilities) + 2
+
+        console.draw_frame(
+            x=console.width // 4,
+            y=console.height // 8,
+            width=width,
+            height=height,
+            title=self.TITLE,
+            fg=colors.white,
+            bg=colors.black
+        )
+
+        for i, ability in enumerate(self.engine.player[0].abilities):
+            if self.cursor == i:
+                fg = colors.black
+                bg = colors.white
+            else:
+                fg = colors.white
+                bg = colors.black
+
+            console.print(
+                x=console.width // 4 + 1,
+                y=console.height // 8 + 1 + i,
+                string=ability.name,
+                fg=fg,
+                bg=bg
+            )
+
+        if self.number_of_abilities != 0:
+            x = console.width // 4 + 1 + width
+            y = console.height // 8
+            # Show a description of the ability
+            console.draw_frame(
+                x=x,
+                y=y,
+                width=console.width // 4 + 2,
+                height=height,
+                fg=colors.white,
+                bg=colors.black
+            )
+
+            text = wrap(self.engine.player[0].abilities[self.cursor].description, console.width // 4)
+
+            for line in text:
+                y += 1
+                console.print(
+                    x=x + 1,
+                    y=y,
+                    string=line,
+                    fg=colors.white,
+                    bg=colors.black
+                )
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+
+        if key in CURSOR_Y_KEYS:
+            self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % self.number_of_abilities
+        elif key in CONFIRM_KEYS:
+            ability = self.engine.player[0].abilities[self.cursor]
+            if isinstance(ability, TargetedAbility):
+                return SelectTargetEventHandler(engine=self.engine, parent=self, action=ability)
+            else:
+                return ability
+        elif key == tcod.event.KeySym.ESCAPE:
+            self.on_exit()
 
 
 if __name__ == "__main__":

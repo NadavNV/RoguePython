@@ -9,11 +9,11 @@ import entity_factories
 from game_map import GameMap
 from components.ai import RoamingEnemy
 import tile_types
+from mapentity import MapEntity, FighterGroup
+from components.fighter import Fighter
 
 if TYPE_CHECKING:
     from engine import Engine
-    from mapentity import MapEntity, FighterGroup
-    from components.fighter import Fighter
 
 Entity = Union[MapEntity, Fighter]
 

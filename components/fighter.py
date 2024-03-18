@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import sys
-from typing import List, Optional, Tuple, TYPE_CHECKING, Union
+from PIL import Image
+import numpy as np
+from typing import List, Tuple, TYPE_CHECKING
 
 import random
 
 import colors
-from components.base_component import BaseComponent, roll_dice
-from render_order import RenderOrder
+from components.base_component import BaseComponent
 from fighter_classes import FighterClass
 from equipment_slots import EquipmentSlot
 from weapon_types import WeaponType
@@ -18,7 +19,7 @@ from components.level import Level
 if TYPE_CHECKING:
     from engine import Engine
     from mapentity import FighterGroup
-    from components.ability import Ability
+    from actions import Ability
 
 BASE_AVOIDANCE = 10
 
@@ -61,10 +62,13 @@ class Fighter(BaseComponent):
             char: str = "?",
             color: Tuple[int, int, int] = colors.white,
             name: str = "<Unnamed>",
+            sprite: str = "images/rogue_icon.png"
     ):
         self.char = char
         self.name = name
         self.color = color
+        with Image.open(sprite) as im:
+            self.sprite = np.array(im.convert('RGB').getdata()).reshape(im.size)
 
         self.fighter_class = fighter_class
 
@@ -82,7 +86,9 @@ class Fighter(BaseComponent):
         self._mana = mana
 
         self.equipment = equipment
+        self.equipment.parent = self
         self.inventory = inventory
+        self.inventory.parent = self
         self.level = level
         self.abilities = [] if abilities is None else abilities
         self.ai = ai_cls(self)
@@ -167,7 +173,7 @@ class Fighter(BaseComponent):
 
         self.engine.message_log.add_message(death_message, death_message_color)
 
-        self.engine.player.level.add_xp(self.level.xp_given)
+        self.engine.player[0].level.add_xp(self.level.xp_given)
 
     def heal(self, amount: int) -> int:
         if self.hp == self.max_hp:

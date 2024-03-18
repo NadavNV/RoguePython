@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import List, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
+from typing import Iterable, List, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
 
 import colors
 from render_order import RenderOrder
@@ -122,6 +122,25 @@ class FighterGroup(MapEntity):
     def inventory(self) -> Inventory:
         """Return the player's inventory. Should only be used by the player group."""
         return self.fighters[0].inventory
+
+    def __len__(self) -> int:
+        return len(self.fighters)
+
+    def __iter__(self) -> Iterable:
+        return iter(self.fighters)
+
+    def __getitem__(self, key: int):
+        try:
+            item = self.fighters[key]
+        except IndexError:
+            raise
+        return item
+
+    def __setitem__(self, key: int, value: Fighter):
+        try:
+            self.fighters[key] = value
+        except IndexError:
+            raise
 
 
 class Item(MapEntity):

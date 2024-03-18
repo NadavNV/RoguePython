@@ -5,13 +5,14 @@ from typing import List, TYPE_CHECKING
 from components.base_component import BaseComponent
 
 if TYPE_CHECKING:
-    from mapentity import Actor, Item
+    from mapentity import Item
+    from components.fighter import Fighter
 
 MAX_STACK_SIZE = 99
 
 
 class Inventory(BaseComponent):
-    parent: Actor
+    parent: Fighter
 
     def __init__(self, capacity: int):
         self.capacity = capacity

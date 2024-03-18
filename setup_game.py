@@ -2,20 +2,16 @@
 from __future__ import annotations
 
 import copy
-import tcod
 import pickle
 import lzma
 
 import colors
 from engine import Engine
+from actions import MeleeAttack
 import entity_factories
 from game_map import GameWorld
 from equipment_slots import EquipmentSlot
 from fighter_classes import FighterClass
-
-
-# Load the background image and remove the alpha channel.
-background_image = tcod.image.load("images/menu_background.png")[:, :, :3]
 
 WINDOW_WIDTH = 128
 WINDOW_HEIGHT = 72
@@ -40,42 +36,38 @@ def new_game(player_class: FighterClass) -> Engine:
 
     player = copy.deepcopy(entity_factories.player)
 
-    # TODO: player is now a FighterGroup, fix accordingly
     if player_class == FighterClass.WARRIOR:
         print("Creating warrior")
-        player.fighter.fighter_class = FighterClass.WARRIOR
-        player.fighter.strength = 6
-        player.fighter.agility = 3
+        player.fighters[0].fighter_class = FighterClass.WARRIOR
+        player.fighters[0].strength = 6
+        player.fighters[0].agility = 3
 
         sword = copy.deepcopy(entity_factories.short_sword)
         armor = copy.deepcopy(entity_factories.chain_mail)
 
-        sword.parent = player.equipment
-        armor.parent = player.equipment
-
-        player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, sword, add_message=False)
-        player.equipment.equip_to_slot(EquipmentSlot.ARMOR, armor, add_message=False)
+        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, sword, add_message=False)
+        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, armor, add_message=False)
 
     elif player_class == FighterClass.ROGUE:
         print("Creating rogue")
-        player.fighter.fighter_class = FighterClass.ROGUE
-        player.fighter.strength = 3
-        player.fighter.agility = 6
+        player.fighters[0].fighter_class = FighterClass.ROGUE
+        player.fighters[0].strength = 3
+        player.fighters[0].agility = 6
 
         dagger = copy.deepcopy(entity_factories.dagger)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
-        dagger.parent = player.equipment
-        leather_armor.parent = player.equipment
-
-        player.equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
-        player.equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
+        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
+        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
 
     elif player_class == FighterClass.MAGE:
         print("Creating mage")
-        player.fighter.fighter_class = FighterClass.MAGE
-        player.fighter.magic = 6
-        player.fighter.agility = 3
+        player.fighters[0].fighter_class = FighterClass.MAGE
+        player.fighters[0].magic = 6
+        player.fighters[0].agility = 3
+
+    player.fighters[0].roll_hitpoints()
+    player[0].abilities.append(MeleeAttack(caster=player[0], target=None))
 
     engine = Engine(player=player)
 
