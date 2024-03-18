@@ -1199,8 +1199,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             bg=(0, 0, 0),
         )
 
-        with Image.open(ClassSelectEventHandler.warrior_icon) as im:
-            sprite = np.array(im.convert('RGB').getdata()).reshape(im.size)
+        sprite = colors.image_to_rgb(ClassSelectEventHandler.warrior_icon)
 
         console.draw_semigraphics(
             sprite,
@@ -1208,8 +1207,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             y=console.height // 8
         )
 
-        with Image.open(ClassSelectEventHandler.rogue_icon) as im:
-            sprite = np.array(im.convert('RGB').getdata()).reshape(im.size)
+        sprite = colors.image_to_rgb(ClassSelectEventHandler.rogue_icon)
 
         console.draw_semigraphics(
             sprite,
@@ -1217,8 +1215,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             y=console.height // 8
         )
 
-        with Image.open(ClassSelectEventHandler.mage_icon) as im:
-            sprite = np.array(im.convert('RGB').getdata()).reshape(im.size)
+        sprite = colors.image_to_rgb(ClassSelectEventHandler.mage_icon)
 
         console.draw_semigraphics(
             sprite,

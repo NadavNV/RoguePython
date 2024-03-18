@@ -20,7 +20,6 @@ def save_game(handler: input_handlers.BaseEventHandler, filename: str) -> None:
 
 
 def main() -> None:
-    print("Starting main()")
     screen_width = setup_game.WINDOW_WIDTH
     screen_height = setup_game.WINDOW_HEIGHT
 
@@ -68,6 +67,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    print("Starting")
-    faulthandler.enable()
     main()

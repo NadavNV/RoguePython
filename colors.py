@@ -1,5 +1,6 @@
 from PIL import Image
-import numpy as np
+
+from typing import List, Tuple
 
 
 white = (0xFF, 0xFF, 0xFF)
@@ -36,8 +37,13 @@ buff = (0x93, 0xC4, 0x7D)
 debuff = (0xE0, 0x66, 0x66)
 
 
-def image_to_rgb(filename: str) -> np.ndarray:
+def image_to_rgb(filename: str) -> List[List[Tuple[int, int, int]]]:
     with Image.open(filename) as im:
-        data = im.convert('RGB').getdata()
-        data = np.array([(data[i], data[i+1], data[i+2]) for i in range(0, len(data), 3)])
-        return data.reshape(im.size)
+        data = list(im.convert('RGB').getdata())
+        result = []
+        for y in range(im.height):
+            row = []
+            for x in range(im.width):
+                row.append(data[x + y * im.width])
+            result.append(list(row))
+        return result

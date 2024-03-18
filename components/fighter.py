@@ -68,7 +68,7 @@ class Fighter(BaseComponent):
         self.name = name
         self.color = color
         with Image.open(sprite) as im:
-            self.sprite = np.array(im.convert('RGB').getdata()).reshape(im.size)
+            self.sprite = colors.image_to_rgb(sprite)
 
         self.fighter_class = fighter_class
 
