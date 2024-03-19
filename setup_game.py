@@ -66,8 +66,9 @@ def new_game(player_class: FighterClass) -> Engine:
         player.fighters[0].magic = 6
         player.fighters[0].agility = 3
 
-    player.fighters[0].roll_hitpoints()
+    player[0].roll_hitpoints()
     player[0].abilities.append(MeleeAttack(caster=player[0], target=None))
+    player[0].parent = player
 
     engine = Engine(player=player)
 

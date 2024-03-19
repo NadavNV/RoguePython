@@ -117,3 +117,5 @@ class RoamingEnemy(BaseAI):
             ).perform()
 
         return WaitAction(self.entity).perform()
+
+# TODO: Add combat AI

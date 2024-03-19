@@ -1377,15 +1377,18 @@ class CombatEventHandler(EventHandler):
         self.cursor = np.array([0, 0])
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        super().on_render(console=console)
         render_functions.render_combat_ui(console=console, cursor=self.cursor)
 
         number_of_enemies = len(self.engine.active_enemies)
+
+        frame_width = console.width * 2 // 3
 
         for i in range(number_of_enemies):
             render_functions.render_enemy(
                 enemy=self.engine.active_enemies.fighters[i],
                 console=console,
-                x=console.width * (i + 1) // (number_of_enemies + 1),
+                x=frame_width * (i + 1) // (number_of_enemies + 1) - console.width // 16,
                 y=console.height // 8,
             )
 
@@ -1427,9 +1430,11 @@ class SelectTargetEventHandler(AskUserEventHandler):
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         self.parent.on_render(console)
 
+        frame_width = console.width * 2 // 3
+
         for i in range(self.number_of_enemies):
             console.draw_frame(
-                x=console.width * (i + 1) // (self.number_of_enemies + 1) - 1,
+                x=frame_width * (i + 1) // (self.number_of_enemies + 1) - console.width // 16 - 1,
                 y=console.height // 8 - 1,
                 width=console.height // 8 + 2,
                 height=console.height // 4 + 2,

@@ -74,7 +74,10 @@ def generate_fighter_groups(
         fighters = get_entities_at_random(enemy_chances, number_of_entities=number_of_monsters, floor=floor)
         for fighter in fighters:
             fighter.roll_hitpoints()
-        groups.append(FighterGroup(fighters=fighters, ai_cls=RoamingEnemy))
+        group = FighterGroup(fighters=fighters, ai_cls=RoamingEnemy)
+        for fighter in group:
+            fighter.parent = group
+        groups.append(group)
     return groups
 
 

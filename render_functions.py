@@ -52,11 +52,11 @@ def render_bar(
         )
 
         console.print(
-            x=2, y=y, string=f"{name}: {current_value}/{maximum_value}", fg=colors.bar_text
+            x=x + 1, y=y, string=f"{name}: {current_value}/{maximum_value}", fg=colors.bar_text
         )
 
 
-def render_bars(
+def render_player_bars(
         console: Console, player: Fighter, total_width: int
 ) -> None:
     """Render the player's hit points and mana as data bars."""

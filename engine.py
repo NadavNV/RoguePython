@@ -59,7 +59,7 @@ class Engine:
             height=console.height * 2 // 3 - 1,
         )
 
-        render_functions.render_bars(
+        render_functions.render_player_bars(
             console=console,
             player=self.player.fighters[0],
             total_width=console.width // 3 - 2,
@@ -72,7 +72,7 @@ class Engine:
         )
 
         if self.in_combat:
-            render_functions.render_combat_ui(console)
+            render_functions.render_combat_ui(console=console, cursor=None)
         else:
             self.game_map.render(console)
 
