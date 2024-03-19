@@ -17,7 +17,8 @@ from actions import (
     BumpAction,
     PickupAction,
     WaitAction,
-    TargetedAbility
+    TargetedAbility,
+    ItemAction,
 )
 import colors
 import exceptions
@@ -1501,7 +1502,7 @@ class CombatEventHandler(EventHandler):
 
 class SelectTargetEventHandler(AskUserEventHandler):
 
-    def __init__(self, engine: Engine, parent: EventHandler, action: TargetedAbility):
+    def __init__(self, engine: Engine, parent: EventHandler, action: Union[TargetedAbility, ItemAction]):
         super().__init__(engine, parent)
         self.cursor = 0
         self.number_of_enemies = len(self.engine.active_enemies)

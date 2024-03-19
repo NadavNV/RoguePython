@@ -67,18 +67,13 @@ class PickupAction(Action):
 
 class ItemAction(Action):
     def __init__(
-            self, entity: Actor, item: Item, target_xy: Optional[Tuple[int, int]] = None
+            self, entity: Actor, item: Item, target: Optional[Fighter] = None
     ):
         super().__init__(entity)
         self.item = item
-        if not target_xy:
-            target_xy = entity.x, entity.y
-        self.target_xy = target_xy
-
-    @property
-    def target_actor(self) -> Optional[Actor]:
-        """Return the actor at this action's destination."""
-        return self.engine.game_map.get_actor_at_location(*self.target_xy)
+        if not target:
+            target = entity
+        self.target = target
 
     def perform(self) -> None:
         """Invoke the item's ability, this action will be given to provide context."""
