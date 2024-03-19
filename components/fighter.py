@@ -11,6 +11,7 @@ import colors
 from components.base_component import BaseComponent
 from fighter_classes import FighterClass
 from equipment_slots import EquipmentSlot
+from equipment_types import EquipmentType
 from weapon_types import WeaponType
 from components.inventory import Inventory
 from components.equipment import Equipment
@@ -37,7 +38,7 @@ class Fighter(BaseComponent):
     3 points to spend when leveling up.
     Avoidance = 10 + Agility bonus.
     Armor reduces weapon damage, heavier armor penalizes Agility. (You're easier to hit, but you take less damage)
-    Proficiency bonus = 1 + level modulo 4, added to attack rolls with proficient weapons and spell attacks.
+    Proficiency bonus = 1 + level / 4, added to attack rolls with proficient weapons and spell attacks.
     Warrior is proficient with swords and axes, rogue is proficient with daggers, rapiers, and scimitars. Mage
     is proficient with spells.
     """
@@ -67,8 +68,7 @@ class Fighter(BaseComponent):
         self.char = char
         self.name = name
         self.color = color
-        with Image.open(sprite) as im:
-            self.sprite = colors.image_to_rgb(sprite)
+        self.sprite = colors.image_to_rgb(sprite)
 
         self.fighter_class = fighter_class
 
@@ -90,6 +90,7 @@ class Fighter(BaseComponent):
         self.inventory = inventory
         self.inventory.parent = self
         self.level = level
+        self.level.parent = self
         self.abilities = [] if abilities is None else abilities
         self.ai = ai_cls(self)
 
@@ -218,17 +219,13 @@ class Fighter(BaseComponent):
         else:
             return roll + attack_bonus
 
-    def roll_mainhand_attack(self) -> int:
-        return self.roll_attack(
-            self.weapon_crit_threshold,
-            self.mainhand_attack_bonus,
-        )
-
-    def roll_offhand_attack(self) -> int:
-        return self.roll_attack(
-            self.weapon_crit_threshold,
-            self.offhand_attack_bonus,
-        )
+    def roll_weapon_attack(self, slot: EquipmentSlot, advantage: bool = False):
+        if slot == EquipmentSlot.MAINHAND:
+            return self.roll_attack(self.weapon_crit_threshold, self.mainhand_attack_bonus, advantage=advantage)
+        elif slot == EquipmentSlot.OFFHAND and self.equipment.items[slot].equipment_type == EquipmentType.WEAPON:
+            return self.roll_attack(self.weapon_crit_threshold, self.offhand_attack_bonus, advantage=advantage)
+        else:
+            return 0
 
     def roll_spell_attack(self) -> int:
         return self.roll_attack(
@@ -250,10 +247,12 @@ class Fighter(BaseComponent):
     def engine(self) -> Engine:
         return self.parent.engine
 
-    def roll_mainhand_damage(self) -> int:
-        return (self.strength // 2 +
-                random.randint(self.equipment.mainhand_min_damage, self.equipment.mainhand_max_damage))
-    
-    def roll_offhand_damage(self) -> int:
-        return (self.strength // 2 +
-                random.randint(self.equipment.offhand_min_damage, self.equipment.offhand_max_damage))
+    def roll_weapon_damage(self, slot: EquipmentSlot):
+        if slot == EquipmentSlot.MAINHAND:
+            return (self.strength // 2 +
+                    random.randint(self.equipment.mainhand_min_damage, self.equipment.mainhand_max_damage))
+        elif slot == EquipmentSlot.OFFHAND and self.equipment.items[slot].equipment_type == EquipmentType.WEAPON:
+            return (self.strength // 2 +
+                    random.randint(self.equipment.offhand_min_damage, self.equipment.offhand_max_damage))
+        else:
+            return 0

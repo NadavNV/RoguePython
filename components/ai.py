@@ -6,10 +6,11 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 import numpy as np   # type: ignore
 import tcod
 
-from actions import Action, BumpAction, MovementAction, WaitAction
+from actions import Action, BumpAction, MovementAction, WaitAction, TargetedAbility
 
 if TYPE_CHECKING:
     from mapentity import FighterGroup
+    from components.fighter import Fighter
 
 
 class BaseAI(Action):
@@ -118,4 +119,16 @@ class RoamingEnemy(BaseAI):
 
         return WaitAction(self.entity).perform()
 
-# TODO: Add combat AI
+
+class HostileEnemy(BaseAI):
+    def __init__(self, entity: Fighter):
+        super().__init__(entity)
+
+    def perform(self) -> None:
+        for ability in self.entity.abilities:
+            if not ability.is_on_cooldown():
+                if isinstance(ability, TargetedAbility):
+                    ability.target = self.entity.engine.player[0]
+                ability.start_cooldown()
+                return ability.perform()
+

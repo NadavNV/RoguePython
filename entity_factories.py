@@ -1,5 +1,5 @@
 import colors
-from components.ai import RoamingEnemy
+from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
 from components.equipment import Equipment
 from components.fighter import Fighter
@@ -7,6 +7,7 @@ from components.inventory import Inventory
 from components.level import Level
 from mapentity import FighterGroup, Item
 from fighter_classes import FighterClass
+from actions import MeleeAttack
 
 SCROLL_CHAR = '~'
 POTION_CHAR = '!'
@@ -27,12 +28,14 @@ player = FighterGroup(
         char="@",
         color=colors.player_icon,
         name="Player",
-        ai_cls=RoamingEnemy,
+        ai_cls=HostileEnemy,
         inventory=Inventory(capacity=26),
         level=Level(level_up_base=200),
     )],
     ai_cls=RoamingEnemy
 )
+
+# TODO: Give enemies equipment
 
 janitor = Fighter(
     strength=2,
@@ -46,7 +49,7 @@ janitor = Fighter(
     color=colors.janitor_icon,
     name="Janitor",
     sprite='images/janitor_sprite.png',
-    ai_cls=RoamingEnemy,
+    ai_cls=HostileEnemy,
     equipment=Equipment(),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=35),
@@ -63,7 +66,7 @@ lumberjack = Fighter(
     color=colors.lumberjack_icon,
     name="Lumberjack",
     sprite='images/lumberjack_sprite.png',
-    ai_cls=RoamingEnemy,
+    ai_cls=HostileEnemy,
     equipment=Equipment(),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),

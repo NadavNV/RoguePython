@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import random
 from typing import Dict, Iterator, List, Tuple, TYPE_CHECKING, Union
 
@@ -11,6 +12,7 @@ from components.ai import RoamingEnemy
 import tile_types
 from mapentity import MapEntity, FighterGroup
 from components.fighter import Fighter
+from actions import MeleeAttack
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -70,10 +72,15 @@ def generate_fighter_groups(
 ) -> List[FighterGroup]:
     groups = []
     for i in range(number_of_groups):
+        # TODO: This needs to be redesigned to work without entity_factories
         number_of_monsters = random.randint(1, get_max_value_for_floor(max_enemies_per_group_by_floor, floor))
-        fighters = get_entities_at_random(enemy_chances, number_of_entities=number_of_monsters, floor=floor)
-        for fighter in fighters:
+        templates = get_entities_at_random(enemy_chances, number_of_entities=number_of_monsters, floor=floor)
+        fighters = []
+        for template in templates:
+            fighter = copy.deepcopy(template)
             fighter.roll_hitpoints()
+            fighter.abilities.append(MeleeAttack(caster=fighter, target=None))
+            fighters.append(fighter)
         group = FighterGroup(fighters=fighters, ai_cls=RoamingEnemy)
         for fighter in group:
             fighter.parent = group

@@ -67,7 +67,7 @@ class PickupAction(Action):
 
 class ItemAction(Action):
     def __init__(
-        self, entity: Actor, item: Item, target_xy: Optional[Tuple[int, int]] = None
+            self, entity: Actor, item: Item, target_xy: Optional[Tuple[int, int]] = None
     ):
         super().__init__(entity)
         self.item = item
@@ -192,7 +192,7 @@ class BumpAction(ActionWithDirection):
 class Ability(Action):
     def __init__(self, caster: Fighter, cooldown: int = 0, name: str = "<Unnamed>", description: str = "<None>"):
         super().__init__(entity=caster)
-        self.name = name,
+        self.name = name
         self.description = description
         self.cooldown = cooldown
         self.cooldown_remaining = 0
@@ -203,6 +203,9 @@ class Ability(Action):
     def start_cooldown(self) -> None:
         self.cooldown_remaining = self.cooldown
 
+    def is_on_cooldown(self) -> bool:
+        return self.cooldown_remaining > 0
+
 
 class TargetedAbility(Ability):
     def __init__(
@@ -210,7 +213,7 @@ class TargetedAbility(Ability):
             caster: Fighter,
             target: Optional[Fighter],
             cooldown: int = 0,
-            name: str = "<Unnamed>",
+            name: str = "<UnnamedTargetedAbility>",
             description: str = "<None>"
     ):
         super().__init__(caster=caster, cooldown=cooldown, name=name, description=description)
@@ -225,11 +228,15 @@ class WeaponAttack(TargetedAbility):
             slot: EquipmentSlot,
             cooldown: int = 0,
             with_advantage: bool = False,
+            name: str = "<WeaponAttack>",
+            description: str = "<Single weapon attack>"
     ):
         super().__init__(
             caster=caster,
             cooldown=cooldown,
-            target=target
+            target=target,
+            name=name,
+            description=description,
         )
         self.with_advantage = with_advantage
         self.slot = slot
@@ -237,31 +244,23 @@ class WeaponAttack(TargetedAbility):
     def perform(self) -> None:
         attack_desc = f"{self.entity.name.capitalize()} attacks {self.target.name}"
 
-        if self.slot == EquipmentSlot.MAINHAND:
-            attack = self.entity.roll_mainhand_attack()
-            if self.with_advantage:
-                attack = max(attack, self.entity.roll_mainhand_attack())
-            if attack == sys.maxsize:  # Critical hit
-                attack_desc = f"{attack_desc} and critically hits"
-                damage = self.entity.roll_mainhand_damage()
-            else:
-                damage = 0
+        if (
+                self.slot == EquipmentSlot.OFFHAND and
+                (
+                    not self.entity.equipment.item_is_equipped(self.slot) or
+                    self.entity.equipment.items[self.slot].equipment_type != EquipmentType.WEAPON
+                )
+        ):
+            # Don't attack with shield or magical focus, or empty slot
+            return
+        attack = self.entity.roll_weapon_attack(slot=self.slot, advantage=self.with_advantage)
+        if attack == sys.maxsize:  # Critical hit
+            attack_desc = f"{attack_desc} and critically hits"
+            damage = self.entity.roll_weapon_damage(self.slot)
         else:
-            if (self.entity.equipment.item_is_equipped(EquipmentSlot.OFFHAND) and
-                    self.entity.equipment.items[EquipmentSlot.OFFHAND].equipment_type == EquipmentType.WEAPON):
-                attack = self.entity.roll_offhand_attack()
-                if self.with_advantage:
-                    attack = max(attack, self.entity.roll_offhand_attack())
-                if attack == sys.maxsize:  # Critical hit
-                    attack_desc = f"{attack_desc} and critically hits"
-                    damage = self.entity.roll_mainhand_damage()
-                else:
-                    damage = 0
-                attack -= self.target.avoidance
-            else:
-                return
-
-        damage -= self.target.armor
+            damage = 0
+        attack -= self.target.avoidance
+        damage += self.entity.roll_weapon_damage(self.slot) - self.target.armor
 
         if self.entity.parent is self.engine.player:
             attack_color = colors.player_atk

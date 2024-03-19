@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
-from components.base_component import BaseComponent, roll_dice
+from components.base_component import BaseComponent
 
 if TYPE_CHECKING:
     from components.fighter import Fighter
@@ -31,7 +31,7 @@ class Level(BaseComponent):
 
     @property
     def requires_level_up(self) -> bool:
-        return self.current_xp > self.experience_to_next_level
+        return self.current_xp >= self.experience_to_next_level
 
     def add_xp(self, xp: int) -> None:
         if xp == 0 or self.level_up_base == 0:
@@ -46,37 +46,41 @@ class Level(BaseComponent):
                 f"You advance to level {self.current_level + 1}"
             )
 
-    def increase_level(self) -> None:
+    def increase_level(self, stats: List[str]) -> None:
         self.current_xp -= self.experience_to_next_level
-
         self.current_level += 1
+        for stat in stats:
+            self.increase_stat(stat)
 
         fighter = self.parent
         fighter.proficiency = 1 + self.current_level % 4
         fighter.roll_hitpoints()
 
-    def increase_max_hp(self, amount: int = 20) -> None:
+    def increase_stat(self, stat: str):
+        if stat == "Strength":
+            self.increase_strength()
+        elif stat == "Perseverance":
+            self.increase_perseverance()
+        elif stat == "Agility":
+            self.increase_agility()
+        elif stat == "Magic":
+            self.increase_magic()
+
+    def increase_perseverance(self) -> None:
+        self.parent.perseverance += 1
+        amount = self.parent.perseverance * self.current_level
         self.parent.max_hp += amount
         self.parent.hp += amount
 
-        self.engine.message_log.add_message("Your health improves!")
+    def increase_strength(self) -> None:
+        self.parent.strength += 1
 
-        self.increase_level()
+    def increase_agility(self) -> None:
+        self.parent.agility += 1
 
-    def increase_power(self, amount: int = 1) -> None:
-        self.parent.base_power += amount
-
-        self.engine.message_log.add_message("Your feel stronger!")
-
-        self.increase_level()
-
-    def increase_defense(self, amount: int = 1) -> None:
-        self.parent.base_defense += amount
-
-        self.engine.message_log.add_message("Your movements are getting swifter!")
-
-        self.increase_level()
+    def increase_magic(self) -> None:
+        self.parent.magic += 1
 
     @property
     def proficiency(self) -> int:
-        return 1 + self.current_level % 4
+        return 1 + self.current_level // 4
