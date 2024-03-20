@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import Iterable, List, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
 
 import colors
 from render_order import RenderOrder
@@ -86,6 +86,7 @@ class FighterGroup(MapEntity):
             y: int = 0,
             fighters: List[Fighter],
             ai_cls: Type[BaseAI],
+            gold: int = 0,
     ):
         super().__init__(
             x=x,
@@ -98,6 +99,7 @@ class FighterGroup(MapEntity):
         )
         self.fighters = fighters
         self.ai = ai_cls(self)
+        self.gold = gold
 
     @property
     def is_alive(self) -> bool:
@@ -147,11 +149,14 @@ class Item(MapEntity):
     def __init__(
         self,
         *,
+        sell_price: int,  # Amount of gold the player gets when selling this item
+        buy_price: int,  # Amount of gold required to buy this item
         x: int = 0,
         y: int = 0,
         char: str = "?",
         color: Tuple[int, int, int] = (255, 255, 255),
         name: str = "<Unnamed>",
+        description: str = "<None>",
         consumable: Optional[Consumable] = None,
         equippable: Optional[Equippable] = None,
         stackable: bool = False
@@ -165,6 +170,9 @@ class Item(MapEntity):
             blocks_movement=False,
             render_order=RenderOrder.ITEM,
         )
+        self.description = description
+        self.sell_price = sell_price
+        self.buy_price = buy_price
 
         self.consumable = consumable
 
@@ -177,3 +185,42 @@ class Item(MapEntity):
             self.equippable.parent = self
 
         self.stackable = stackable
+
+
+class Trader(MapEntity):
+    NUMBER_OF_ITEMS = 7
+
+    def __init__(
+            self,
+            parent: GameMap,
+            current_floor: int,
+            x: int = 0,
+            y: int = 0,
+    ):
+        super().__init__(
+            parent=parent,
+            x=x,
+            y=y,
+            char="@",
+            color=colors.trader_icon,
+            name="Trader",
+            blocks_movement=True,
+            render_order=RenderOrder.ACTOR,
+        )
+        self.items = {}
+
+    def sell_item(self, item_name: str) -> Item:
+        for item, amount in self.items.items():
+            if item.name == item_name and amount > 0:
+                self.items[item] -= 1
+                return copy.deepcopy(item)
+
+    def buy_item(self, item: Item) -> int:
+        if not item.stackable:
+            self.items[item] = 1
+        else:
+            for key in self.items:
+                if key.name == item.name:
+                    self.items[key] += 1
+                    break
+        return item.sell_price

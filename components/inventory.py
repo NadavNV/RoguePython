@@ -1,4 +1,5 @@
 from __future__ import annotations
+import random
 
 from typing import List, TYPE_CHECKING
 
@@ -14,16 +15,17 @@ MAX_STACK_SIZE = 99
 class Inventory(BaseComponent):
     parent: Fighter
 
-    def __init__(self, capacity: int):
+    def __init__(self, capacity: int, min_gold: int, max_gold: int):
         self.capacity = capacity
         self.items: List[List[Item]] = []
+        self.gold = random.randint(min_gold, max_gold)
 
     def drop(self, item: Item) -> None:
         """
         Removes an item from the inventory and restores it to the game map, at the player's current location.
         """
         self.remove_item(item)
-        item.place(self.parent.x, self.parent.y, self.game_map)
+        item.place(self.parent.parent.x, self.parent.parent.y, self.game_map)
 
         self.engine.message_log.add_message(f"You dropped the {item.name}.")
 

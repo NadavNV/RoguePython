@@ -20,6 +20,7 @@ from actions import (
     TargetedAbility,
     ItemAction,
 )
+from components.equippable import Weapon
 import colors
 import exceptions
 from equipment_slots import EquipmentSlot
@@ -115,8 +116,8 @@ class PopupMessage(BaseEventHandler):
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         """Render the parent and dim the result, then print the message on top."""
         self.parent.on_render(console)
-        console.rgb["fg"] //= 8
-        console.rgb["bg"] //= 8
+        console.rgb["fg"] //= 2
+        console.rgb["bg"] //= 2
 
         console.print(
             console.width // 2,
@@ -146,16 +147,14 @@ class EventHandler(BaseEventHandler):
         if self.handle_action(action_or_state):
             # A valid action was performed.
             if not self.engine.player.is_alive:
+                print("Player is dead.")
                 # The player was killed some time during or after the action
                 return GameOverEventHandler(self.engine)
-            elif self.engine.player.fighters[0].level.requires_level_up:
-                return LevelUpEventHandler(self.engine, parent=self)
             elif self.engine.in_combat:
                 if not self.engine.active_enemies.is_alive:
-                    # TODO: Handle loot from combat
                     self.engine.game_map.entities.remove(self.engine.active_enemies)
                     self.engine.in_combat = False
-                    return MainGameEventHandler(self.engine)
+                    return LootEventHandler(engine=self.engine, parent=MainGameEventHandler(self.engine))
                 else:
                     return CombatEventHandler(self.engine)
             else:
@@ -187,6 +186,8 @@ class EventHandler(BaseEventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         self.engine.render(console)
+        if self.engine.player.fighters[0].level.requires_level_up:
+            return LevelUpEventHandler(self.engine, parent=self)
         return self
 
 
@@ -229,8 +230,8 @@ class CharacterScreenEventHandler(AskUserEventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         super().on_render(console)
-        console.rgb["fg"] //= 8
-        console.rgb["bg"] //= 8
+        console.rgb["fg"] //= 2
+        console.rgb["bg"] //= 2
 
         player = self.engine.player[0]
 
@@ -244,10 +245,19 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             y=y,
             width=width,
             height=11,
-            title=self.TITLE,
             clear=True,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string=f"┤{self.TITLE}├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         console.print(x=x + 1, y=y + 1, string="Strength:")
@@ -376,10 +386,19 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             y=y,
             width=width,
             height=14,
-            title="Equipment",
             clear=True,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string=f"┤Equipment├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         equipment = player.equipment.list_equipped_items()
@@ -428,7 +447,9 @@ class CharacterScreenEventHandler(AskUserEventHandler):
 
 
 class LevelUpEventHandler(AskUserEventHandler):
-    TITlE = "Level Up"
+    TITLE = "Level Up"
+    WINDOW_WIDTH = len('perseverance') * 3 + 6
+    WINDOW_HEIGHT = 12
 
     def __init__(self, engine: Engine, parent: EventHandler):
         super().__init__(engine=engine, parent=parent)
@@ -437,17 +458,26 @@ class LevelUpEventHandler(AskUserEventHandler):
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         super().on_render(console)
 
-        x = console.width // 2 - 21
+        x = (console.width - self.WINDOW_WIDTH) // 2
 
         console.draw_frame(
             x=x,
             y=1,
-            width=42,
-            height=12,
-            title=self.TITlE,
+            width=self.WINDOW_WIDTH,
+            height=self.WINDOW_HEIGHT,
             clear=True,
             fg=colors.white,
             bg=colors.black,
+        )
+        console.print_box(
+            x=x,
+            y=1,
+            width=self.WINDOW_WIDTH,
+            height=1,
+            string=f"┤{self.TITLE}├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         console.print(x=x + 1, y=2, string="Congratulations! You level up!")
@@ -487,7 +517,6 @@ class LevelUpEventHandler(AskUserEventHandler):
         return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
-        player = self.engine.player
         key = event.sym
 
         if key == tcod.event.KeySym.ESCAPE:
@@ -550,26 +579,32 @@ class InventoryEventHandler(AskUserEventHandler):
         if height <= 3:
             height = 3
 
-        if self.engine.player.x <= self.engine.game_map.width // 2 - 10:
-            x = self.engine.game_map.width // 2
-        else:
-            x = 0
-
         y = 0
 
         width = len(self.TITLE) + 4
         if number_of_items_in_inventory != 0:
             width = max(max([len(line) for line in self.engine.player.inventory.list_items()]) + 7, width)
 
+        x = console.width // 2 - width
+
         console.draw_frame(
             x=x,
             y=y,
             width=width,
             height=height,
-            title=self.TITLE,
             clear=True,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string=f"┤{self.TITLE}├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         if number_of_items_in_inventory > 0:
@@ -580,6 +615,25 @@ class InventoryEventHandler(AskUserEventHandler):
                 y=y + 1,
                 cursor=self.cursor,
             )
+            console.draw_frame(
+                x=console.width // 2 + 1,
+                y=0,
+                width=console.width // 4,
+                height=max(height, console.height // 3),
+                fg=colors.white,
+                bg=colors.black
+            )
+            console.print(
+                x=console.width // 2 + 2,
+                y=1,
+                string=wrap(
+                    text=self.engine.player.inventory.items[self.cursor][0].description,
+                    width=console.width // 4 - 2
+                ),
+                fg=colors.white,
+                bg=colors.black
+            )
+
         else:
             console.print(x + 1, y + 1, "(Empty)")
 
@@ -636,7 +690,7 @@ class InventoryActivateHandler(InventoryEventHandler):
 
                 if not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND):
                     return actions.EquipAction(player, item=item, slot=EquipmentSlot.MAINHAND)
-                elif (
+                elif isinstance(item.equippable, Weapon) and (
                         not item.equippable.offhand
                         or player.equipment.items[EquipmentSlot.MAINHAND].two_handed
                 ):
@@ -829,7 +883,8 @@ class MainGameEventHandler(EventHandler):
 
 
 class GameOverEventHandler(EventHandler):
-    def on_quit(self):
+    @staticmethod
+    def on_quit():
         """Handle exiting out of a finished game."""
         if os.path.exists("savegame.sav"):
             os.remove("savegame.sav")  # Deletes the active save file.
@@ -841,6 +896,11 @@ class GameOverEventHandler(EventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> None:
         if event.sym == tcod.event.KeySym.ESCAPE:
             self.on_quit()
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        self.engine.in_combat=False
+        MainGameEventHandler(self.engine).on_render(console)
+        return self
 
 
 class HistoryViewer(EventHandler):
@@ -1045,10 +1105,19 @@ class EquipmentEventHandler(AskUserEventHandler):
             y=y,
             width=width,
             height=height,
-            title=self.TITLE,
             clear=True,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+            fg=colors.white,
+            bg=colors.black,
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string=f"┤{self.TITLE}├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         print_menu(
@@ -1109,6 +1178,8 @@ class UnequipEventHandler(EquipmentEventHandler):
 
 
 class ChooseSlotEventHandler(AskUserEventHandler):
+    TITLE = "<missing title>"
+
     def __init__(self, engine: Engine, item: Item, parent: EventHandler):
         super().__init__(engine, parent)
         self.item = item
@@ -1121,13 +1192,14 @@ class ChooseSlotEventHandler(AskUserEventHandler):
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         # Renders the previews UI but dimmed
         self.parent.on_render(console)
-        console.rgb["fg"] //= 8
-        console.rgb["bg"] //= 8
+        console.rgb["fg"] //= 2
+        console.rgb["bg"] //= 2
 
         return self
 
 
 class EquipWeaponEventHandler(ChooseSlotEventHandler):
+    TITLE = "Select weapon to replace"
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         player = self.engine.player.fighters[0]
@@ -1138,9 +1210,7 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
             player.equipment.items[EquipmentSlot.OFFHAND].name
         ]
 
-        title = "Select weapon to replace"
-
-        width = max(len(title), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
+        width = max(len(self.TITLE), len(equipped_weapons[0]), len(equipped_weapons[1])) + 2
         height = 4
         x = (console.width - width) // 2
         y = (console.height - height) // 2
@@ -1150,10 +1220,19 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
             y=y,
             width=width,
             height=height,
-            title=title,
             clear=True,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+            fg=colors.white,
+            bg=colors.black,
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string=f"┤{self.TITLE}├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         for i in range(2):
@@ -1193,6 +1272,7 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
 
 
 class EquipTrinketEventHandler(ChooseSlotEventHandler):
+    TITLE = "Select trinket to replace"
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         player = self.engine.player.fighters[0]
@@ -1203,9 +1283,7 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
             player.equipment.items[EquipmentSlot.TRINKET2].name
         ]
 
-        title = "Select trinket to replace"
-
-        width = max(len(title), len(equipped_trinkets[0]), len(equipped_trinkets[1])) + 2
+        width = max(len(self.TITLE), len(equipped_trinkets[0]), len(equipped_trinkets[1])) + 2
         height = 4
         x = (console.width - width) // 2
         y = (console.height - height) // 2
@@ -1215,10 +1293,19 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
             y=y,
             width=width,
             height=height,
-            title=title,
             clear=True,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string=f"┤{self.TITLE}├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         for i in range(2):
@@ -1272,9 +1359,18 @@ class ClassSelectEventHandler(BaseEventHandler):
             y=0,
             width=console.width,
             height=console.height * 2 // 3,
-            title="Choose a class",
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+            fg=colors.white,
+            bg=colors.black,
+        )
+        console.print_box(
+            x=0,
+            y=0,
+            width=console.width,
+            height=1,
+            string=f"┤Choose a class├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         sprite = colors.image_to_rgb(ClassSelectEventHandler.warrior_icon)
@@ -1354,9 +1450,18 @@ class ClassSelectEventHandler(BaseEventHandler):
             y=console.height * 2 // 3,
             height=console.height // 3,
             width=console.width,
-            title="Class Description:",
             fg=(255, 255, 255),
             bg=(0, 0, 0)
+        )
+        console.print_box(
+            x=0,
+            y=console.height * 2 // 3,
+            width=console.width,
+            height=1,
+            string=f"┤Class Description├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         class_descriptions = [
@@ -1553,8 +1658,8 @@ class SelectAbilityEventHandler(AskUserEventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         self.parent.on_render(console)
-        console.rgb['fg'] //= 8
-        console.rgb['bg'] //= 8
+        console.rgb['fg'] //= 2
+        console.rgb['bg'] //= 2
 
         self.number_of_abilities = len(self.engine.player[0].abilities)
 
@@ -1572,9 +1677,18 @@ class SelectAbilityEventHandler(AskUserEventHandler):
             y=console.height // 8,
             width=width,
             height=height,
-            title=self.TITLE,
             fg=colors.white,
             bg=colors.black
+        )
+        console.print_box(
+            x=console.width // 4,
+            y=console.height // 8,
+            width=width,
+            height=1,
+            string=f"┤{self.TITLE}├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
         )
 
         for i, ability in enumerate(self.engine.player[0].abilities):
@@ -1601,22 +1715,20 @@ class SelectAbilityEventHandler(AskUserEventHandler):
                 x=x,
                 y=y,
                 width=console.width // 4 + 2,
-                height=height,
+                height=max(height, console.height // 3),
                 fg=colors.white,
                 bg=colors.black
             )
 
             text = wrap(self.engine.player[0].abilities[self.cursor].description, console.width // 4)
 
-            for line in text:
-                y += 1
-                console.print(
-                    x=x + 1,
-                    y=y,
-                    string=line,
-                    fg=colors.white,
-                    bg=colors.black
-                )
+            console.print(
+                x=x + 1,
+                y=y + 1,
+                string=text,
+                fg=colors.white,
+                bg=colors.black
+            )
 
         return self
 
@@ -1633,6 +1745,119 @@ class SelectAbilityEventHandler(AskUserEventHandler):
                 return ability
         elif key == tcod.event.KeySym.ESCAPE:
             return self.parent
+
+
+class LootEventHandler(AskUserEventHandler):
+    TEXT = "Choose which items to pick up:"
+
+    def __init__(self, engine: Engine, parent: EventHandler) -> None:
+        super().__init__(engine=engine, parent=parent)
+        self.items: List[Item] = []
+        self.gold = self.engine.active_enemies.gold
+        for enemy in self.engine.active_enemies.fighters:
+            for equippable in enemy.equipment.items.values():
+                if equippable is not None:
+                    self.items.append(equippable.parent)
+        self.cursor = 0
+        self.height = 8 + len(self.items)
+        self.width = 4 + max(
+            len(self.TEXT),
+            max([len(item.name) for item in self.items]),
+            len(f"You also pick up {self.gold} gold pieces!")
+        )
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        self.parent.on_render(console)
+        console.rgb["fg"] //= 2
+        console.rgb["bg"] //= 2
+
+        x = (console.width - self.width) // 2
+        y = (console.height - self.height) // 2
+
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=self.width,
+            height=self.height,
+            fg=colors.white,
+            bg=colors.black
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=self.width,
+            height=1,
+            string=f"┤Loot├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
+        )
+
+        console.print_box(
+            x=x,
+            y=y + 2,
+            width=self.width,
+            height=1,
+            string=self.TEXT,
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
+        )
+
+        for i, item in enumerate(self.items):
+            if self.cursor == i:
+                fg = colors.black
+                bg = colors.white
+            else:
+                fg = colors.white
+                bg = colors.black
+            console.print(
+                x=x + 2,
+                y=y + 4 + i,
+                string=item.name,
+                fg=fg,
+                bg=bg
+            )
+
+        console.print_box(
+            x=x,
+            y=y + self.height - 3,
+            width=self.width,
+            height=1,
+            string=f"You also pick up {self.gold} gold pieces!",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
+        )
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+
+        if key in CONFIRM_KEYS:
+            self.engine.player[0].inventory.add_item(self.items.pop(self.cursor))
+            self.cursor = max(self.cursor, len(self.items) - 1)
+            if len(self.items) == 0:
+                self.engine.player[0].inventory.gold += self.gold
+                return self.parent
+        elif key in CURSOR_Y_KEYS:
+            self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % len(self.items)
+            return self
+        elif key == tcod.event.KeySym.ESCAPE:
+            self.engine.player[0].inventory.gold += self.gold
+
+            for item in self.items:
+                item.x = self.engine.player.x
+                item.y = self.engine.player.y
+                self.engine.game_map.entities.add(item)
+
+            return self.parent
+
+        return self
+
+    def ev_mousebuttondown(self, event: tcod.event.MouseButtonDown) -> Optional[ActionOrHandler]:
+        return self
 
 
 if __name__ == "__main__":

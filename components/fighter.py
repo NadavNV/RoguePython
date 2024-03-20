@@ -53,7 +53,7 @@ class Fighter(BaseComponent):
             max_hp_per_level: int,
             fighter_class: FighterClass,
             ai_cls,
-            inventory: Inventory = Inventory(26),
+            inventory: Inventory = Inventory(capacity=26, min_gold=0, max_gold=0),
             equipment: Equipment = Equipment(),
             level: Level = Level(),
             abilities: List[Ability] = None,

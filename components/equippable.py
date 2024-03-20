@@ -88,13 +88,44 @@ class Dagger(Weapon):
         )
 
 
+class Club(Weapon):
+    def __init__(self) -> None:
+        super().__init__(
+            weapon_type=WeaponType.STRENGTH,
+            equipment_type=EquipmentType.WEAPON,
+            min_damage=1,
+            max_damage=4,
+            offhand=True
+        )
+
+
 class ShortSword(Weapon):
     def __init__(self) -> None:
         super().__init__(
             weapon_type=WeaponType.FINESSE,
             equipment_type=EquipmentType.WEAPON,
-            min_damage=2,
-            max_damage=6
+            min_damage=1,
+            max_damage=5
+        )
+
+
+class Broom(Weapon):
+    def __init__(self) -> None:
+        super().__init__(
+            weapon_type=WeaponType.AGILITY,
+            equipment_type=EquipmentType.WEAPON,
+            min_damage=1,
+            max_damage=3
+        )
+
+
+class Handaxe(Weapon):
+    def __init__(self) -> None:
+        super().__init__(
+            weapon_type=WeaponType.STRENGTH,
+            equipment_type=EquipmentType.WEAPON,
+            min_damage=1,
+            max_damage=4
         )
 
 

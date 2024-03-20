@@ -1,7 +1,5 @@
+import numpy as np
 from PIL import Image
-
-from typing import List, Tuple
-
 
 white = (0xFF, 0xFF, 0xFF)
 black = (0x0, 0x0, 0x0)
@@ -27,6 +25,7 @@ health_recovered = (0x0, 0xFF, 0x0)
 player_icon = (0x3F, 0x7F, 0x3F)
 janitor_icon = (0x6F, 0x8F, 0xAF)
 lumberjack_icon = (0xC7, 0x0, 0x39)
+trader_icon = (0xFF, 0xFF, 0xFF)
 
 bar_text = white
 
@@ -38,7 +37,7 @@ buff = (0x93, 0xC4, 0x7D)
 debuff = (0xE0, 0x66, 0x66)
 
 
-def image_to_rgb(filename: str) -> List[List[Tuple[int, int, int]]]:
+def image_to_rgb(filename: str) -> np.ndarray:
     with Image.open(filename) as im:
         data = list(im.convert('RGB').getdata())
         result = []
@@ -47,4 +46,4 @@ def image_to_rgb(filename: str) -> List[List[Tuple[int, int, int]]]:
             for x in range(im.width):
                 row.append(data[x + y * im.width])
             result.append(list(row))
-        return result
+        return np.array(result)

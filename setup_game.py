@@ -42,10 +42,10 @@ def new_game(player_class: FighterClass) -> Engine:
         player.fighters[0].strength = 6
         player.fighters[0].agility = 3
 
-        sword = copy.deepcopy(entity_factories.short_sword)
-        armor = copy.deepcopy(entity_factories.chain_mail)
+        club = copy.deepcopy(entity_factories.club)
+        armor = copy.deepcopy(entity_factories.leather_armor)
 
-        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, sword, add_message=False)
+        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, club, add_message=False)
         player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, armor, add_message=False)
 
     elif player_class == FighterClass.ROGUE:
