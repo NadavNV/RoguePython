@@ -1758,6 +1758,8 @@ class LootEventHandler(AskUserEventHandler):
             for equippable in enemy.equipment.items.values():
                 if equippable is not None:
                     self.items.append(equippable.parent)
+            for stack in enemy.inventory.items:
+                self.items += stack
         self.cursor = 0
         self.height = 8 + len(self.items)
         self.width = 4 + max(
@@ -1837,7 +1839,7 @@ class LootEventHandler(AskUserEventHandler):
 
         if key in CONFIRM_KEYS:
             self.engine.player[0].inventory.add_item(self.items.pop(self.cursor))
-            self.cursor = max(self.cursor, len(self.items) - 1)
+            self.cursor = min(self.cursor, len(self.items) - 1)
             if len(self.items) == 0:
                 self.engine.player[0].inventory.gold += self.gold
                 return self.parent

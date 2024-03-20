@@ -6,7 +6,8 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 import numpy as np  # type: ignore
 import tcod
 
-from actions import Action, BumpAction, MovementAction, WaitAction, TargetedAbility, MeleeAttack
+from components.consumable import HealingConsumable
+from actions import Action, BumpAction, MovementAction, WaitAction, TargetedAbility, MeleeAttack, ItemAction
 
 if TYPE_CHECKING:
     from mapentity import FighterGroup
@@ -113,6 +114,12 @@ class HostileEnemy(BaseAI):
         super().__init__(entity)
 
     def perform(self) -> None:
+
+        if self.entity.hp < self.entity.max_hp // 2:
+            for stack in self.entity.inventory.items:
+                item = stack[0]
+                if item.consumable is not None and isinstance(item.consumable, HealingConsumable):
+                    return item.consumable.activate(ItemAction(entity=self.entity, item=item))
         for ability in self.entity.abilities:
             if not ability.is_on_cooldown():
                 if isinstance(ability, TargetedAbility):

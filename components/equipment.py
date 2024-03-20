@@ -25,6 +25,7 @@ class Equipment(BaseComponent):
         self.magic_bonus = 0
         self.armor_bonus = 0
         self.avoidance_bonus = 0
+        self.magic_resistance = 0
         self.spell_attack_bonus = 0
 
         self.mainhand_attack_bonus = 0

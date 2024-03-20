@@ -116,10 +116,11 @@ class HealingConsumable(Consumable):
         amount_recovered = consumer.heal(amount)
 
         if amount_recovered > 0:
-            self.engine.message_log.add_message(
-                f"You consumer the {self.parent.name}, and recover {amount_recovered} HP!",
-                colors.health_recovered,
-            )
+            if consumer == self.engine.player[0]:
+                message = f"You consume the {self.parent.name}, and recover {amount_recovered} HP!"
+            else:
+                message = f"The {consumer.name} consumes the {self.parent.name}, and recovers {amount_recovered} HP!"
+            self.engine.message_log.add_message(message, colors.health_recovered)
             self.consume()
         else:
             raise Impossible(f"Your health is already full.")
@@ -134,10 +135,11 @@ class ManaConsumable(Consumable):
         amount_recovered = consumer.restore_mana(self.amount)
 
         if amount_recovered > 0:
-            self.engine.message_log.add_message(
-                f"You consume the {self.parent.name}, and recover {amount_recovered} mana!",
-                colors.health_recovered,
-            )
+            if consumer == self.engine.player[0]:
+                message = f"You consume the {self.parent.name}, and recover {amount_recovered} mana!"
+            else:
+                message = f"The {consumer.name} consumes the {self.parent.name}, and recovers {amount_recovered} mana!"
+            self.engine.message_log.add_message(message,colors.health_recovered)
             self.consume()
         else:
             raise Impossible(f"Your mana is already full.")

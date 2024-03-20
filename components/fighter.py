@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import sys
-from PIL import Image
-import numpy as np
 from typing import List, Tuple, TYPE_CHECKING
 
 import random
@@ -22,7 +20,7 @@ if TYPE_CHECKING:
     from mapentity import FighterGroup
     from actions import Ability
 
-BASE_AVOIDANCE = 10
+BASE_DEFENSE = 10
 
 
 class Fighter(BaseComponent):
@@ -124,7 +122,11 @@ class Fighter(BaseComponent):
 
     @property
     def avoidance(self) -> int:
-        return BASE_AVOIDANCE + self.agility // 2 + self.equipment.avoidance_bonus
+        return BASE_DEFENSE + (self.agility + self.equipment.agility_bonus) // 2 + self.equipment.avoidance_bonus
+
+    @property
+    def magic_defense(self) -> int:
+        return BASE_DEFENSE + (self.magic + self.equipment.magic_bonus) // 2 + self.equipment.magic_resistance
 
     @property
     def mainhand_attack_bonus(self) -> int:

@@ -81,6 +81,7 @@ def generate_fighter_groups(
         for template in templates:
             fighter = copy.deepcopy(template)
             fighter.roll_hitpoints()
+            fighter.inventory.add_item(copy.deepcopy(entity_factories.tasty_rat))
             for ability in fighter.abilities:
                 ability.entity = fighter
             fighters.append(fighter)
