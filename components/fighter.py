@@ -138,14 +138,14 @@ class Fighter(BaseComponent):
 
     @property
     def spell_attack_bonus(self) -> int:
-        bonus = self.magic // 2
+        bonus = (self.magic + self.equipment.magic_bonus) // 2
         if self.fighter_class == FighterClass.MAGE:
             bonus += self.level.proficiency
         return bonus
 
     def weapon_base_attack_bonus(self, slot: EquipmentSlot) -> int:
         weapon = self.equipment.items[slot]
-        bonus = self.agility // 2
+        bonus = (self.agility + self.equipment.agility_bonus) // 2
         if weapon is not None and hasattr(weapon, 'weapon_type'):
             if self.fighter_class == FighterClass.ROGUE and (
                     weapon.weapon_type == WeaponType.AGILITY or
@@ -236,7 +236,8 @@ class Fighter(BaseComponent):
         )
 
     def roll_hitpoints(self) -> None:
-        new_hp = random.randint(self.min_hp_per_level, self.max_hp_per_level) + self.perseverance // 2
+        new_hp = random.randint(self.min_hp_per_level, self.max_hp_per_level)
+        new_hp += (self.perseverance + self.equipment.perseverance_bonus) // 2
         self.max_hp += new_hp
         self._hp += new_hp
 
@@ -251,10 +252,10 @@ class Fighter(BaseComponent):
 
     def roll_weapon_damage(self, slot: EquipmentSlot):
         if slot == EquipmentSlot.MAINHAND:
-            return (self.strength // 2 +
+            return ((self.strength + self.equipment.strength_bonus) // 2 +
                     random.randint(self.equipment.mainhand_min_damage, self.equipment.mainhand_max_damage))
         elif slot == EquipmentSlot.OFFHAND and self.equipment.items[slot].equipment_type == EquipmentType.WEAPON:
-            return (self.strength // 2 +
+            return ((self.strength + self.equipment.strength_bonus) // 2 +
                     random.randint(self.equipment.offhand_min_damage, self.equipment.offhand_max_damage))
         else:
             return 0
