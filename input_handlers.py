@@ -898,7 +898,7 @@ class GameOverEventHandler(EventHandler):
             self.on_quit()
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        self.engine.in_combat=False
+        self.engine.in_combat = False
         MainGameEventHandler(self.engine).on_render(console)
         return self
 
@@ -1860,6 +1860,13 @@ class LootEventHandler(AskUserEventHandler):
 
     def ev_mousebuttondown(self, event: tcod.event.MouseButtonDown) -> Optional[ActionOrHandler]:
         return self
+
+
+class TraderEventHandler(AskUserEventHandler):
+    def __init__(self, engine: Engine, parent: EventHandler) -> None:
+        super().__init__(engine=engine, parent=parent)
+
+    # TODO: Add on_render and ev_keydown
 
 
 if __name__ == "__main__":
