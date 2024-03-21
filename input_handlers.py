@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os.path
 import time
+import re
 from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
@@ -1938,15 +1939,12 @@ class TraderEventHandler(AskUserEventHandler):
                 bg=bg
             )
 
-        console.print_box(
+        console.print(
             x=x + 2,
             y=y + height - 3,
-            width=width,
-            height=1,
             string=f"Gold: {player.inventory.gold}",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.RIGHT
         )
 
         # Show trader inventory
@@ -1999,23 +1997,30 @@ class TraderEventHandler(AskUserEventHandler):
             )
 
         # Show item description
+        if self.cursor[0] == 0:
+            text = player.inventory.items[self.cursor[1]][0].description
+        else:
+            item_name = re.match(
+                pattern="(?P<name>[A-Za-z ]*) ?(?P<amount>\\(x[0-9]*\\))?",
+                string=items[self.cursor[1]]
+            ).group(1).strip()
+            text = self.trader.get_item_by_name(item_name).description
+
+        text = wrap(text, width - 2)
+
         console.draw_frame(
             x=x,
             y=y + height,
             width=width,
-            height=8,
+            height=2 + len(text.splitlines()),
             fg=colors.white,
             bg=colors.black
         )
-        if self.cursor[0] == 0:
-            text = player.inventory.items[self.cursor[1]][0].description
-        else:
-            text = self.trader.get_item_by_name(items[self.cursor[1]]).description
 
         console.print(
             x=x + 1,
             y=y + height + 1,
-            string=wrap(text, width - 2),
+            string=text,
             fg=colors.white,
             bg=colors.black
         )
@@ -2029,7 +2034,7 @@ class TraderEventHandler(AskUserEventHandler):
         trader_items = list(self.trader.items.keys())
 
         if key in CURSOR_X_KEYS:
-            self.cursor[1] = 0,
+            self.cursor[1] = 0
             self.cursor[0] = (self.cursor[0] + CURSOR_X_KEYS[key]) % 2
         elif key in CURSOR_Y_KEYS:
             if self.cursor[0] == 0:
@@ -2041,6 +2046,7 @@ class TraderEventHandler(AskUserEventHandler):
                 item = player_items[self.cursor[1]][0]
                 self.engine.player[0].inventory.remove_item(item)
                 self.engine.player[0].inventory.gold += self.trader.buy_item(item=item)
+                self.cursor[1] = min(self.cursor[1], len(self.engine.player[0].inventory.items) - 1)
             else:
                 item = trader_items[self.cursor[1]]
                 if self.engine.player[0].inventory.gold < item.buy_price:
@@ -2048,7 +2054,9 @@ class TraderEventHandler(AskUserEventHandler):
                 else:
                     self.engine.player[0].inventory.gold -= item.buy_price
                     self.engine.player[0].inventory.add_item(self.trader.sell_item(item.name))
+                    self.cursor[1] = min(self.cursor[1], len(self.trader.list_items()) - 1)
         elif key == tcod.event.KeySym.ESCAPE:
+            self.engine.active_trader = None
             return self.parent
 
 

@@ -178,7 +178,6 @@ def generate_dungeon(
         engine: Engine,
 ) -> GameMap:
     """Generate a new dungeon map."""
-    print(f"Creating floor {engine.game_world.current_floor}")
     player = engine.player
     dungeon = GameMap(engine, map_width, map_height, entities=[player])
 
@@ -188,7 +187,6 @@ def generate_dungeon(
     placed_trader = False
 
     for r in range(max_rooms):
-        print(f"Creating room {r + 1} out of {max_rooms}")
         room_width = random.randint(room_min_size, room_max_size)
         room_height = random.randint(room_min_size, room_max_size)
 
@@ -219,7 +217,6 @@ def generate_dungeon(
                     not placed_trader
             ):
                 placed_trader = True
-                print("Making a trader")
                 x, y = new_room.center
                 trader = Trader(parent=dungeon, current_floor=engine.game_world.current_floor, x=x, y=y)
                 trader.items = generate_trader_items(engine.game_world.current_floor, trader.NUMBER_OF_ITEMS)

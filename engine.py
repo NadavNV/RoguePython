@@ -33,7 +33,7 @@ class Engine:
     def handle_enemy_turns(self) -> None:
         if not self.in_combat:
             for entity in set(self.game_map.actors) - {self.player}:
-                if entity.ai:
+                if hasattr(entity, "ai") and entity.ai:
                     try:
                         entity.ai.perform()
                         if self.in_combat:

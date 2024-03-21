@@ -5,7 +5,7 @@ from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 import numpy as np  # type: ignore
 from tcod.console import Console
 
-from mapentity import FighterGroup, Item
+from mapentity import FighterGroup, Item, Trader
 import tile_types
 
 if TYPE_CHECKING:
@@ -41,7 +41,10 @@ class GameMap:
         yield from (
             entity
             for entity in self.entities
-            if isinstance(entity, FighterGroup) and entity.is_alive
+            if (
+                       (isinstance(entity, FighterGroup) and entity.is_alive) or
+                       isinstance(entity, Trader)
+            )
         )
 
     @property
@@ -61,7 +64,7 @@ class GameMap:
 
         return None
 
-    def get_actor_at_location(self, x: int, y: int) -> Optional[FighterGroup]:
+    def get_actor_at_location(self, x: int, y: int) -> Optional[MapEntity]:
         for actor in self.actors:
             if actor.x == x and actor.y == y:
                 return actor
