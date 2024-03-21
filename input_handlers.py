@@ -1846,13 +1846,15 @@ class LootEventHandler(AskUserEventHandler):
         inventory = self.engine.player[0].inventory
 
         if key in CONFIRM_KEYS:
+            item = self.items.pop(self.cursor)
             try:
-                inventory.add_item(self.items.pop(self.cursor))
+                inventory.add_item(item)
                 self.cursor = min(self.cursor, len(self.items) - 1)
                 if len(self.items) == 0:
                     inventory.gold += self.gold
                     return self.parent
             except exceptions.Impossible:
+                self.items.index(item, self.cursor)
                 self.engine.message_log.add_message(
                     text="You don't have room for that item.",
                     fg=colors.impossible,
@@ -1866,8 +1868,8 @@ class LootEventHandler(AskUserEventHandler):
             inventory.gold += self.gold
 
             for item in self.items:
-                item.x = self.engine.player.x
-                item.y = self.engine.player.y
+                item.x = self.engine.active_enemies.x
+                item.y = self.engine.active_enemies.y
                 self.engine.game_map.entities.add(item)
 
             return self.parent
