@@ -141,24 +141,27 @@ class EventHandler(BaseEventHandler):
 
     def handle_events(self, event: tcod.event.Event) -> BaseEventHandler:
         """Handle events for input handlers with an engine."""
-        action_or_state = self.dispatch(event)
-        if isinstance(action_or_state, BaseEventHandler):
-            return action_or_state
-        if self.handle_action(action_or_state):
-            # A valid action was performed.
-            if not self.engine.player.is_alive:
-                print("Player is dead.")
-                # The player was killed some time during or after the action
-                return GameOverEventHandler(self.engine)
-            elif self.engine.in_combat:
-                if not self.engine.active_enemies.is_alive:
-                    self.engine.game_map.entities.remove(self.engine.active_enemies)
-                    self.engine.in_combat = False
-                    return LootEventHandler(engine=self.engine, parent=MainGameEventHandler(self.engine))
+        try:
+            action_or_state = self.dispatch(event)
+            if isinstance(action_or_state, BaseEventHandler):
+                return action_or_state
+            if self.handle_action(action_or_state):
+                # A valid action was performed.
+                if not self.engine.player.is_alive:
+                    print("Player is dead.")
+                    # The player was killed some time during or after the action
+                    return GameOverEventHandler(self.engine)
+                elif self.engine.in_combat:
+                    if not self.engine.active_enemies.is_alive:
+                        self.engine.game_map.entities.remove(self.engine.active_enemies)
+                        self.engine.in_combat = False
+                        return LootEventHandler(engine=self.engine, parent=MainGameEventHandler(self.engine))
+                    else:
+                        return CombatEventHandler(self.engine)
                 else:
-                    return CombatEventHandler(self.engine)
-            else:
-                return MainGameEventHandler(self.engine)  # Return to the main handler.
+                    return MainGameEventHandler(self.engine)  # Return to the main handler.
+        except exceptions.Impossible as exc:
+            self.engine.message_log.add_message(text=exc.args[0], fg=colors.impossible)
         return self
 
     def handle_action(self, action: Optional[Action]) -> bool:
@@ -890,7 +893,7 @@ class GameOverEventHandler(EventHandler):
         """Handle exiting out of a finished game."""
         if os.path.exists("savegame.sav"):
             os.remove("savegame.sav")  # Deletes the active save file.
-        raise exceptions.QuiteWithoutSaving()  # Avoid saving a finished game.
+        raise exceptions.QuitWithoutSaving()  # Avoid saving a finished game.
 
     def ev_quit(self, event: tcod.event.Quit) -> None:
         self.on_quit()
@@ -994,7 +997,7 @@ class CutsceneEventHandler(BaseEventHandler):
         self.cutscene_skip = True
 
     def ev_quit(self, event: tcod.event.Quit) -> Optional[Action]:
-        raise exceptions.QuiteWithoutSaving()
+        raise exceptions.QuitWithoutSaving()
 
 
 def wrap(text: str, width: int):
@@ -1622,15 +1625,16 @@ class SelectTargetEventHandler(AskUserEventHandler):
         frame_width = console.width * 2 // 3
 
         for i in range(self.number_of_enemies):
-            console.draw_frame(
-                x=frame_width * (i + 1) // (self.number_of_enemies + 1) - console.width // 16 - 1,
-                y=console.height // 8 - 1,
-                width=console.width // 8 + 2,
-                height=console.width // 4 + 2,
-                clear=False,
-                fg=colors.white,
-                bg=colors.black,
-            )
+            if self.cursor == i:
+                console.draw_frame(
+                    x=frame_width * (i + 1) // (self.number_of_enemies + 1) - console.width // 16 - 1,
+                    y=console.height // 8 - 1,
+                    width=console.width // 8 + 2,
+                    height=console.width // 4 + 2,
+                    clear=False,
+                    fg=colors.white,
+                    bg=colors.black,
+                )
 
         return self
 

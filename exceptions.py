@@ -5,5 +5,5 @@ class Impossible(Exception):
     """
 
 
-class QuiteWithoutSaving(SystemExit):
+class QuitWithoutSaving(SystemExit):
     """Can be raised to exit the game without automatically saving."""

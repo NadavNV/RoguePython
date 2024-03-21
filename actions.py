@@ -52,12 +52,12 @@ class PickupAction(Action):
 
         for item in self.engine.game_map.items:
             if actor_location_y == item.y and actor_location_x == item.x:
-                if len(inventory.items) >= inventory.capacity:
-                    raise exceptions.Impossible("Your inventory is full.")
-
-                self.engine.game_map.entities.remove(item)
-                item.parent = inventory
-                inventory.add_item(item)
+                try:
+                    inventory.add_item(item)
+                    self.engine.game_map.entities.remove(item)
+                    item.parent = inventory
+                except exceptions.Impossible as exc:
+                    raise exc
 
                 self.engine.message_log.add_message(f"You picked up the {item.name}!")
                 return

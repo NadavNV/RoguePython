@@ -52,7 +52,7 @@ janitor = Fighter(
     sprite='images/janitor_sprite.png',
     ai_cls=HostileEnemy,
     equipment=Equipment(),
-    inventory=Inventory(capacity=0, min_gold=15, max_gold=50),
+    inventory=Inventory(capacity=1, min_gold=15, max_gold=50),
     level=Level(xp_given=50),
 )
 janitor.abilities = [
@@ -74,7 +74,7 @@ lumberjack = Fighter(
     sprite='images/lumberjack_sprite.png',
     ai_cls=HostileEnemy,
     equipment=Equipment(),
-    inventory=Inventory(capacity=0, min_gold=50, max_gold=200),
+    inventory=Inventory(capacity=1, min_gold=50, max_gold=200),
     level=Level(xp_given=100),
 )
 lumberjack.abilities = [
