@@ -1838,18 +1838,27 @@ class LootEventHandler(AskUserEventHandler):
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
+        inventory = self.engine.player[0].inventory
 
         if key in CONFIRM_KEYS:
-            self.engine.player[0].inventory.add_item(self.items.pop(self.cursor))
-            self.cursor = min(self.cursor, len(self.items) - 1)
-            if len(self.items) == 0:
-                self.engine.player[0].inventory.gold += self.gold
-                return self.parent
+            try:
+                inventory.add_item(self.items.pop(self.cursor))
+                self.cursor = min(self.cursor, len(self.items) - 1)
+                if len(self.items) == 0:
+                    inventory.gold += self.gold
+                    return self.parent
+            except exceptions.Impossible:
+                self.engine.message_log.add_message(
+                    text="You don't have room for that item.",
+                    fg=colors.impossible,
+                    stack=True
+                )
+
         elif key in CURSOR_Y_KEYS:
             self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % len(self.items)
             return self
         elif key == tcod.event.KeySym.ESCAPE:
-            self.engine.player[0].inventory.gold += self.gold
+            inventory.gold += self.gold
 
             for item in self.items:
                 item.x = self.engine.player.x

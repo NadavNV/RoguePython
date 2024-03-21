@@ -4,6 +4,7 @@ import random
 from typing import List, TYPE_CHECKING
 
 from components.base_component import BaseComponent
+from exceptions import Impossible
 
 if TYPE_CHECKING:
     from mapentity import Item
@@ -43,16 +44,25 @@ class Inventory(BaseComponent):
                 break
 
     def add_item(self, item: Item) -> None:
-        item.parent = self
-        if item.stackable:
-            for stack in self.items:
-                if item.name == stack[0].name and len(stack) < MAX_STACK_SIZE:
-                    stack.append(item)
-                    return None
+        if len(self.items) < self.capacity:
+            item.parent = self
+            if item.stackable:
+                for stack in self.items:
+                    if item.name == stack[0].name and len(stack) < MAX_STACK_SIZE:
+                        stack.append(item)
+                        return None
 
-        # Item is not stackable or can't fit in any existing stack
-        self.items.append([item])
-
+            # Item is not stackable or can't fit in any existing stack
+            self.items.append([item])
+        else:
+            if not item.stackable:
+                raise Impossible("Inventory is full")
+            else:
+                for stack in self.items:
+                    if item.name == stack[0].name and len(stack) < MAX_STACK_SIZE:
+                        stack.append(item)
+                        return None
+                raise Impossible("Inventory is full")
     def list_items(self) -> List[str]:
         """Creates a list of the items in the inventory, with their amounts if stacked."""
         result = []
