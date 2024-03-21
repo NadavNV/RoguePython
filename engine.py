@@ -12,7 +12,7 @@ from message_log import MessageLog
 import render_functions
 
 if TYPE_CHECKING:
-    from mapentity import FighterGroup
+    from mapentity import FighterGroup, Trader
     from game_map import GameMap, GameWorld
 
 
@@ -28,6 +28,7 @@ class Engine:
         self.player = player
         self.in_combat = False
         self.active_enemies = None
+        self.active_trader: Optional[Trader] = None
 
     def handle_enemy_turns(self) -> None:
         if not self.in_combat:

@@ -170,9 +170,9 @@ class Item(MapEntity):
             blocks_movement=False,
             render_order=RenderOrder.ITEM,
         )
-        self.description = description
         self.sell_price = sell_price
         self.buy_price = buy_price
+        self.description = description + f"\n\nBuying price: {self.buy_price}\nSelling price: {self.sell_price}"
 
         self.consumable = consumable
 
@@ -207,7 +207,7 @@ class Trader(MapEntity):
             blocks_movement=True,
             render_order=RenderOrder.ACTOR,
         )
-        self.items = {}
+        self.items: Dict[Item, int] = {}
 
     def sell_item(self, item_name: str) -> Item:
         for item, amount in self.items.items():
@@ -224,3 +224,21 @@ class Trader(MapEntity):
                     self.items[key] += 1
                     break
         return item.sell_price
+
+    def list_items(self) -> List[str]:
+        result = []
+        for item, amount in self.items.items():
+            if amount == 1:
+                result.append(item.name)
+            else:
+                result.append(f"{item.name} (x{amount})")
+
+        return result
+
+    def get_item_by_name(self, item_name: str) -> Optional[Item]:
+        for item in self.items:
+            if item.name == item_name:
+                return item
+
+        self.engine.message_log.add_message(text=f"Item {item_name} not found.", fg=colors.invalid, stack=True)
+        return None

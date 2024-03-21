@@ -188,6 +188,8 @@ class EventHandler(BaseEventHandler):
         self.engine.render(console)
         if self.engine.player.fighters[0].level.requires_level_up:
             return LevelUpEventHandler(self.engine, parent=self)
+        if self.engine.active_trader is not None:
+            return TraderEventHandler(self.engine, MainGameEventHandler(self.engine))
         return self
 
 
@@ -1865,8 +1867,176 @@ class LootEventHandler(AskUserEventHandler):
 class TraderEventHandler(AskUserEventHandler):
     def __init__(self, engine: Engine, parent: EventHandler) -> None:
         super().__init__(engine=engine, parent=parent)
+        self.trader = self.engine.active_trader
+        self.cursor = np.array([0, 0])
 
-    # TODO: Add on_render and ev_keydown
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        self.parent.on_render(console)
+        console.rgb["fg"] //= 2
+        console.rgb["bg"] //= 2
+
+        player = self.engine.player[0]
+        items = player.inventory.list_items()
+
+        # Show player inventory
+        width = max(max([len(item) for item in items]), len("Choose item to sell:")) + 4
+        height = len(items) + 8
+        x = console.width // 2 - width
+        y = 1
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            fg=colors.white,
+            bg=colors.black
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string="┤Inventory├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
+        )
+
+        console.print(
+            x=x + 2,
+            y=y + 2,
+            string="Choose item to sell:",
+            fg=colors.white,
+            bg=colors.black
+        )
+
+        for i, item in enumerate(items):
+            if self.cursor[0] == 0 and self.cursor[1] == i:
+                fg = colors.black
+                bg = colors.white
+            else:
+                fg = colors.white
+                bg = colors.black
+            console.print(
+                x=x + 2,
+                y=y + 4 + i,
+                string=f"{item}",
+                fg=fg,
+                bg=bg
+            )
+
+        console.print_box(
+            x=x + 2,
+            y=y + height - 3,
+            width=width,
+            height=1,
+            string=f"Gold: {player.inventory.gold}",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.RIGHT
+        )
+
+        # Show trader inventory
+        items = self.trader.list_items()
+
+        width = max(max([len(item) for item in items]), len("Choose item to buy:")) + 4
+        height = len(items) + 6
+        x = console.width // 2 + 1
+        y = 1
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            fg=colors.white,
+            bg=colors.black
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string="┤Inventory├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER
+        )
+
+        console.print(
+            x=x + 2,
+            y=y + 2,
+            string="Choose item to sell:",
+            fg=colors.white,
+            bg=colors.black
+        )
+
+        for i, item in enumerate(items):
+            if self.cursor[0] == 1 and self.cursor[1] == i:
+                fg = colors.black
+                bg = colors.white
+            else:
+                fg = colors.white
+                bg = colors.black
+            console.print(
+                x=x + 2,
+                y=y + 4 + i,
+                string=f"{item}",
+                fg=fg,
+                bg=bg
+            )
+
+        # Show item description
+        console.draw_frame(
+            x=x,
+            y=y + height,
+            width=width,
+            height=8,
+            fg=colors.white,
+            bg=colors.black
+        )
+        if self.cursor[0] == 0:
+            text = player.inventory.items[self.cursor[1]][0].description
+        else:
+            text = self.trader.get_item_by_name(items[self.cursor[1]]).description
+
+        console.print(
+            x=x + 1,
+            y=y + height + 1,
+            string=wrap(text, width - 2),
+            fg=colors.white,
+            bg=colors.black
+        )
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+
+        player_items = self.engine.player[0].inventory.items
+        trader_items = list(self.trader.items.keys())
+
+        if key in CURSOR_X_KEYS:
+            self.cursor[1] = 0,
+            self.cursor[0] = (self.cursor[0] + CURSOR_X_KEYS[key]) % 2
+        elif key in CURSOR_Y_KEYS:
+            if self.cursor[0] == 0:
+                self.cursor[1] = (self.cursor[1] + CURSOR_Y_KEYS[key]) % len(player_items)
+            else:
+                self.cursor[1] = (self.cursor[1] + CURSOR_Y_KEYS[key]) % len(trader_items)
+        elif key in CONFIRM_KEYS:
+            if self.cursor[0] == 0:
+                item = player_items[self.cursor[1]][0]
+                self.engine.player[0].inventory.remove_item(item)
+                self.engine.player[0].inventory.gold += self.trader.buy_item(item=item)
+            else:
+                item = trader_items[self.cursor[1]]
+                if self.engine.player[0].inventory.gold < item.buy_price:
+                    self.engine.message_log.add_message(text="Not enough gold", fg=colors.error)
+                else:
+                    self.engine.player[0].inventory.gold -= item.buy_price
+                    self.engine.player[0].inventory.add_item(self.trader.sell_item(item.name))
+        elif key == tcod.event.KeySym.ESCAPE:
+            return self.parent
 
 
 if __name__ == "__main__":

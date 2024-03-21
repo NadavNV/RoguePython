@@ -8,7 +8,7 @@ import colors
 import exceptions
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
-from mapentity import FighterGroup
+from mapentity import FighterGroup, Trader
 from components.fighter import Fighter
 
 if TYPE_CHECKING:
@@ -166,7 +166,9 @@ class MovementAction(ActionWithDirection):
 class BumpAction(ActionWithDirection):
     def perform(self) -> None:
         if self.target_actor:
-            self.engine.in_combat = True
+            if isinstance(self.target_actor, Trader) and self.entity is self.engine.player:
+                self.engine.active_trader = self.target_actor
+                return
             if (
                     self.target_actor is not self.engine.player and
                     self.entity is not self.engine.player

@@ -10,7 +10,7 @@ import entity_factories
 from game_map import GameMap
 from components.ai import RoamingEnemy
 import tile_types
-from mapentity import MapEntity, FighterGroup, Item
+from mapentity import MapEntity, FighterGroup, Item, Trader
 from components.fighter import Fighter
 
 if TYPE_CHECKING:
@@ -73,7 +73,7 @@ def generate_fighter_groups(
 ) -> List[FighterGroup]:
     groups = []
     for i in range(number_of_groups):
-        # TODO: This needs(?) to be redesigned to work without entity_factories
+        # TODO: This needs to be redesigned to work with constructors rather than deepcopy
         number_of_monsters = random.randint(1, get_max_value_for_floor(max_enemies_per_group_by_floor, floor))
         templates = get_entities_at_random(enemy_chances, number_of_entities=number_of_monsters, floor=floor)
         fighters = []
@@ -214,8 +214,10 @@ def generate_dungeon(
                     engine.game_world.current_floor % TRADER_FLOOR == 0 and
                     len(rooms) == max_rooms // 2
             ):
-                # TODO: Place a vendor in the center of the room
-                pass
+                trader = Trader(parent=dungeon, current_floor=engine.game_world.current_floor, *new_room.center)
+                trader.items = generate_trader_items(engine.game_world.current_floor, trader.NUMBER_OF_ITEMS)
+                trader.parent = dungeon
+                dungeon.entities.add(trader)
 
             center_of_last_room = new_room.center
 
@@ -253,7 +255,7 @@ def place_entities(room: RectangularRoom, dungeon: GameMap, floor_number: int) -
             entity.spawn(dungeon, x, y)
 
 
-def generate_items(current_floor: int, number_of_items: int) -> Dict[Item, int]:
+def generate_trader_items(current_floor: int, number_of_items: int) -> Dict[Item, int]:
     # TODO: Generate a random set of items based on current floor
     return {
         entity_factories.tasty_rat: 20,
