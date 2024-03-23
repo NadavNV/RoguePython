@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import copy
 from typing import List, Tuple, TYPE_CHECKING
 
 import random
@@ -89,11 +90,13 @@ class Fighter(BaseComponent):
         self.inventory.parent = self
         self.level = level
         self.level.parent = self
-        self.abilities = [] if abilities is None else abilities
+        self.abilities = [] if abilities is None else copy.deepcopy(abilities)
         self.ai = ai_cls(self)
 
         self.weapon_crit_threshold = weapon_crit_threshold
         self.spell_crit_threshold = spell_crit_threshold
+
+        self.roll_hitpoints()
 
     @property
     def hp(self) -> int:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import random
-from typing import Dict, Iterator, List, Tuple, TYPE_CHECKING, Union
+from typing import Dict, Iterator, List, Tuple, Type, TYPE_CHECKING, Union
 
 import tcod
 
@@ -16,7 +16,7 @@ from components.fighter import Fighter
 if TYPE_CHECKING:
     from engine import Engine
 
-Entity = Union[MapEntity, Fighter]
+Entity = Union[MapEntity, Type[Fighter]]
 
 TRADER_FLOOR = 3
 
@@ -45,11 +45,11 @@ item_chances: Dict[int, List[Tuple[MapEntity, int]]] = {
     6: [(entity_factories.fireball_scroll, 25), (entity_factories.chain_mail, 15)],
 }
 
-enemy_chances: Dict[int, List[Tuple[Fighter, int]]] = {
-    0: [(entity_factories.janitor, 80)],
-    3: [(entity_factories.lumberjack, 15)],
-    5: [(entity_factories.lumberjack, 30)],
-    7: [(entity_factories.lumberjack, 60)],
+enemy_chances: Dict[int, List[Tuple[Type[Fighter], int]]] = {
+    0: [(entity_factories.Janitor, 80)],
+    3: [(entity_factories.Lumberjack, 15)],
+    5: [(entity_factories.Lumberjack, 30)],
+    7: [(entity_factories.Lumberjack, 60)],
 }
 
 
@@ -73,17 +73,12 @@ def generate_fighter_groups(
 ) -> List[FighterGroup]:
     groups = []
     for i in range(number_of_groups):
-        # TODO: This needs to be redesigned to work with constructors rather than deepcopy
         number_of_monsters = random.randint(1, get_max_value_for_floor(max_enemies_per_group_by_floor, floor))
         templates = get_entities_at_random(enemy_chances, number_of_entities=number_of_monsters, floor=floor)
         fighters = []
         gold = 0
         for template in templates:
-            fighter = copy.deepcopy(template)
-            fighter.roll_hitpoints()
-            fighter.inventory.add_item(copy.deepcopy(entity_factories.tasty_rat))
-            for ability in fighter.abilities:
-                ability.entity = fighter
+            fighter = template()
             fighters.append(fighter)
             gold += fighter.inventory.gold
         group = FighterGroup(fighters=fighters, ai_cls=RoamingEnemy, gold=gold)

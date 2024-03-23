@@ -518,7 +518,16 @@ class LevelUpEventHandler(AskUserEventHandler):
         )
 
         for i in range(len(self.stats)):
-            console.print(x=x + 2 + i * (len('perseverance') + 1), y=10, string=self.stats[i])
+            console.print_box(
+                x=x + 2 + i * (len('perseverance') + 1),
+                y=10,
+                width=len('perseverance'),
+                height=1,
+                string=self.stats[i],
+                fg=colors.white,
+                bg=colors.black,
+                alignment=libtcodpy.CENTER
+            )
 
         return self
 
@@ -580,10 +589,10 @@ class InventoryEventHandler(AskUserEventHandler):
         super().on_render(console)
         number_of_items_in_inventory = len(self.engine.player.inventory.list_items())
 
-        height = number_of_items_in_inventory + 2
+        height = number_of_items_in_inventory + 4
 
-        if height <= 3:
-            height = 3
+        if height <= 5:
+            height = 5
 
         y = 0
 
@@ -642,6 +651,14 @@ class InventoryEventHandler(AskUserEventHandler):
 
         else:
             console.print(x + 1, y + 1, "(Empty)")
+
+        console.print(
+            x=x + 1,
+            y=y + height - 2,
+            string=f"Gold: {self.engine.player.inventory.gold}",
+            fg=colors.white,
+            bg=colors.black
+        )
 
         return self
 

@@ -37,49 +37,6 @@ player = FighterGroup(
     )],
     ai_cls=RoamingEnemy
 )
-# TODO: Change to class Janitor(Fighter)
-janitor = Fighter(
-    strength=2,
-    perseverance=1,
-    agility=4,
-    magic=1,
-    min_hp_per_level=3,
-    max_hp_per_level=8,
-    fighter_class=FighterClass.ROGUE,
-    char="j",
-    color=colors.janitor_icon,
-    name="Janitor",
-    sprite='images/janitor_sprite.png',
-    ai_cls=HostileEnemy,
-    equipment=Equipment(),
-    inventory=Inventory(capacity=1, min_gold=15, max_gold=50),
-    level=Level(xp_given=50),
-)
-janitor.abilities = [
-    MeleeAttack(caster=janitor, target=None)
-]
-
-# TODO: Change to class Lumberjack(Fighter)
-lumberjack = Fighter(
-    strength=5,
-    perseverance=3,
-    agility=3,
-    magic=1,
-    min_hp_per_level=6,
-    max_hp_per_level=12,
-    fighter_class=FighterClass.WARRIOR,
-    char="L",
-    color=colors.lumberjack_icon,
-    name="Lumberjack",
-    sprite='images/lumberjack_sprite.png',
-    ai_cls=HostileEnemy,
-    equipment=Equipment(),
-    inventory=Inventory(capacity=1, min_gold=50, max_gold=200),
-    level=Level(xp_given=100),
-)
-lumberjack.abilities = [
-    MeleeAttack(caster=lumberjack, target=None)
-]
 
 confusion_scroll = Item(
     buy_price=400,
@@ -156,7 +113,7 @@ broom = Item(
     equippable=equippable.Broom(),
 )
 
-janitor.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
+# janitor.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
 
 club = Item(
     buy_price=25,
@@ -188,7 +145,7 @@ handaxe = Item(
     equippable=equippable.ShortSword(),
 )
 
-lumberjack.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(handaxe), add_message=False)
+# lumberjack.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(handaxe), add_message=False)
 
 leather_armor = Item(
     buy_price=200,
@@ -210,3 +167,67 @@ chain_mail = Item(
                  "the weight makes movement somewhat challenging."),
     equippable=equippable.ChainMail(),
 )
+
+
+class Janitor(Fighter):
+    def __init__(self):
+        super().__init__(
+            strength=2,
+            perseverance=1,
+            agility=4,
+            magic=1,
+            min_hp_per_level=3,
+            max_hp_per_level=8,
+            fighter_class=FighterClass.ROGUE,
+            char="j",
+            color=colors.janitor_icon,
+            name="Janitor",
+            sprite='images/janitor_sprite.png',
+            ai_cls=HostileEnemy,
+            equipment=Equipment(),
+            inventory=Inventory(capacity=1, min_gold=15, max_gold=50),
+            level=Level(xp_given=50),
+            weapon_crit_threshold=20,
+        )
+
+        self.equipment.parent = self
+        self.inventory.parent = self
+
+        self.abilities=[MeleeAttack(caster=self, target=None)]
+
+        self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
+
+
+class Lumberjack(Fighter):
+    def __init__(self):
+        super().__init__(
+            strength=5,
+            perseverance=3,
+            agility=3,
+            magic=1,
+            min_hp_per_level=6,
+            max_hp_per_level=12,
+            fighter_class=FighterClass.WARRIOR,
+            char="L",
+            color=colors.lumberjack_icon,
+            name="Lumberjack",
+            sprite='images/lumberjack_sprite.png',
+            ai_cls=HostileEnemy,
+            equipment=Equipment(),
+            inventory=Inventory(capacity=1, min_gold=35, max_gold=75),
+            level=Level(xp_given=100),
+            weapon_crit_threshold=20,
+        )
+
+        self.equipment.parent = self
+        self.inventory.parent = self
+
+        self.abilities=[MeleeAttack(caster=self, target=None)]
+
+        self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(handaxe), add_message=False)
+
+
+if __name__ == "__main__":
+    janitor = Janitor()
+    print(janitor.hp)
+    print(janitor.weapon_crit_threshold)

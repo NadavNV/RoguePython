@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from components.base_component import BaseComponent
 from components.equippable import Equippable
@@ -35,6 +35,7 @@ class Equipment(BaseComponent):
         self.offhand_attack_bonus = 0
         self.offhand_min_damage = 0
         self.offhand_max_damage = 0
+
 
     def item_is_equipped(self, slot: EquipmentSlot) -> bool:
         return self.items[slot] is not None
