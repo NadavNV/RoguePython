@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Optional, TYPE_CHECKING
 
 import random
@@ -67,14 +68,19 @@ class ConfusionConsumable(Consumable):
         if target is consumer:
             raise Impossible("You cannot confuse yourself!")
 
-        # TODO: Add roll attack against magic defense
-        self.engine.message_log.add_message(
-            f"The eyes of the {target.name} look vacant, as it starts to stumble around!",
-            colors.status_effect_applied,
-        )
-        target.ai = components.ai.ConfusedEnemy(
-            entity=target, previous_ai=target.ai, turns_remaining=self.number_of_turns
-        )
+        if consumer.roll_spell_attack() >= target.magic_defense:
+            self.engine.message_log.add_message(
+                f"The eyes of the {target.name} look vacant, as it starts to stumble around!",
+                colors.status_effect_applied,
+            )
+            target.ai = components.ai.ConfusedEnemy(
+                entity=target, previous_ai=target.ai, turns_remaining=self.number_of_turns
+            )
+        else:
+            self.engine.message_log.add_message(
+                f"The {target.name} resists the effect, and the spell fizzles!",
+                colors.invalid,
+            )
         self.consume()
 
 
@@ -90,14 +96,18 @@ class FireballDamageConsumable(Consumable):
             return None
 
     def activate(self, action: actions.ItemAction) -> None:
+        caster = action.entity
         targets_hit = False
         for enemy in self.engine.active_enemies.fighters:
             if enemy.is_alive:
-                # TODO: Roll to take half damage
+                if caster.roll_spell_attack() < enemy.magic_defense:
+                    damage = self.damage // 2
+                else:
+                    damage = self.damage
                 self.engine.message_log.add_message(
-                    f"The {enemy.name} is engulfed in a fiery explosion, taking {self.damage} damage!"
+                    f"The {enemy.name} is engulfed in a fiery explosion, taking {damage} damage!"
                 )
-                enemy.take_damage(self.damage)
+                enemy.take_damage(damage)
                 targets_hit = True
 
         if not targets_hit:
@@ -161,11 +171,17 @@ class LightningDamageConsumable(Consumable):
             return None
 
     def activate(self, action: actions.ItemAction) -> None:
+        caster = action.entity
         target = action.target
 
-        # TODO: Add rolling spell attack
-        self.engine.message_log.add_message(
-            f"A lightning bolt strikes the {target.name} with a loud thunder, for {self.damage} damage!"
-        )
-        target.take_damage(self.damage)
+        attack = caster.roll_spell_attack()
+        if attack >= target.avoidance:
+            if attack == sys.maxsize:
+                damage = self.damage * 2
+            else:
+                damage = self.damage
+            self.engine.message_log.add_message(
+                f"A lightning bolt strikes the {target.name} with a loud thunder, for {damage} damage!"
+            )
+            target.take_damage(damage)
         self.consume()
