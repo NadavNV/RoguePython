@@ -28,7 +28,3 @@ class BaseComponent:
     @property
     def engine(self) -> Engine:
         return self.game_map.engine
-
-
-if __name__ == "__main__":
-    print(roll_dice("2d12"))

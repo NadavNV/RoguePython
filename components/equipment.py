@@ -3,17 +3,17 @@ from __future__ import annotations
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 from components.base_component import BaseComponent
-from components.equippable import Equippable
+from components.equippable import Equippable, Weapon
 from equipment_types import EquipmentType
 from equipment_slots import EquipmentSlot
 
 if TYPE_CHECKING:
     from components.fighter import Fighter
-    from mapentity import Actor, Item
+    from mapentity import Item
 
 
 class Equipment(BaseComponent):
-    items: Dict[EquipmentSlot, Equippable]
+    items: Dict[EquipmentSlot, Optional[Equippable]]
     parent: Fighter
 
     def __init__(self):
@@ -35,7 +35,6 @@ class Equipment(BaseComponent):
         self.offhand_attack_bonus = 0
         self.offhand_min_damage = 0
         self.offhand_max_damage = 0
-
 
     def item_is_equipped(self, slot: EquipmentSlot) -> bool:
         return self.items[slot] is not None
@@ -64,14 +63,17 @@ class Equipment(BaseComponent):
 
         item.equippable.on_equip(self)
 
-        if slot == EquipmentSlot.MAINHAND:
-            self.mainhand_max_damage = item.equippable.max_damage + item.equippable.damage_bonus
-            self.mainhand_min_damage = item.equippable.min_damage + item.equippable.damage_bonus
-            self.mainhand_attack_bonus = item.equippable.attack_bonus
-        elif slot == EquipmentSlot.OFFHAND and item.equippable.equipment_type == EquipmentType.WEAPON:
-            self.offhand_max_damage = item.equippable.max_damage + item.equippable.damage_bonus
-            self.offhand_min_damage = item.equippable.min_damage + item.equippable.damage_bonus
-            self.offhand_attack_bonus = item.equippable.attack_bonus
+        if isinstance(item.equippable, Weapon):
+            min_damage = item.equippable.min_damage + item.equippable.damage_bonus
+            max_damage = item.equippable.max_damage + item.equippable.damage_bonus
+            if slot == EquipmentSlot.MAINHAND:
+                self.mainhand_max_damage = max_damage
+                self.mainhand_min_damage = min_damage
+                self.mainhand_attack_bonus = item.equippable.attack_bonus
+            elif slot == EquipmentSlot.OFFHAND:
+                self.offhand_max_damage = max_damage
+                self.offhand_min_damage = min_damage
+                self.offhand_attack_bonus = item.equippable.attack_bonus
 
         if (
                 slot == EquipmentSlot.MAINHAND and
@@ -92,9 +94,9 @@ class Equipment(BaseComponent):
 
             current_item.on_unequip(self)
             if slot == EquipmentSlot.MAINHAND:
-                self.mainhand_max_damage = self.parent.fighter.strength // 2
-                self.mainhand_min_damage = self.parent.fighter.strength // 2
-                self.mainhand_attack_bonus = self.parent.fighter.strength // 2
+                self.mainhand_max_damage = self.parent.strength // 2
+                self.mainhand_min_damage = self.parent.strength // 2
+                self.mainhand_attack_bonus = self.parent.strength // 2
             elif slot == EquipmentSlot.OFFHAND:
                 self.offhand_max_damage = 0
                 self.offhand_min_damage = 0
