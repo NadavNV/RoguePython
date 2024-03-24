@@ -1663,8 +1663,12 @@ class SelectTargetEventHandler(AskUserEventHandler):
             self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % self.number_of_enemies
         elif key in CONFIRM_KEYS:
             try:
-                self.action.target = self.engine.active_enemies[self.cursor]
-                return self.action
+                target = self.engine.active_enemies[self.cursor]
+                if target.is_alive:
+                    self.action.target = target
+                    return self.action
+                else:
+                    self.engine.message_log.add_message("Can't target dead enemies.", colors.invalid)
             except IndexError:
                 self.engine.message_log.add_message("Invalid entry.", colors.invalid)
                 return self
@@ -1763,10 +1767,14 @@ class SelectAbilityEventHandler(AskUserEventHandler):
             self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % self.number_of_abilities
         elif key in CONFIRM_KEYS:
             ability = self.engine.player[0].abilities[self.cursor]
-            if isinstance(ability, TargetedAbility):
-                return SelectTargetEventHandler(engine=self.engine, parent=self, action=ability)
+            if ability.cooldown_remaining <= 0:
+                if isinstance(ability, TargetedAbility):
+                    return SelectTargetEventHandler(engine=self.engine, parent=self, action=ability)
+                else:
+                    return ability
             else:
-                return ability
+                self.engine.message_log.add_message("Ability on cooldown.", colors.invalid)
+                return self
         elif key == tcod.event.KeySym.ESCAPE:
             return self.parent
 

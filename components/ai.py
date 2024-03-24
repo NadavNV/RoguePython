@@ -76,7 +76,10 @@ class ConfusedEnemy(BaseAI):
                     f"The {self.entity.name} shuffles around aimlessly."
                 )
             else:
-                target = random.choice(self.engine.active_enemies.fighters + self.engine.player.fighters)
+                target = random.choice(filter(
+                    lambda x: x.is_alive(),
+                    self.engine.active_enemies.fighters + self.engine.player.fighters
+                ))
                 self.engine.message_log.add_message(
                     f"The confused {self.entity.name} strikes the {target.name}!"
                 )
