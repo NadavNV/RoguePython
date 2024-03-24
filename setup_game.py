@@ -39,8 +39,8 @@ def new_game(player_class: FighterClass) -> Engine:
     if player_class == FighterClass.WARRIOR:
         print("Creating warrior")
         player.fighters[0].fighter_class = FighterClass.WARRIOR
-        player.fighters[0].strength = 6
-        player.fighters[0].agility = 3
+        player.fighters[0].strength = 7
+        player.fighters[0].agility = 4
 
         club = copy.deepcopy(entity_factories.club)
         armor = copy.deepcopy(entity_factories.leather_armor)
@@ -51,8 +51,8 @@ def new_game(player_class: FighterClass) -> Engine:
     elif player_class == FighterClass.ROGUE:
         print("Creating rogue")
         player.fighters[0].fighter_class = FighterClass.ROGUE
-        player.fighters[0].strength = 3
-        player.fighters[0].agility = 6
+        player.fighters[0].strength = 4
+        player.fighters[0].agility = 7
 
         dagger = copy.deepcopy(entity_factories.dagger)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
@@ -63,8 +63,8 @@ def new_game(player_class: FighterClass) -> Engine:
     elif player_class == FighterClass.MAGE:
         print("Creating mage")
         player.fighters[0].fighter_class = FighterClass.MAGE
-        player.fighters[0].magic = 6
-        player.fighters[0].agility = 3
+        player.fighters[0].magic = 7
+        player.fighters[0].agility = 4
 
     # player[0].roll_hitpoints()
     player[0].abilities.append(MeleeAttack(caster=player[0], target=None))

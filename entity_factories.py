@@ -25,7 +25,7 @@ player = FighterGroup(
         perseverance=1,
         agility=1,
         magic=1,
-        min_hp_per_level=7,
+        min_hp_per_level=10,
         max_hp_per_level=15,
         fighter_class=FighterClass.ROGUE,
         char="@",
@@ -185,7 +185,7 @@ class Janitor(Fighter):
             sprite='images/janitor_sprite.png',
             ai_cls=HostileEnemy,
             equipment=Equipment(),
-            inventory=Inventory(capacity=1, min_gold=15, max_gold=50),
+            inventory=Inventory(capacity=1, min_gold=10, max_gold=35),
             level=Level(xp_given=50),
             weapon_crit_threshold=20,
         )
