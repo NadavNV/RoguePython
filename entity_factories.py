@@ -113,8 +113,6 @@ broom = Item(
     equippable=equippable.Broom(),
 )
 
-# janitor.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
-
 club = Item(
     buy_price=25,
     sell_price=5,
@@ -144,8 +142,6 @@ handaxe = Item(
     description="For cutting trees and enemies. Strength weapon. Must be equipped in the main hand.",
     equippable=equippable.ShortSword(),
 )
-
-# lumberjack.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(handaxe), add_message=False)
 
 leather_armor = Item(
     buy_price=200,
@@ -193,7 +189,7 @@ class Janitor(Fighter):
         self.equipment.parent = self
         self.inventory.parent = self
 
-        self.abilities=[MeleeAttack(caster=self, target=None)]
+        self.abilities = [MeleeAttack(caster=self, target=None)]
 
         self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
 
@@ -201,12 +197,12 @@ class Janitor(Fighter):
 class Lumberjack(Fighter):
     def __init__(self):
         super().__init__(
-            strength=5,
+            strength=8,
             perseverance=3,
-            agility=3,
+            agility=4,
             magic=1,
-            min_hp_per_level=6,
-            max_hp_per_level=12,
+            min_hp_per_level=10,
+            max_hp_per_level=25,
             fighter_class=FighterClass.WARRIOR,
             char="L",
             color=colors.lumberjack_icon,
@@ -222,9 +218,10 @@ class Lumberjack(Fighter):
         self.equipment.parent = self
         self.inventory.parent = self
 
-        self.abilities=[MeleeAttack(caster=self, target=None)]
+        self.abilities = [MeleeAttack(caster=self, target=None)]
 
         self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(handaxe), add_message=False)
+        self.inventory.add_item(copy.deepcopy(tasty_rat))
 
 
 if __name__ == "__main__":

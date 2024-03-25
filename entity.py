@@ -213,6 +213,9 @@ class Trader(Entity):
         for item, amount in self.items.items():
             if item.name == item_name and amount > 0:
                 self.items[item] -= 1
+                if self.items[item] == 0:
+                    # Remove sold out items
+                    del self.items[item]
                 return copy.deepcopy(item)
 
     def buy_item(self, item: Item) -> int:

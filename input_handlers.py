@@ -529,6 +529,71 @@ class LevelUpEventHandler(AskUserEventHandler):
                 alignment=libtcodpy.CENTER
             )
 
+        width = len("┤Current Attributes├") + 4
+        height = 8
+        x = x - width-1
+        y = 1
+
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            fg=colors.white,
+            bg=colors.black
+        )
+        console.print_box(
+            x=x,
+            y=y,
+            width=width,
+            height=1,
+            string="┤Current Attributes├",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER,
+        )
+
+        console.print_box(
+            x=x,
+            y=y + 2,
+            width=width,
+            height=1,
+            string=f"S: {self.engine.player[0].strength}",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER,
+        )
+        console.print_box(
+            x=x,
+            y=y + 3,
+            width=width,
+            height=1,
+            string=f"P: {self.engine.player[0].perseverance}",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER,
+        )
+        console.print_box(
+            x=x,
+            y=y + 4,
+            width=width,
+            height=1,
+            string=f"A: {self.engine.player[0].agility}",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER,
+        )
+        console.print_box(
+            x=x,
+            y=y + 5,
+            width=width,
+            height=1,
+            string=f"M: {self.engine.player[0].magic}",
+            fg=colors.white,
+            bg=colors.black,
+            alignment=libtcodpy.CENTER,
+        )
+
         return self
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
@@ -1879,7 +1944,7 @@ class LootEventHandler(AskUserEventHandler):
                     inventory.gold += self.gold
                     return self.parent
             except exceptions.Impossible:
-                self.items.index(item, self.cursor)
+                self.items.insert(self.cursor, item)
                 self.engine.message_log.add_message(
                     text="You don't have room for that item.",
                     fg=colors.impossible,

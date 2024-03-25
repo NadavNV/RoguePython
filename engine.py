@@ -78,7 +78,7 @@ class Engine:
             self.game_map.render(console)
 
             render_functions.render_names_at_mouse_location(
-                console=console, x=1, y=console.height * 2 // 3 + 7, engine=self
+                console=console, x=1, y=console.height * 2 // 3 + 8, engine=self
             )
 
             render_functions.render_dungeon_ui(console)

@@ -21,9 +21,9 @@ Actor = Union[Entity, Type[Fighter]]
 TRADER_FLOOR = 3
 
 max_items_by_floor = [
-    (1, 2),
-    (3, 3),
-    (4, 4),
+    (1, 1),
+    (3, 2),
+    (4, 3),
 ]
 
 max_groups_by_floor = [
@@ -46,7 +46,7 @@ item_chances: Dict[int, List[Tuple[Entity, int]]] = {
 }
 
 enemy_chances: Dict[int, List[Tuple[Type[Fighter], int]]] = {
-    0: [(entity_factories.Janitor, 80)],
+    0: [(entity_factories.Janitor, 40)],
     3: [(entity_factories.Lumberjack, 15)],
     5: [(entity_factories.Lumberjack, 30)],
     7: [(entity_factories.Lumberjack, 60)],
@@ -81,6 +81,7 @@ def generate_fighter_groups(
             fighter = template()
             fighters.append(fighter)
             gold += fighter.inventory.gold
+        fighters.sort(key=lambda x: x.max_hp, reverse=True)
         group = FighterGroup(fighters=fighters, ai_cls=RoamingEnemy, gold=gold)
         for fighter in group:
             fighter.parent = group

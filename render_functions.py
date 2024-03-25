@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional, Tuple, TYPE_CHECKING
 
 import numpy as np
+from tcod import libtcodpy
 
 import colors
 from components.fighter import Fighter
@@ -201,10 +202,19 @@ def render_dungeon_ui(console: Console) -> None:
         y=frame_y,
         width=console.width // 3 - 1,
         height=console.height // 3 - 2,
-        title="Keyboard Commands",
         clear=True,
-        fg=(255, 255, 255),
-        bg=(0, 0, 0),
+        fg=colors.white,
+        bg=colors.black,
+    )
+    console.print_box(
+        x=frame_x,
+        y=frame_y,
+        width=console.width // 3 - 1,
+        height=1,
+        string=f"┤Keyboard Commands├",
+        fg=colors.white,
+        bg=colors.black,
+        alignment=libtcodpy.CENTER
     )
 
     console.print(x=frame_x + 1, y=frame_y + 1, string="Use item from inventory:         i")
@@ -223,10 +233,19 @@ def render_dungeon_ui(console: Console) -> None:
         y=frame_y,
         width=console.width // 3 - 1,
         height=console.height // 3 - 2,
-        title="Map Legend",
         clear=True,
-        fg=(255, 255, 255),
-        bg=(0, 0, 0),
+        fg=colors.white,
+        bg=colors.black,
+    )
+    console.print_box(
+        x=frame_x,
+        y=frame_y,
+        width=console.width // 3 - 1,
+        height=1,
+        string=f"┤Map Legend├",
+        fg=colors.white,
+        bg=colors.black,
+        alignment=libtcodpy.CENTER
     )
 
     console.print(x=frame_x + 1, y=frame_y + 1, string="@: Player / Trader")
