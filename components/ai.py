@@ -10,7 +10,7 @@ from components.consumable import HealingConsumable
 from actions import Action, BumpAction, MovementAction, WaitAction, TargetedAbility, MeleeAttack, ItemAction
 
 if TYPE_CHECKING:
-    from mapentity import FighterGroup
+    from entity import FighterGroup
     from components.fighter import Fighter
 
 

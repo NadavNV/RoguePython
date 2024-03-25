@@ -29,7 +29,7 @@ from equipment_types import EquipmentType
 from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
-    from mapentity import Item
+    from entity import Item
     from engine import Engine
 
 MOVE_KEYS = {

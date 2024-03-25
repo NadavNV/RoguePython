@@ -8,12 +8,12 @@ import colors
 import exceptions
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
-from mapentity import FighterGroup, Trader
+from entity import FighterGroup, Trader
 from components.fighter import Fighter
 
 if TYPE_CHECKING:
     from engine import Engine
-    from mapentity import Item
+    from entity import Item
 
 Actor = Union[Fighter, FighterGroup]
 

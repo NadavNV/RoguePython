@@ -7,7 +7,7 @@ from equipment_types import EquipmentType
 from weapon_types import WeaponType
 
 if TYPE_CHECKING:
-    from mapentity import Item
+    from entity import Item
     from components.equipment import Equipment
 
 
@@ -24,6 +24,15 @@ class Equippable(BaseComponent):
     def on_unequip(self, equipment: Equipment) -> None:
         """What to do when unequipping this item, e.g. remove a strength bonus"""
         pass
+
+    def enhance_item(self, n: int):
+        """
+        For weapons, increases attack bonus and damage by n.
+        For armors, increases armor bonus by n.
+        """
+        self.parent.name += f" +{n}"
+        self.parent.buy_price *= n * 3
+        self.parent.sell_price *= n * 3
 
     @property
     def name(self) -> str:
@@ -63,6 +72,12 @@ class Weapon(Equippable):
             self.attack_bonus = 0
             self.damage_bonus = 0
 
+    def enhance_item(self, n: int):
+        super().enhance_item(n)
+        self.min_damage += n
+        self.max_damage += n
+        self.attack_bonus += n
+
 
 class Armor(Equippable):
     armor_bonus: int
@@ -86,21 +101,9 @@ class Armor(Equippable):
         equipment.armor_bonus -= self.armor_bonus
         equipment.agility_bonus += self.agility_penalty
 
-
-class EnhancedWeapon(Weapon):
-    def __init__(self, *, parent: Item, n: int):
-        # TODO: This should be a class method of Weapon/Armor rather than a subclass
-        super().__init__(other=parent.equippable)
-        self.parent = parent
-        parent.equippable = self
-
-        self.min_damage += n
-        self.max_damage += n
-        self.attack_bonus += n
-
-        self.parent.name += f" +{n}"
-        self.parent.buy_price *= n * 3
-        self.parent.sell_price *= n * 3
+    def enhance_item(self, n: int):
+        super().enhance_item(n)
+        self.armor_bonus += n
 
 
 class Dagger(Weapon):
@@ -161,7 +164,7 @@ class ChainMail(Armor):
 
 
 if __name__ == "__main__":
-    from mapentity import Item
+    from entity import Item
     dagger = Item(
         buy_price=25,
         sell_price=5,
@@ -171,11 +174,10 @@ if __name__ == "__main__":
         description="Fine steel, good for stabbing. Can be used in the off hand. Agility weapon.",
         equippable=Dagger(),
     )
-    EnhancedWeapon(parent=dagger, n=1)
+    dagger.equippable.enhance_item(1)
     print(dagger.name)
     print(f"Attack: +{dagger.equippable.attack_bonus}")
     print(f"Damage: {dagger.equippable.min_damage} - {dagger.equippable.max_damage}")
     print(dagger.buy_price)
     print(dagger.sell_price)
     print(dagger.equippable)
-

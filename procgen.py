@@ -10,13 +10,13 @@ import entity_factories
 from game_map import GameMap
 from components.ai import RoamingEnemy
 import tile_types
-from mapentity import MapEntity, FighterGroup, Item, Trader
+from entity import Entity, FighterGroup, Item, Trader
 from components.fighter import Fighter
 
 if TYPE_CHECKING:
     from engine import Engine
 
-Entity = Union[MapEntity, Type[Fighter]]
+Actor = Union[Entity, Type[Fighter]]
 
 TRADER_FLOOR = 3
 
@@ -38,7 +38,7 @@ max_enemies_per_group_by_floor = [
     (6, 3)
 ]
 
-item_chances: Dict[int, List[Tuple[MapEntity, int]]] = {
+item_chances: Dict[int, List[Tuple[Entity, int]]] = {
     0: [(entity_factories.tasty_rat, 40), (entity_factories.mana_potion, 12)],
     2: [(entity_factories.confusion_scroll, 12), (entity_factories.dagger, 3)],
     4: [(entity_factories.lightning_scroll, 25), (entity_factories.short_sword, 5)],
@@ -89,10 +89,10 @@ def generate_fighter_groups(
 
 
 def get_entities_at_random(
-        weighted_chances_by_floor: Dict[int, List[Tuple[Entity, int]]],
+        weighted_chances_by_floor: Dict[int, List[Tuple[Actor, int]]],
         number_of_entities: int,
         floor: int,
-) -> List[Entity]:
+) -> List[Actor]:
     entity_weighted_chances = {}
 
     for key, values in weighted_chances_by_floor.items():
@@ -239,10 +239,10 @@ def place_entities(room: RectangularRoom, dungeon: GameMap, floor_number: int) -
         0, get_max_value_for_floor(max_items_by_floor, floor_number)
     )
 
-    monsters: List[MapEntity] = generate_fighter_groups(
+    monsters: List[Entity] = generate_fighter_groups(
         number_of_groups, floor_number
     )
-    items: List[MapEntity] = get_entities_at_random(
+    items: List[Entity] = get_entities_at_random(
         item_chances, number_of_items, floor_number
     )
 

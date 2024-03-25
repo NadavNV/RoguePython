@@ -6,7 +6,7 @@ import random
 
 if TYPE_CHECKING:
     from engine import Engine
-    from mapentity import MapEntity
+    from entity import Entity
     from game_map import GameMap
 
 
@@ -19,7 +19,7 @@ def roll_dice(dice_string: str):
 
 
 class BaseComponent:
-    parent: MapEntity  # Owning entity instance
+    parent: Entity  # Owning entity instance
 
     @property
     def game_map(self) -> GameMap:

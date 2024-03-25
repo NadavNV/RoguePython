@@ -7,7 +7,7 @@ from components.base_component import BaseComponent
 from exceptions import Impossible
 
 if TYPE_CHECKING:
-    from mapentity import Item
+    from entity import Item
     from components.fighter import Fighter
 
 MAX_STACK_SIZE = 99

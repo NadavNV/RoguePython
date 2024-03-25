@@ -18,7 +18,7 @@ from components.level import Level
 
 if TYPE_CHECKING:
     from engine import Engine
-    from mapentity import FighterGroup
+    from entity import FighterGroup
     from actions import Ability
 
 BASE_DEFENSE = 10

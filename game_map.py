@@ -5,17 +5,17 @@ from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 import numpy as np  # type: ignore
 from tcod.console import Console
 
-from mapentity import FighterGroup, Item, Trader
+from entity import FighterGroup, Item, Trader
 import tile_types
 
 if TYPE_CHECKING:
     from engine import Engine
-    from mapentity import MapEntity
+    from entity import Entity
 
 
 class GameMap:
     def __init__(
-        self, engine: Engine, width: int, height: int, entities: Iterable[MapEntity] = ()
+        self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()
     ):
         self.engine = engine
         self.width, self.height = width, height
@@ -53,7 +53,7 @@ class GameMap:
 
     def get_blocking_entity_at_location(
             self, location_x: int, location_y: int,
-    ) -> Optional[MapEntity]:
+    ) -> Optional[Entity]:
         for entity in self.entities:
             if (
                 entity.blocks_movement
@@ -64,7 +64,7 @@ class GameMap:
 
         return None
 
-    def get_actor_at_location(self, x: int, y: int) -> Optional[MapEntity]:
+    def get_actor_at_location(self, x: int, y: int) -> Optional[Entity]:
         for actor in self.actors:
             if actor.x == x and actor.y == y:
                 return actor

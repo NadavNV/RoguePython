@@ -18,7 +18,7 @@ from input_handlers import (
 )
 
 if TYPE_CHECKING:
-    from mapentity import Item
+    from entity import Item
     from components.fighter import Fighter
 
 
@@ -149,7 +149,7 @@ class ManaConsumable(Consumable):
                 message = f"You consume the {self.parent.name}, and recover {amount_recovered} mana!"
             else:
                 message = f"The {consumer.name} consumes the {self.parent.name}, and recovers {amount_recovered} mana!"
-            self.engine.message_log.add_message(message,colors.health_recovered)
+            self.engine.message_log.add_message(message, colors.health_recovered)
             self.consume()
         else:
             raise Impossible(f"Your mana is already full.")

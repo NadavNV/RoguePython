@@ -7,7 +7,7 @@ from components.equipment import Equipment
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
-from mapentity import FighterGroup, Item
+from entity import FighterGroup, Item
 from fighter_classes import FighterClass
 from equipment_slots import EquipmentSlot
 from actions import MeleeAttack

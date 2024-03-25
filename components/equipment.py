@@ -9,7 +9,7 @@ from equipment_slots import EquipmentSlot
 
 if TYPE_CHECKING:
     from components.fighter import Fighter
-    from mapentity import Item
+    from entity import Item
 
 
 class Equipment(BaseComponent):

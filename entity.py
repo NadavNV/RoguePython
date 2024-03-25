@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound="MapEntity")
 
 
-class MapEntity:
+class Entity:
     """
-    A generic object to represent any object that appears on the dungeon map.
+    A generic object to represent any object that can appear on the dungeon map.
     """
 
     parent: Union[GameMap, Inventory]
@@ -78,7 +78,7 @@ class MapEntity:
         return self.parent.engine
 
 
-class FighterGroup(MapEntity):
+class FighterGroup(Entity):
     def __init__(
             self,
             *,
@@ -145,7 +145,7 @@ class FighterGroup(MapEntity):
             raise
 
 
-class Item(MapEntity):
+class Item(Entity):
     def __init__(
         self,
         *,
@@ -187,7 +187,7 @@ class Item(MapEntity):
         self.stackable = stackable
 
 
-class Trader(MapEntity):
+class Trader(Entity):
     NUMBER_OF_ITEMS = 7
 
     def __init__(

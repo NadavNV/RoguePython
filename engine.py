@@ -12,7 +12,7 @@ from message_log import MessageLog
 import render_functions
 
 if TYPE_CHECKING:
-    from mapentity import FighterGroup, Trader
+    from entity import FighterGroup, Trader
     from game_map import GameMap, GameWorld
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from mapentity import FighterGroup
+    from entity import FighterGroup
     from components.ability import Ability
 
 from components.base_component import BaseComponent
