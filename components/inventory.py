@@ -16,10 +16,10 @@ MAX_STACK_SIZE = 99
 class Inventory(BaseComponent):
     parent: Fighter
 
-    def __init__(self, capacity: int, min_gold: int, max_gold: int):
+    def __init__(self, capacity: int):
         self.capacity = capacity
         self.items: List[List[Item]] = []
-        self.gold = random.randint(min_gold, max_gold)
+        self.gold = 0
 
     def drop(self, item: Item) -> None:
         """

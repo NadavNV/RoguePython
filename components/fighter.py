@@ -2,29 +2,34 @@ from __future__ import annotations
 
 import sys
 import copy
-from typing import List, Tuple, TYPE_CHECKING
+from typing import List, Tuple, Type, TYPE_CHECKING
 
 import random
 
 import colors
 from components.base_component import BaseComponent
-from fighter_classes import FighterClass
+from components.equipment import Equipment
+from components.inventory import Inventory
+from components.level import Level
+from dropgen.RDSObject import RDSObject
+from dropgen.RDSValue import RDSValue
+from dropgen.RDSTable import RDSTable
+from entity import Item
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
+from fighter_classes import FighterClass
 from weapon_types import WeaponType
-from components.inventory import Inventory
-from components.equipment import Equipment
-from components.level import Level
 
 if TYPE_CHECKING:
+    from actions import Ability
+    from components.ai import BaseAI
     from engine import Engine
     from entity import FighterGroup
-    from actions import Ability
 
 BASE_DEFENSE = 10
 
 
-class Fighter(BaseComponent):
+class Fighter(BaseComponent, RDSObject):
     parent: FighterGroup
     """
     Strength - Affects damage with weapons and block amount with shields.
@@ -37,8 +42,8 @@ class Fighter(BaseComponent):
     3 points to spend when leveling up.
     Avoidance = 10 + Agility bonus.
     Armor reduces weapon damage, heavier armor penalizes Agility. (You're easier to hit, but you take less damage)
-    Proficiency bonus = 1 + level / 4, added to attack rolls with proficient weapons and spell attacks.
-    Warrior is proficient with swords and axes, rogue is proficient with daggers, rapiers, and scimitars. Mage
+    Proficiency bonus = 1 + level // 4, added to attack rolls with proficient weapons and spell attacks.
+    Warrior is proficient with swords and axes, rogue is proficient with daggers and rapiers. Mage
     is proficient with spells.
     """
 
@@ -51,8 +56,8 @@ class Fighter(BaseComponent):
             min_hp_per_level: int,
             max_hp_per_level: int,
             fighter_class: FighterClass,
-            ai_cls,
-            inventory: Inventory = Inventory(capacity=26, min_gold=0, max_gold=0),
+            ai_cls: Type[BaseAI],
+            inventory: Inventory = Inventory(capacity=26),
             equipment: Equipment = Equipment(),
             level: Level = Level(),
             abilities: List[Ability] = None,
@@ -64,6 +69,7 @@ class Fighter(BaseComponent):
             name: str = "<Unnamed>",
             sprite: str = "images/rogue_icon.png"
     ):
+        super().__init__()
         self.char = char
         self.name = name
         self.color = color
@@ -262,3 +268,72 @@ class Fighter(BaseComponent):
                     random.randint(self.equipment.offhand_min_damage, self.equipment.offhand_max_damage))
         else:
             return 0
+
+
+class Enemy(Fighter):
+    def __init__(
+            self,
+            target_level: int,
+            loot_table: RDSTable,
+            stat_prio: RDSTable,
+            strength: int,
+            perseverance: int,
+            agility: int,
+            magic: int,
+            min_hp_per_level: int,
+            max_hp_per_level: int,
+            fighter_class: FighterClass,
+            ai_cls,
+            inventory: Inventory = Inventory(capacity=26),
+            equipment: Equipment = Equipment(),
+            level: Level = Level(),
+            abilities: List[Ability] = None,
+            mana: int = 0,
+            weapon_crit_threshold: int = 20,
+            spell_crit_threshold: int = 20,
+            char: str = "?",
+            color: Tuple[int, int, int] = colors.white,
+            name: str = "<Unnamed>",
+            sprite: str = "images/rogue_icon.png",
+    ):
+        super().__init__(
+            strength=strength,
+            perseverance=perseverance,
+            agility=agility,
+            magic=magic,
+            min_hp_per_level=min_hp_per_level,
+            max_hp_per_level=max_hp_per_level,
+            fighter_class=fighter_class,
+            ai_cls=ai_cls,
+            inventory=inventory,
+            equipment=equipment,
+            level=level,
+            abilities=abilities,
+            mana=mana,
+            weapon_crit_threshold=weapon_crit_threshold,
+            spell_crit_threshold=spell_crit_threshold,
+            name=name,
+            color=color,
+            char=char,
+            sprite=sprite
+        )
+
+        self.loot_table = loot_table
+
+        while self.level.current_level < target_level:
+            self.level.increase_level(stats=[x.rds_value for x in stat_prio.rds_result])
+
+        self.level.xp_given *= self.level.current_level
+
+    def die(self) -> None:
+        super().die()
+
+        loot = self.loot_table.rds_result
+
+        for item in loot:
+            if isinstance(item, RDSValue):
+                print(f"Dropped {item.rds_value} gold")
+                self.inventory.gold += item.rds_value
+            elif isinstance(item, Item):
+                print(f"Dropped {item.name}")
+                self.inventory.add_item(item)

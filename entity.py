@@ -86,7 +86,6 @@ class FighterGroup(Entity):
             y: int = 0,
             fighters: List[Fighter],
             ai_cls: Type[BaseAI],
-            gold: int = 0,
     ):
         super().__init__(
             x=x,
@@ -99,7 +98,6 @@ class FighterGroup(Entity):
         )
         self.fighters = fighters
         self.ai = ai_cls(self)
-        self.gold = gold
 
     @property
     def is_alive(self) -> bool:

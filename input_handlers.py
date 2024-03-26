@@ -1850,22 +1850,30 @@ class LootEventHandler(AskUserEventHandler):
     def __init__(self, engine: Engine, parent: EventHandler) -> None:
         super().__init__(engine=engine, parent=parent)
         self.items: List[Item] = []
-        self.gold = self.engine.active_enemies.gold
+        self.gold = 0
         for enemy in self.engine.active_enemies.fighters:
-            for equippable in enemy.equipment.items.values():
-                if equippable is not None:
-                    self.items.append(equippable.parent)
+            # for equippable in enemy.equipment.items.values():
+            #     if equippable is not None:
+            #         self.items.append(equippable.parent)
             for stack in enemy.inventory.items:
                 self.items += stack
+            self.gold += enemy.inventory.gold
         self.cursor = 0
         self.height = 8 + len(self.items)
         self.width = 4 + max(
             len(self.TEXT),
-            max([len(item.name) for item in self.items]),
             len(f"You also pick up {self.gold} gold pieces!")
         )
 
+        if len(self.items) != 0:
+            self.width = max(
+                self.width,
+                max([len(item.name) for item in self.items]) + 4,
+            )
+
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        if self.gold == 0 and len(self.items) == 0:
+            return PopupMessage(MainGameEventHandler(self.engine), "There is no loot!")
         self.parent.on_render(console)
         console.rgb["fg"] //= 2
         console.rgb["bg"] //= 2
@@ -1917,17 +1925,17 @@ class LootEventHandler(AskUserEventHandler):
                 fg=fg,
                 bg=bg
             )
-
-        console.print_box(
-            x=x,
-            y=y + self.height - 3,
-            width=self.width,
-            height=1,
-            string=f"You also pick up {self.gold} gold pieces!",
-            fg=colors.white,
-            bg=colors.black,
-            alignment=libtcodpy.CENTER
-        )
+        if self.gold > 0:
+            console.print_box(
+                x=x,
+                y=y + self.height - 3,
+                width=self.width,
+                height=1,
+                string=f"You also pick up {self.gold} gold pieces!",
+                fg=colors.white,
+                bg=colors.black,
+                alignment=libtcodpy.CENTER
+            )
 
         return self
 
@@ -1936,20 +1944,24 @@ class LootEventHandler(AskUserEventHandler):
         inventory = self.engine.player[0].inventory
 
         if key in CONFIRM_KEYS:
-            item = self.items.pop(self.cursor)
-            try:
-                inventory.add_item(item)
-                self.cursor = min(self.cursor, len(self.items) - 1)
-                if len(self.items) == 0:
-                    inventory.gold += self.gold
-                    return self.parent
-            except exceptions.Impossible:
-                self.items.insert(self.cursor, item)
-                self.engine.message_log.add_message(
-                    text="You don't have room for that item.",
-                    fg=colors.impossible,
-                    stack=True
-                )
+            if len(self.items) > 0:
+                item = self.items.pop(self.cursor)
+                try:
+                    inventory.add_item(item)
+                    self.cursor = min(self.cursor, len(self.items) - 1)
+                    if len(self.items) == 0:
+                        inventory.gold += self.gold
+                        return self.parent
+                except exceptions.Impossible:
+                    self.items.insert(self.cursor, item)
+                    self.engine.message_log.add_message(
+                        text="You don't have room for that item.",
+                        fg=colors.impossible,
+                        stack=True
+                    )
+            else:
+                inventory.gold += self.gold
+                return self.parent
 
         elif key in CURSOR_Y_KEYS:
             self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % len(self.items)

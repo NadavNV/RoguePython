@@ -8,15 +8,15 @@ import tcod
 
 import entity_factories
 from game_map import GameMap
-from components.ai import RoamingEnemy
+from components.ai import RoamingEnemy, HostileEnemy
 import tile_types
 from entity import Entity, FighterGroup, Item, Trader
-from components.fighter import Fighter
+from components.fighter import Enemy
 
 if TYPE_CHECKING:
     from engine import Engine
 
-Actor = Union[Entity, Type[Fighter]]
+Actor = Union[Entity, Type[Enemy]]
 
 TRADER_FLOOR = 3
 
@@ -45,7 +45,7 @@ item_chances: Dict[int, List[Tuple[Entity, int]]] = {
     6: [(entity_factories.fireball_scroll, 25), (entity_factories.chain_mail, 15)],
 }
 
-enemy_chances: Dict[int, List[Tuple[Type[Fighter], int]]] = {
+enemy_chances: Dict[int, List[Tuple[Type[Enemy], int]]] = {
     0: [(entity_factories.Janitor, 40)],
     3: [(entity_factories.Lumberjack, 15)],
     5: [(entity_factories.Lumberjack, 30)],
@@ -76,13 +76,12 @@ def generate_fighter_groups(
         number_of_monsters = random.randint(1, get_max_value_for_floor(max_enemies_per_group_by_floor, floor))
         templates = get_entities_at_random(enemy_chances, number_of_entities=number_of_monsters, floor=floor)
         fighters = []
-        gold = 0
         for template in templates:
-            fighter = template()
+            target_level = random.choices([floor - 1, floor, floor + 1], [2, 5, 2])[0]
+            fighter = template(target_level=target_level)
             fighters.append(fighter)
-            gold += fighter.inventory.gold
         fighters.sort(key=lambda x: x.max_hp, reverse=True)
-        group = FighterGroup(fighters=fighters, ai_cls=RoamingEnemy, gold=gold)
+        group = FighterGroup(fighters=fighters, ai_cls=RoamingEnemy)
         for fighter in group:
             fighter.parent = group
         groups.append(group)

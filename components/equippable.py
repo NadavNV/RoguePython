@@ -149,7 +149,8 @@ class Handaxe(Weapon):
         super().__init__(
             weapon_type=WeaponType.STRENGTH,
             min_damage=1,
-            max_damage=4
+            max_damage=4,
+            offhand=True,
         )
 
 

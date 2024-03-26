@@ -1,16 +1,20 @@
 import copy
+import random
 
+from actions import MeleeAttack
 import colors
 from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
 from components.equipment import Equipment
-from components.fighter import Fighter
+from components.fighter import Fighter, Enemy
 from components.inventory import Inventory
 from components.level import Level
+from dropgen.RDSNullValue import RDSNullValue
+from dropgen.RDSTable import RDSTable
+from dropgen.RDSValue import RDSValue
 from entity import FighterGroup, Item
-from fighter_classes import FighterClass
 from equipment_slots import EquipmentSlot
-from actions import MeleeAttack
+from fighter_classes import FighterClass
 
 SCROLL_CHAR = '~'
 POTION_CHAR = '!'
@@ -32,7 +36,7 @@ player = FighterGroup(
         color=colors.player_icon,
         name="Player",
         ai_cls=HostileEnemy,
-        inventory=Inventory(capacity=26, min_gold=0, max_gold=100),
+        inventory=Inventory(capacity=26),
         level=Level(level_up_base=200),
     )],
     ai_cls=RoamingEnemy
@@ -140,7 +144,7 @@ handaxe = Item(
     color=(0, 191, 255),
     name="Hand Axe",
     description="For cutting trees and enemies. Strength weapon. Must be equipped in the main hand.",
-    equippable=equippable.ShortSword(),
+    equippable=equippable.Handaxe(),
 )
 
 leather_armor = Item(
@@ -165,8 +169,19 @@ chain_mail = Item(
 )
 
 
-class Janitor(Fighter):
-    def __init__(self):
+class Gold(RDSValue):
+    def __init__(self, level: int, min_value: int, max_value: int, probability: float):
+        level = max(1, level)
+        value = random.randint(level * min_value, level * max_value)
+
+        super().__init__(
+            probability=probability,
+            value=value
+        )
+
+
+class Janitor(Enemy):
+    def __init__(self, target_level: int):
         super().__init__(
             strength=2,
             perseverance=1,
@@ -181,9 +196,28 @@ class Janitor(Fighter):
             sprite='images/janitor_sprite.png',
             ai_cls=HostileEnemy,
             equipment=Equipment(),
-            inventory=Inventory(capacity=1, min_gold=10, max_gold=35),
+            inventory=Inventory(capacity=26),
             level=Level(xp_given=50),
             weapon_crit_threshold=20,
+            target_level=target_level,
+            loot_table=RDSTable(
+                contents=[
+                    Gold(level=target_level, min_value=10, max_value=35, probability=30),
+                    RDSNullValue(probability=50),
+                    # TODO: Add item drops
+                ],
+                count=2,
+            ),
+            stat_prio=RDSTable(
+                contents=[
+                    RDSValue(probability=3, value="Strength"),
+                    RDSValue(probability=2, value="Perseverance"),
+                    RDSValue(probability=4, value="Agility"),
+                    RDSValue(probability=1, value="Magic"),
+                ],
+                count=3,
+                always=True
+            ),
         )
 
         self.equipment.parent = self
@@ -194,8 +228,8 @@ class Janitor(Fighter):
         self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
 
 
-class Lumberjack(Fighter):
-    def __init__(self):
+class Lumberjack(Enemy):
+    def __init__(self, target_level: int):
         super().__init__(
             strength=8,
             perseverance=3,
@@ -210,9 +244,28 @@ class Lumberjack(Fighter):
             sprite='images/lumberjack_sprite.png',
             ai_cls=HostileEnemy,
             equipment=Equipment(),
-            inventory=Inventory(capacity=1, min_gold=35, max_gold=75),
+            inventory=Inventory(capacity=26),
             level=Level(xp_given=100),
             weapon_crit_threshold=20,
+            target_level=target_level,
+            loot_table=RDSTable(
+                contents=[
+                    Gold(level=target_level, min_value=35, max_value=70, probability=30),
+                    RDSNullValue(probability=50),
+                    # TODO: Add item drops
+                ],
+                count=2,
+            ),
+            stat_prio=RDSTable(
+                contents=[
+                    RDSValue(probability=3, value="Strength"),
+                    RDSValue(probability=2, value="Perseverance"),
+                    RDSValue(probability=4, value="Agility"),
+                    RDSValue(probability=1, value="Magic"),
+                ],
+                count=3,
+                always=True
+            ),
         )
 
         self.equipment.parent = self
@@ -225,6 +278,10 @@ class Lumberjack(Fighter):
 
 
 if __name__ == "__main__":
-    janitor = Janitor()
+    janitor = Janitor(target_level=3)
     print(janitor.hp)
-    print(janitor.weapon_crit_threshold)
+    print(janitor.level.current_level)
+    print(f"Strength: {janitor.strength}")
+    print(f"Perseverance: {janitor.perseverance}")
+    print(f"Agility: {janitor.agility}")
+    print(f"Magic: {janitor.magic}")
