@@ -15,6 +15,8 @@ system similar to classic JRPGs.
 ## Technologies Used
 * Python 3.12.2
 * python-tcod 16.2.2
+* pillow 10.2.0
+* [drop-generator 0.0.35](https://pypi.org/project/drop-generator/)
 ## Screenshots
 ***TBA***
 ## Setup and Usage

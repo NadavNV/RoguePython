@@ -5,6 +5,7 @@ import math
 from typing import Dict, Iterable, List, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
 
 import colors
+from dropgen.RDSObject import RDSObject
 from render_order import RenderOrder
 
 if TYPE_CHECKING:
@@ -143,7 +144,7 @@ class FighterGroup(Entity):
             raise
 
 
-class Item(Entity):
+class Item(Entity, RDSObject):
     def __init__(
         self,
         *,

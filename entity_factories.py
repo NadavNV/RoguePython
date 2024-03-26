@@ -75,6 +75,39 @@ tasty_rat = Item(
     stackable=True
 )
 
+plump_rat = Item(
+    buy_price=500,
+    sell_price=100,
+    char=POTION_CHAR,
+    color=(127, 0, 255),
+    name="Plump Rat",
+    description="Eat the plump rat to restore 8 to 20 hit points.",
+    consumable=consumable.HealingConsumable(min_amount=8, max_amount=20),
+    stackable=True
+)
+
+enormous_rat = Item(
+    buy_price=50,
+    sell_price=10,
+    char=POTION_CHAR,
+    color=(127, 0, 255),
+    name="Enormous Rat",
+    description="Eat the enormous rat to restore 16 to 40 hit points.",
+    consumable=consumable.HealingConsumable(min_amount=16, max_amount=40),
+    stackable=True
+)
+
+rodent_of_unusual_size = Item(
+    buy_price=50,
+    sell_price=10,
+    char=POTION_CHAR,
+    color=(127, 0, 255),
+    name="Rodent of Unusual Size",
+    description="Eat the R.O.U.S. to restore 30 to 60 hit points.",
+    consumable=consumable.HealingConsumable(min_amount=30, max_amount=60),
+    stackable=True
+)
+
 mana_potion = Item(
     buy_price=50,
     sell_price=10,
