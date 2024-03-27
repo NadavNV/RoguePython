@@ -60,6 +60,7 @@ class Inventory(BaseComponent):
             else:
                 for stack in self.items:
                     if item.name == stack[0].name and len(stack) < MAX_STACK_SIZE:
+                        item.parent = self
                         stack.append(item)
                         return None
                 raise Impossible("Inventory is full")

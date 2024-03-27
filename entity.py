@@ -7,6 +7,7 @@ from typing import Dict, Iterable, List, Optional, Tuple, Type, TypeVar, TYPE_CH
 import colors
 from dropgen.RDSObject import RDSObject
 
+import exceptions
 from render_order import RenderOrder
 
 if TYPE_CHECKING:
@@ -220,28 +221,19 @@ class Trader(Entity):
             render_order=RenderOrder.ACTOR,
         )
         self.items: Dict[Item, int] = {}
-        self.inventory = Inventory(capacity=self.NUMBER_OF_ITEMS)
+        self.inventory = Inventory(capacity=26)
 
-    def sell_item(self, item_name: str) -> Item:
-        # TODO: Change to work with an Inventory
-        for item, amount in self.items.items():
-            if item.name == item_name and amount > 0:
-                self.items[item] -= 1
-                if self.items[item] == 0:
-                    # Remove sold out items
-                    del self.items[item]
-                return copy.deepcopy(item)
+    def sell_item(self, item_index: int) -> Item:
+        item = self.inventory.items[item_index][0]
+        self.inventory.remove_item(item)
+        return item
 
     def buy_item(self, item: Item) -> int:
-        # TODO: Change to work with an Inventory
-        if not item.stackable:
-            self.items[item] = 1
-        else:
-            for key in self.items:
-                if key.name == item.name:
-                    self.items[key] += 1
-                    break
-        return item.sell_price
+        try:
+            self.inventory.add_item(item)
+            return item.sell_price
+        except exceptions.Impossible as exc:
+            raise exc
 
     def list_items(self) -> List[str]:
         # TODO: Change to work with an Inventory

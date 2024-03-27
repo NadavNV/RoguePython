@@ -1986,7 +1986,7 @@ class TraderEventHandler(AskUserEventHandler):
     def __init__(self, engine: Engine, parent: EventHandler) -> None:
         super().__init__(engine=engine, parent=parent)
         self.trader = self.engine.active_trader
-        self.cursor = np.array([0, 0])
+        self.cursor = [0, 0]
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         self.parent.on_render(console)
@@ -1995,6 +1995,9 @@ class TraderEventHandler(AskUserEventHandler):
 
         player = self.engine.player[0]
         items = player.inventory.list_items()
+
+        if len(items) == 0:
+            self.cursor[0] = 1
 
         # Show player inventory
         width = max(max([len(item) for item in items]), len("Choose item to sell:")) + 4
@@ -2052,7 +2055,10 @@ class TraderEventHandler(AskUserEventHandler):
         )
 
         # Show trader inventory
-        items = self.trader.list_items()
+        items = self.trader.inventory.list_items()
+
+        if len(items) == 0:
+            self.cursor[0] = 0
 
         width = max(max([len(item) for item in items]), len("Choose item to buy:")) + 4
         height = len(items) + 6
@@ -2071,7 +2077,7 @@ class TraderEventHandler(AskUserEventHandler):
             y=y,
             width=width,
             height=1,
-            string="┤Inventory├",
+            string="┤Trader├",
             fg=colors.white,
             bg=colors.black,
             alignment=libtcodpy.CENTER
@@ -2080,7 +2086,7 @@ class TraderEventHandler(AskUserEventHandler):
         console.print(
             x=x + 2,
             y=y + 2,
-            string="Choose item to sell:",
+            string="Choose item to buy:",
             fg=colors.white,
             bg=colors.black
         )
@@ -2104,11 +2110,12 @@ class TraderEventHandler(AskUserEventHandler):
         if self.cursor[0] == 0:
             text = player.inventory.items[self.cursor[1]][0].description
         else:
-            item_name = re.match(
-                pattern="(?P<name>[A-Za-z ]*) ?(?P<amount>\\(x[0-9]*\\))?",
-                string=items[self.cursor[1]]
-            ).group(1).strip()
-            text = self.trader.get_item_by_name(item_name).description
+            text = self.trader.inventory.items[self.cursor[1]][0].description
+            # item_name = re.match(
+            #     pattern="(?P<name>[A-Za-z ]*) ?(?P<amount>\\(x[0-9]*\\))?",
+            #     string=items[self.cursor[1]]
+            # ).group(1).strip()
+            # text = self.trader.get_item_by_name(item_name).description
 
         text = wrap(text, width - 2)
 
@@ -2135,30 +2142,38 @@ class TraderEventHandler(AskUserEventHandler):
         key = event.sym
 
         player_items = self.engine.player[0].inventory.items
-        trader_items = list(self.trader.items.keys())
-
+        trader_items = self.trader.inventory.items
         if key in CURSOR_X_KEYS:
-            self.cursor[1] = 0
-            self.cursor[0] = (self.cursor[0] + CURSOR_X_KEYS[key]) % 2
+            if len(player_items) != 0 and len(trader_items) != 0:
+                self.cursor[1] = 0
+                self.cursor[0] = (self.cursor[0] + CURSOR_X_KEYS[key]) % 2
         elif key in CURSOR_Y_KEYS:
-            if self.cursor[0] == 0:
+            if self.cursor[0] == 0 and len(player_items) != 0:
                 self.cursor[1] = (self.cursor[1] + CURSOR_Y_KEYS[key]) % len(player_items)
-            else:
+            elif self.cursor[0] == 1 and len(trader_items) != 0:
                 self.cursor[1] = (self.cursor[1] + CURSOR_Y_KEYS[key]) % len(trader_items)
         elif key in CONFIRM_KEYS:
             if self.cursor[0] == 0:
                 item = player_items[self.cursor[1]][0]
                 self.engine.player[0].inventory.remove_item(item)
-                self.engine.player[0].inventory.gold += self.trader.buy_item(item=item)
-                self.cursor[1] = min(self.cursor[1], len(self.engine.player[0].inventory.items) - 1)
+                try:
+                    self.engine.player[0].inventory.gold += self.trader.buy_item(item=item)
+                    self.cursor[1] = min(self.cursor[1], len(self.engine.player[0].inventory.items) - 1)
+                except exceptions.Impossible as exc:
+                    self.engine.message_log.add_message("Trader inventory is full", fg=colors.impossible)
+                    self.engine.player[0].inventory.add_item(item)
             else:
                 item = trader_items[self.cursor[1]]
                 if self.engine.player[0].inventory.gold < item.buy_price:
                     self.engine.message_log.add_message(text="Not enough gold", fg=colors.error)
                 else:
-                    self.engine.player[0].inventory.gold -= item.buy_price
-                    self.engine.player[0].inventory.add_item(self.trader.sell_item(item.name))
-                    self.cursor[1] = min(self.cursor[1], len(self.trader.list_items()) - 1)
+                    try:
+                        self.engine.player[0].inventory.add_item(self.trader.sell_item(item))
+                        self.engine.player[0].inventory.gold -= item.buy_price
+                        self.cursor[1] = min(self.cursor[1], len(self.trader.list_items()) - 1)
+                    except exceptions.Impossible as exc:
+                        self.engine.message_log.add_message(exc.args)
+
         elif key == tcod.event.KeySym.ESCAPE:
             self.engine.active_trader = None
             return self.parent
