@@ -77,7 +77,7 @@ class ConfusedEnemy(BaseAI):
                 )
             else:
                 target = random.choice(list(filter(
-                    lambda x: x.is_alive(),
+                    lambda x: x.is_alive,
                     self.engine.active_enemies.fighters + self.engine.player.fighters
                 )))
                 self.engine.message_log.add_message(

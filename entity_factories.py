@@ -10,6 +10,7 @@ from components.equipment import Equipment
 from components.fighter import Fighter, Enemy
 from components.inventory import Inventory
 from components.level import Level
+from components.loot_table import HealingItemTable
 from dropgen.RDSNullValue import RDSNullValue
 from dropgen.RDSTable import RDSTable
 from dropgen.RDSValue import RDSValue
@@ -250,7 +251,8 @@ class Gold(RDSValue):
 
         super().__init__(
             probability=probability,
-            value=value
+            value=value,
+            unique=True,
         )
 
 
@@ -278,6 +280,7 @@ class Janitor(Enemy):
                 contents=[
                     Gold(level=target_level, min_value=10, max_value=35, probability=30),
                     RDSNullValue(probability=50),
+                    HealingItemTable(current_floor=max(1, target_level), count=1, probability=20)
                     # TODO: Add item drops
                 ],
                 count=2,

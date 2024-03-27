@@ -215,7 +215,9 @@ def generate_dungeon(
                 placed_trader = True
                 x, y = new_room.center
                 trader = Trader(parent=dungeon, current_floor=engine.game_world.current_floor, x=x, y=y)
-                trader.items = generate_trader_items(engine.game_world.current_floor, trader.NUMBER_OF_ITEMS)
+                items = generate_trader_items(engine.game_world.current_floor, trader.NUMBER_OF_ITEMS)
+                for item in items:
+                    trader.inventory.add_item(item)
                 trader.parent = dungeon
                 dungeon.entities.add(trader)
 
@@ -255,13 +257,14 @@ def place_entities(room: RectangularRoom, dungeon: GameMap, floor_number: int) -
             entity.spawn(dungeon, x, y)
 
 
-def generate_trader_items(current_floor: int, number_of_items: int) -> Dict[Item, int]:
+def generate_trader_items(current_floor: int, number_of_items: int) -> List[Item]:
+    result = []
     table = components.loot_table.HealingItemTable(current_floor=current_floor, count=20)
     healing_potions = table.rds_result
-    return {
-        entity_factories.tasty_rat: 20,
-        entity_factories.mana_potion: 20,
-    }
+    result.extend(healing_potions)
+    # TODO: Add item rolling
+
+    return result
 
 
 if __name__ == "__main__":

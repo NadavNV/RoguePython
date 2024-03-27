@@ -5,6 +5,7 @@ import math
 from typing import Dict, Iterable, List, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
 
 import colors
+from components.inventory import Inventory
 from dropgen.RDSObject import RDSObject
 
 import exceptions
@@ -220,13 +221,11 @@ class Trader(Entity):
             blocks_movement=True,
             render_order=RenderOrder.ACTOR,
         )
-        self.items: Dict[Item, int] = {}
         self.inventory = Inventory(capacity=26)
 
-    def sell_item(self, item_index: int) -> Item:
-        item = self.inventory.items[item_index][0]
+    def sell_item(self, item: Item) -> None:
         self.inventory.remove_item(item)
-        return item
+        return
 
     def buy_item(self, item: Item) -> int:
         try:
@@ -235,21 +234,3 @@ class Trader(Entity):
         except exceptions.Impossible as exc:
             raise exc
 
-    def list_items(self) -> List[str]:
-        # TODO: Change to work with an Inventory
-        result = []
-        for item, amount in self.items.items():
-            if amount == 1:
-                result.append(item.name)
-            else:
-                result.append(f"{item.name} (x{amount})")
-
-        return result
-
-    def get_item_by_name(self, item_name: str) -> Optional[Item]:
-        for item in self.items:
-            if item.name == item_name:
-                return item
-
-        self.engine.message_log.add_message(text=f"Item {item_name} not found.", fg=colors.invalid, stack=True)
-        return None

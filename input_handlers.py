@@ -1862,7 +1862,7 @@ class LootEventHandler(AskUserEventHandler):
         self.height = 8 + len(self.items)
         self.width = 4 + max(
             len(self.TEXT),
-            len(f"You also pick up {self.gold} gold pieces!")
+            len(f"You pick up {self.gold} gold pieces!")
         )
 
         if len(self.items) != 0:
@@ -1873,7 +1873,7 @@ class LootEventHandler(AskUserEventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         if self.gold == 0 and len(self.items) == 0:
-            return PopupMessage(MainGameEventHandler(self.engine), "There is no loot!")
+            return MainGameEventHandler(self.engine)
         self.parent.on_render(console)
         console.rgb["fg"] //= 2
         console.rgb["bg"] //= 2
@@ -1900,38 +1900,40 @@ class LootEventHandler(AskUserEventHandler):
             alignment=libtcodpy.CENTER
         )
 
-        console.print_box(
-            x=x,
-            y=y + 2,
-            width=self.width,
-            height=1,
-            string=self.TEXT,
-            fg=colors.white,
-            bg=colors.black,
-            alignment=libtcodpy.CENTER
-        )
-
-        for i, item in enumerate(self.items):
-            if self.cursor == i:
-                fg = colors.black
-                bg = colors.white
-            else:
-                fg = colors.white
-                bg = colors.black
-            console.print(
-                x=x + 2,
-                y=y + 4 + i,
-                string=item.name,
-                fg=fg,
-                bg=bg
+        if len(self.items) > 0:
+            console.print_box(
+                x=x,
+                y=y + 2,
+                width=self.width,
+                height=1,
+                string=self.TEXT,
+                fg=colors.white,
+                bg=colors.black,
+                alignment=libtcodpy.CENTER
             )
+
+            for i, item in enumerate(self.items):
+                if self.cursor == i:
+                    fg = colors.black
+                    bg = colors.white
+                else:
+                    fg = colors.white
+                    bg = colors.black
+                console.print(
+                    x=x + 2,
+                    y=y + 4 + i,
+                    string=item.name,
+                    fg=fg,
+                    bg=bg
+                )
+
         if self.gold > 0:
             console.print_box(
                 x=x,
                 y=y + self.height - 3,
                 width=self.width,
                 height=1,
-                string=f"You also pick up {self.gold} gold pieces!",
+                string=f"You pick up {self.gold} gold pieces!",
                 fg=colors.white,
                 bg=colors.black,
                 alignment=libtcodpy.CENTER
@@ -2111,11 +2113,6 @@ class TraderEventHandler(AskUserEventHandler):
             text = player.inventory.items[self.cursor[1]][0].description
         else:
             text = self.trader.inventory.items[self.cursor[1]][0].description
-            # item_name = re.match(
-            #     pattern="(?P<name>[A-Za-z ]*) ?(?P<amount>\\(x[0-9]*\\))?",
-            #     string=items[self.cursor[1]]
-            # ).group(1).strip()
-            # text = self.trader.get_item_by_name(item_name).description
 
         text = wrap(text, width - 2)
 
@@ -2163,14 +2160,15 @@ class TraderEventHandler(AskUserEventHandler):
                     self.engine.message_log.add_message("Trader inventory is full", fg=colors.impossible)
                     self.engine.player[0].inventory.add_item(item)
             else:
-                item = trader_items[self.cursor[1]]
+                item = trader_items[self.cursor[1]][0]
                 if self.engine.player[0].inventory.gold < item.buy_price:
                     self.engine.message_log.add_message(text="Not enough gold", fg=colors.error)
                 else:
                     try:
-                        self.engine.player[0].inventory.add_item(self.trader.sell_item(item))
+                        self.trader.sell_item(item)
+                        self.engine.player[0].inventory.add_item(item)
                         self.engine.player[0].inventory.gold -= item.buy_price
-                        self.cursor[1] = min(self.cursor[1], len(self.trader.list_items()) - 1)
+                        self.cursor[1] = min(self.cursor[1], len(self.trader.inventory.items) - 1)
                     except exceptions.Impossible as exc:
                         self.engine.message_log.add_message(exc.args)
 
