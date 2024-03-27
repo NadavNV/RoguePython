@@ -32,7 +32,7 @@ class Inventory(BaseComponent):
 
     def remove_item(self, item: Item) -> None:
         """
-        Removes an item from the inventory and restores it to the game map, at the player's current location.
+        Removes an item from the inventory.
         """
         for stack in range(len(self.items)):
             if item in self.items[stack]:
@@ -63,6 +63,7 @@ class Inventory(BaseComponent):
                         stack.append(item)
                         return None
                 raise Impossible("Inventory is full")
+
     def list_items(self) -> List[str]:
         """Creates a list of the items in the inventory, with their amounts if stacked."""
         result = []

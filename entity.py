@@ -6,6 +6,7 @@ from typing import Dict, Iterable, List, Optional, Tuple, Type, TypeVar, TYPE_CH
 
 import colors
 from dropgen.RDSObject import RDSObject
+
 from render_order import RenderOrder
 
 if TYPE_CHECKING:
@@ -158,9 +159,14 @@ class Item(Entity, RDSObject):
         description: str = "<None>",
         consumable: Optional[Consumable] = None,
         equippable: Optional[Equippable] = None,
-        stackable: bool = False
+        stackable: bool = False,
+        probability: Optional[float] = None,
+        unique: Optional[bool] = None,
+        always: Optional[bool] = None,
+        enabled: Optional[bool] = None,
     ):
-        super().__init__(
+        Entity.__init__(
+            self,
             x=x,
             y=y,
             char=char,
@@ -168,6 +174,13 @@ class Item(Entity, RDSObject):
             name=name,
             blocks_movement=False,
             render_order=RenderOrder.ITEM,
+        )
+        RDSObject.__init__(
+            self,
+            probability=probability,
+            unique=unique,
+            always=always,
+            enabled=enabled
         )
         self.sell_price = sell_price
         self.buy_price = buy_price
@@ -207,8 +220,10 @@ class Trader(Entity):
             render_order=RenderOrder.ACTOR,
         )
         self.items: Dict[Item, int] = {}
+        self.inventory = Inventory(capacity=self.NUMBER_OF_ITEMS)
 
     def sell_item(self, item_name: str) -> Item:
+        # TODO: Change to work with an Inventory
         for item, amount in self.items.items():
             if item.name == item_name and amount > 0:
                 self.items[item] -= 1
@@ -218,6 +233,7 @@ class Trader(Entity):
                 return copy.deepcopy(item)
 
     def buy_item(self, item: Item) -> int:
+        # TODO: Change to work with an Inventory
         if not item.stackable:
             self.items[item] = 1
         else:
@@ -228,6 +244,7 @@ class Trader(Entity):
         return item.sell_price
 
     def list_items(self) -> List[str]:
+        # TODO: Change to work with an Inventory
         result = []
         for item, amount in self.items.items():
             if amount == 1:

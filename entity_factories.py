@@ -1,5 +1,6 @@
 import copy
 import random
+import sys
 
 from actions import MeleeAttack
 import colors
@@ -20,6 +21,41 @@ SCROLL_CHAR = '~'
 POTION_CHAR = '!'
 WEAPON_CHAR = '/'
 ARMOR_CHAR = '['
+
+
+class HealingItem(Item):
+    def __init__(
+            self,
+            min_floor: int,
+            max_floor: int,
+            min_amount: int,
+            max_amount: int,
+            probability: float,
+            sell_price: int,
+            buy_price: int,
+            name: str = "<Unnamed>",
+            description: str = "<None>",
+
+    ):
+        super().__init__(
+            sell_price=sell_price,
+            buy_price=buy_price,
+            char=POTION_CHAR,
+            color=colors.healing_potion,
+            name=name,
+            description=description,
+            consumable=consumable.HealingConsumable(min_amount, max_amount),
+            probability=probability,
+            stackable=True,
+        )
+
+        self.min_floor = min_floor
+        self.max_floor = max_floor
+
+    def on_rds_pre_result_eval(self, **kwargs):
+        if self.min_floor <= self.rds_table.current_floor <= self.max_floor:
+            self.rds_enabled = True
+
 
 player = FighterGroup(
     x=0,
@@ -64,48 +100,53 @@ fireball_scroll = Item(
     stackable=True
 )
 
-tasty_rat = Item(
+tasty_rat = HealingItem(
     buy_price=50,
     sell_price=10,
-    char=POTION_CHAR,
-    color=(127, 0, 255),
     name="Tasty Rat",
     description="Eat the tasty rat to restore 4 to 10 hit points.",
-    consumable=consumable.HealingConsumable(min_amount=4, max_amount=10),
-    stackable=True
+    probability=50,
+    min_amount=4,
+    max_amount=10,
+    min_floor=1,
+    max_floor=5,
 )
 
-plump_rat = Item(
+plump_rat = HealingItem(
     buy_price=500,
     sell_price=100,
-    char=POTION_CHAR,
-    color=(127, 0, 255),
     name="Plump Rat",
     description="Eat the plump rat to restore 8 to 20 hit points.",
-    consumable=consumable.HealingConsumable(min_amount=8, max_amount=20),
-    stackable=True
+    probability=40,
+    min_amount=8,
+    max_amount=20,
+    min_floor=4,
+    max_floor=8,
 )
 
-enormous_rat = Item(
-    buy_price=50,
-    sell_price=10,
-    char=POTION_CHAR,
-    color=(127, 0, 255),
+enormous_rat = HealingItem(
+    buy_price=5000,
+    sell_price=1000,
     name="Enormous Rat",
     description="Eat the enormous rat to restore 16 to 40 hit points.",
-    consumable=consumable.HealingConsumable(min_amount=16, max_amount=40),
-    stackable=True
+    probability=20,
+    min_amount=16,
+    max_amount=40,
+    min_floor=7,
+    max_floor=sys.maxsize
 )
 
-rodent_of_unusual_size = Item(
-    buy_price=50,
-    sell_price=10,
-    char=POTION_CHAR,
-    color=(127, 0, 255),
+rodent_of_unusual_size = HealingItem(
+    buy_price=50000,
+    sell_price=10000,
     name="Rodent of Unusual Size",
     description="Eat the R.O.U.S. to restore 30 to 60 hit points.",
-    consumable=consumable.HealingConsumable(min_amount=30, max_amount=60),
-    stackable=True
+    probability=10,
+    min_amount=30,
+    max_amount=60,
+    min_floor=12,
+    max_floor=sys.maxsize
+
 )
 
 mana_potion = Item(
