@@ -9,8 +9,19 @@ import entity_factories
 
 
 class WeaponsTable(RDSTable):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, current_floor: int, count: int, probability: Optional[float] = None):
+        super().__init__(count=count, probability=probability)
+
+        self.current_floor = current_floor
+
+        self.add_entry(entry=copy.deepcopy(entity_factories.dagger), unique=True)
+        self.add_entry(entry=copy.deepcopy(entity_factories.broom), unique=True)
+        self.add_entry(entry=copy.deepcopy(entity_factories.club), unique=True)
+        self.add_entry(entry=copy.deepcopy(entity_factories.handaxe), unique=True)
+        self.add_entry(entry=copy.deepcopy(entity_factories.greatsword), unique=True)
+        self.add_entry(entry=copy.deepcopy(entity_factories.wand), unique=True)
+        self.add_entry(entry=copy.deepcopy(entity_factories.staff), unique=True)
+        self.add_entry(entry=copy.deepcopy(entity_factories.short_sword), unique=True)
 
 
 class HealingItemTable(RDSTable):

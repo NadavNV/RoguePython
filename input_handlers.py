@@ -1262,7 +1262,7 @@ class UnequipEventHandler(EquipmentEventHandler):
             self.engine.message_log.add_message("Nothing to unequip.", colors.invalid)
             return self
         else:
-            return actions.EquipAction(entity=self.engine.player, item=item.parent, slot=slot)
+            return actions.EquipAction(entity=self.engine.player[0], item=item.parent, slot=slot)
 
 
 class ChooseSlotEventHandler(AskUserEventHandler):

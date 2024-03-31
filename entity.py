@@ -186,7 +186,7 @@ class Item(Entity, RDSObject):
         )
         self.sell_price = sell_price
         self.buy_price = buy_price
-        self.description = description + f"\n\nBuying price: {self.buy_price}\nSelling price: {self.sell_price}"
+        self.__description = description
 
         self.consumable = consumable
 
@@ -199,6 +199,10 @@ class Item(Entity, RDSObject):
             self.equippable.parent = self
 
         self.stackable = stackable
+
+    @property
+    def description(self):
+        return self.__description + f"\n\nBuying price: {self.buy_price}\nSelling price: {self.sell_price}"
 
 
 class Trader(Entity):

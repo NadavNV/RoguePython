@@ -1,3 +1,5 @@
+from typing import Optional
+
 import copy
 import random
 import sys
@@ -10,7 +12,7 @@ from components.equipment import Equipment
 from components.fighter import Fighter, Enemy
 from components.inventory import Inventory
 from components.level import Level
-from components.loot_table import HealingItemTable
+from components.loot_table import HealingItemTable, WeaponsTable
 from dropgen.RDSNullValue import RDSNullValue
 from dropgen.RDSTable import RDSTable
 from dropgen.RDSValue import RDSValue
@@ -36,7 +38,6 @@ class HealingItem(Item):
             buy_price: int,
             name: str = "<Unnamed>",
             description: str = "<None>",
-
     ):
         super().__init__(
             sell_price=sell_price,
@@ -56,6 +57,39 @@ class HealingItem(Item):
     def on_rds_pre_result_eval(self, **kwargs):
         if self.min_floor <= self.rds_table.current_floor <= self.max_floor:
             self.rds_enabled = True
+
+
+class WeaponItem(Item):
+    def __init__(
+            self,
+            sell_price: int,
+            buy_price: int,
+            equippable_component: equippable.Equippable,
+            probability: Optional[float] = None,
+            name: str = "<Unnamed>",
+            description: str = "<None>",
+    ):
+        super().__init__(
+            sell_price=sell_price,
+            buy_price=buy_price,
+            char=WEAPON_CHAR,
+            color=colors.weapon,
+            name=name,
+            description=description,
+            probability=probability,
+            stackable=False,
+            equippable=equippable_component
+        )
+
+    def on_rds_pre_result_eval(self, **kwargs):
+        floor = self.rds_table.current_floor
+        n = random.choices(
+            population=[floor - 2, floor - 1, floor, floor + 1, floor + 2],
+            weights=[1, 3, 6, 3, 1],
+        )[0]
+
+        if n > 0:
+            self.equippable.enhance_item(n)
 
 
 player = FighterGroup(
@@ -172,54 +206,69 @@ lightning_scroll = Item(
     stackable=True
 )
 
-dagger = Item(
+dagger = WeaponItem(
     buy_price=25,
     sell_price=5,
-    char=WEAPON_CHAR,
-    color=(0, 191, 255),
     name="Dagger",
     description="Fine steel, good for stabbing. Can be used in the off hand. Agility weapon.",
-    equippable=equippable.Dagger(),
+    equippable_component=equippable.Dagger(),
 )
 
-broom = Item(
+broom = WeaponItem(
     buy_price=20,
     sell_price=4,
-    char=WEAPON_CHAR,
-    color=(0, 191, 255),
     name="Broom",
-    description="Useful for sweeping floors and hitting snakes. Agility weapon.",
-    equippable=equippable.Broom(),
+    description="Useful for sweeping floors and hitting snakes. Agility weapon. Requires both hands to wield",
+    equippable_component=equippable.Broom(),
 )
 
-club = Item(
+club = WeaponItem(
     buy_price=25,
     sell_price=5,
-    char=WEAPON_CHAR,
-    color=(0, 191, 255),
     name="Club",
     description="Long piece of wood, used for smacking evil in the face. Strength weapon.",
-    equippable=equippable.Club(),
+    equippable_component=equippable.Club(),
 )
 
-short_sword = Item(
+short_sword = WeaponItem(
     buy_price=45,
     sell_price=9,
-    char=WEAPON_CHAR,
-    color=(0, 191, 255),
     name="Short Sword",
     description="Shorter than a longsword, longer than a dagger. Finesse weapon. Must be equipped in the main hand.",
-    equippable=equippable.ShortSword(),
+    equippable_component=equippable.ShortSword(),
 )
 
-handaxe = Item(
-    buy_price=45,
-    sell_price=9,
-    char=WEAPON_CHAR,
-    color=(0, 191, 255),
+handaxe = WeaponItem(
+    buy_price=25,
+    sell_price=5,
     name="Hand Axe",
     description="For cutting trees and enemies. Strength weapon. Must be equipped in the main hand.",
-    equippable=equippable.Handaxe(),
+    equippable_component=equippable.Handaxe(),
+)
+
+greatsword = WeaponItem(
+    buy_price=100,
+    sell_price=20,
+    name="Greatsword",
+    description="Massive piece of steel. Requires both hands to wield. Strength based.",
+    equippable_component=equippable.Greatsword(),
+)
+
+wand = WeaponItem(
+    buy_price=25,
+    sell_price=5,
+    name="Wand",
+    description="Enchanted wooden rod that can fire magical projectiles. Magic based weapon.",
+    equippable_component=equippable.Wand(),
+)
+
+staff = WeaponItem(
+    buy_price=25,
+    sell_price=5,
+    name="Staff",
+    description="Enchanted wooden rod that can fire magical projectiles. Magic based weapon." +
+                " Requires both hands to wield",
+    equippable_component=equippable.Staff(),
 )
 
 leather_armor = Item(
@@ -280,7 +329,8 @@ class Janitor(Enemy):
                 contents=[
                     Gold(level=target_level, min_value=10, max_value=35, probability=30),
                     RDSNullValue(probability=50),
-                    HealingItemTable(current_floor=max(1, target_level), count=1, probability=20)
+                    HealingItemTable(current_floor=max(1, target_level), count=1, probability=20),
+                    WeaponsTable(current_floor=max(1, target_level), count=1, probability=10),
                     # TODO: Add item drops
                 ],
                 count=2,
@@ -329,6 +379,8 @@ class Lumberjack(Enemy):
                 contents=[
                     Gold(level=target_level, min_value=35, max_value=70, probability=30),
                     RDSNullValue(probability=50),
+                    HealingItemTable(current_floor=max(1, target_level), count=1, probability=20),
+                    WeaponsTable(current_floor=max(1, target_level), count=1, probability=10),
                     # TODO: Add item drops
                 ],
                 count=2,

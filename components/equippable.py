@@ -73,6 +73,7 @@ class Weapon(Equippable):
             self.damage_bonus = 0
 
     def enhance_item(self, n: int):
+        n = max(1, n)
         super().enhance_item(n)
         self.min_damage += n
         self.max_damage += n
@@ -102,6 +103,7 @@ class Armor(Equippable):
         equipment.agility_bonus += self.agility_penalty
 
     def enhance_item(self, n: int):
+        n = max(1, n)
         super().enhance_item(n)
         self.armor_bonus += n
 
@@ -130,7 +132,7 @@ class ShortSword(Weapon):
     def __init__(self) -> None:
         super().__init__(
             weapon_type=WeaponType.FINESSE,
-            min_damage=1,
+            min_damage=2,
             max_damage=5
         )
 
@@ -151,6 +153,35 @@ class Handaxe(Weapon):
             min_damage=1,
             max_damage=4,
             offhand=True,
+        )
+
+
+class Greatsword(Weapon):
+    def __init__(self) -> None:
+        super().__init__(
+            weapon_type=WeaponType.STRENGTH,
+            min_damage=3,
+            max_damage=8,
+            two_handed=True,
+        )
+
+
+class Wand(Weapon):
+    def __init__(self) -> None:
+        super().__init__(
+            weapon_type=WeaponType.MAGIC,
+            min_damage=1,
+            max_damage=4,
+        )
+
+
+class Staff(Weapon):
+    def __init__(self) -> None:
+        super().__init__(
+            weapon_type=WeaponType.MAGIC,
+            min_damage=3,
+            max_damage=8,
+            two_handed=True,
         )
 
 

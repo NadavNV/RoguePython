@@ -27,6 +27,7 @@ janitor_icon = (0x6F, 0x8F, 0xAF)
 lumberjack_icon = (0xC7, 0x0, 0x39)
 trader_icon = (0xFF, 0xFF, 0xFF)
 healing_potion = (127, 0, 255)
+weapon = (0, 191, 255)
 
 bar_text = white
 
