@@ -31,7 +31,8 @@ def render_bar(
         current_value: int,
         maximum_value: int,
         x: int,
-        y: int, bar_color: Tuple[int, int, int], name: str
+        y: int,
+        bar_color: Tuple[int, int, int], name: str
 ):
     if maximum_value == 0:
         bar_width = 0
@@ -73,16 +74,13 @@ def render_player_bars(
         name="HP"
     )
 
-    render_bar(
+    player.resource.render_bar(
         console=console,
-        current_value=player.mana,
-        maximum_value=player.max_mana,
-        total_width=total_width,
         x=1,
         y=console.height * 2 // 3 + 4,
-        bar_color=colors.bar_mana_filled,
-        name="Mana"
+        width=total_width,
     )
+
 
 
 def render_dungeon_level(

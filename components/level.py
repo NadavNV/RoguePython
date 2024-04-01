@@ -4,6 +4,8 @@ from typing import List, TYPE_CHECKING
 
 from components.base_component import BaseComponent
 
+from fighter_classes import FighterClass
+
 if TYPE_CHECKING:
     from components.fighter import Fighter
 
@@ -57,6 +59,8 @@ class Level(BaseComponent):
         fighter = self.parent
         fighter.proficiency = 1 + self.current_level % 4
         fighter.roll_hitpoints()
+        if fighter.fighter_class == FighterClass.MAGE:
+            fighter.resource.max_amount += 10
 
     def increase_stat(self, stat: str):
         if stat == "Strength":

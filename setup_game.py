@@ -6,6 +6,7 @@ import pickle
 import lzma
 
 import colors
+from components.resoucre import Mana, Rage, Stamina
 from engine import Engine
 from actions import MeleeAttack
 import entity_factories
@@ -37,19 +38,18 @@ def new_game(player_class: FighterClass) -> Engine:
     player = copy.deepcopy(entity_factories.player)
 
     if player_class == FighterClass.WARRIOR:
-        print("Creating warrior")
         player.fighters[0].fighter_class = FighterClass.WARRIOR
         player.fighters[0].strength = 7
         player.fighters[0].agility = 4
 
         club = copy.deepcopy(entity_factories.club)
-        armor = copy.deepcopy(entity_factories.leather_armor)
+        leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
         player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, club, add_message=False)
-        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, armor, add_message=False)
+        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
+        player.fighters[0].resource = Rage()
 
     elif player_class == FighterClass.ROGUE:
-        print("Creating rogue")
         player.fighters[0].fighter_class = FighterClass.ROGUE
         player.fighters[0].strength = 4
         player.fighters[0].agility = 7
@@ -59,14 +59,21 @@ def new_game(player_class: FighterClass) -> Engine:
 
         player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
         player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
+        player.fighters[0].resource = Stamina()
 
     elif player_class == FighterClass.MAGE:
-        print("Creating mage")
         player.fighters[0].fighter_class = FighterClass.MAGE
         player.fighters[0].magic = 7
         player.fighters[0].agility = 4
 
-    # player[0].roll_hitpoints()
+        wand = copy.deepcopy(entity_factories.wand)
+        leather_armor = copy.deepcopy(entity_factories.leather_armor)
+
+        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, wand, add_message=False)
+        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
+        player.fighters[0].resource = Mana()
+
+    player[0].resource.parent = player[0]
     player[0].abilities.append(MeleeAttack(caster=player[0], target=None))
     player[0].parent = player
 

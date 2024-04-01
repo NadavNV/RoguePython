@@ -11,6 +11,7 @@ from components.base_component import BaseComponent
 from components.equipment import Equipment
 from components.inventory import Inventory
 from components.level import Level
+from components.resoucre import Resource, Stamina
 from dropgen.RDSObject import RDSObject
 from dropgen.RDSValue import RDSValue
 from dropgen.RDSTable import RDSTable
@@ -57,11 +58,11 @@ class Fighter(BaseComponent, RDSObject):
             max_hp_per_level: int,
             fighter_class: FighterClass,
             ai_cls: Type[BaseAI],
+            resource: Resource = Stamina(),
             inventory: Inventory = Inventory(capacity=26),
             equipment: Equipment = Equipment(),
             level: Level = Level(),
             abilities: List[Ability] = None,
-            mana: int = 0,
             weapon_crit_threshold: int = 20,
             spell_crit_threshold: int = 20,
             char: str = "?",
@@ -87,9 +88,8 @@ class Fighter(BaseComponent, RDSObject):
         self._hp = 0
         self.max_hp = 0
 
-        self.max_mana = mana
-        self._mana = mana
-
+        self.resource = resource
+        self.resource.parent = self
         self.equipment = equipment
         self.equipment.parent = self
         self.inventory = inventory
@@ -113,14 +113,6 @@ class Fighter(BaseComponent, RDSObject):
         self._hp = max(0, min(value, self.max_hp))
         if self._hp == 0 and self.parent.ai:
             self.die()
-
-    @property
-    def mana(self) -> int:
-        return self._mana
-
-    @mana.setter
-    def mana(self, value: int) -> None:
-        self._mana = max(0, min(value, self.max_mana))
 
     @property
     def armor(self) -> int:
@@ -202,21 +194,6 @@ class Fighter(BaseComponent, RDSObject):
 
         return amount_recovered
 
-    def restore_mana(self, amount: int) -> int:
-        if self.mana == self.max_mana:
-            return 0
-
-        new_mana_value = self.mana + amount
-
-        if new_mana_value > self.max_mana:
-            new_mana_value = self.max_mana
-
-        amount_recovered = new_mana_value - self.mana
-
-        self.mana = new_mana_value
-
-        return amount_recovered
-
     def take_damage(self, amount: int) -> None:
         self.hp -= amount
 
@@ -288,7 +265,6 @@ class Enemy(Fighter):
             equipment: Equipment = Equipment(),
             level: Level = Level(),
             abilities: List[Ability] = None,
-            mana: int = 0,
             weapon_crit_threshold: int = 20,
             spell_crit_threshold: int = 20,
             char: str = "?",
@@ -309,7 +285,6 @@ class Enemy(Fighter):
             equipment=equipment,
             level=level,
             abilities=abilities,
-            mana=mana,
             weapon_crit_threshold=weapon_crit_threshold,
             spell_crit_threshold=spell_crit_threshold,
             name=name,
