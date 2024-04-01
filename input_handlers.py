@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os.path
 import time
-import re
 from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
@@ -976,14 +975,15 @@ class GameOverEventHandler(EventHandler):
         """Handle exiting out of a finished game."""
         if os.path.exists("savegame.sav"):
             os.remove("savegame.sav")  # Deletes the active save file.
-        raise exceptions.QuitWithoutSaving()  # Avoid saving a finished game.
+        return MainMenu()
 
     def ev_quit(self, event: tcod.event.Quit) -> None:
         self.on_quit()
+        raise exceptions.QuitWithoutSaving()
 
-    def ev_keydown(self, event: tcod.event.KeyDown) -> None:
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[BaseEventHandler]:
         if event.sym == tcod.event.KeySym.ESCAPE:
-            self.on_quit()
+            return self.on_quit()
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         self.engine.in_combat = False
@@ -2156,7 +2156,7 @@ class TraderEventHandler(AskUserEventHandler):
                 try:
                     self.engine.player[0].inventory.gold += self.trader.buy_item(item=item)
                     self.cursor[1] = min(self.cursor[1], len(self.engine.player[0].inventory.items) - 1)
-                except exceptions.Impossible as exc:
+                except exceptions.Impossible:
                     self.engine.message_log.add_message("Trader inventory is full", fg=colors.impossible)
                     self.engine.player[0].inventory.add_item(item)
             else:
