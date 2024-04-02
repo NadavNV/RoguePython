@@ -461,6 +461,7 @@ class LevelUpEventHandler(AskUserEventHandler):
         self.stats = []
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        # TODO: Show new abilities if there are any
         super().on_render(console)
 
         x = (console.width - self.WINDOW_WIDTH) // 2
@@ -1762,7 +1763,7 @@ class SelectAbilityEventHandler(AskUserEventHandler):
         else:
             width = len(self.TITLE) + 4
             for ability in self.engine.player[0].abilities:
-                width = max(width, len(ability.name) + 2)
+                width = max(width, len(ability.name) + 6)
             height = len(self.engine.player[0].abilities) + 2
 
         console.draw_frame(
@@ -1792,10 +1793,13 @@ class SelectAbilityEventHandler(AskUserEventHandler):
                 fg = colors.white
                 bg = colors.black
 
+            text = ability.name
+            if ability.cooldown_remaining > 0:
+                text += f" ({ability.cooldown_remaining})"
             console.print(
                 x=console.width // 4 + 1,
                 y=console.height // 8 + 1 + i,
-                string=ability.name,
+                string=text,
                 fg=fg,
                 bg=bg
             )

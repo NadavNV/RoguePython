@@ -8,8 +8,10 @@ import colors
 import exceptions
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
+from fighter_classes import FighterClass
 from entity import FighterGroup, Trader
 from components.fighter import Fighter
+from components.status_effects import Bleed
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -187,10 +189,18 @@ class BumpAction(ActionWithDirection):
 
 
 class Ability(Action):
-    def __init__(self, caster: Fighter, cooldown: int = 0, name: str = "<Unnamed>", description: str = "<None>"):
+    def __init__(
+            self,
+            caster: Fighter,
+            cost: int = 0,
+            cooldown: int = 0,
+            name: str = "<Unnamed>",
+            description: str = "<None>"
+    ):
         super().__init__(entity=caster)
         self.name = name
-        self.description = description
+        self._description = description
+        self.cost = cost
         self.cooldown = cooldown
         self.cooldown_remaining = 0
 
@@ -203,17 +213,27 @@ class Ability(Action):
     def is_on_cooldown(self) -> bool:
         return self.cooldown_remaining > 0
 
+    @property
+    def description(self) -> str:
+        result = self._description
+        if self.cost != 0:
+            result += f"\nCosts {self.cost} {self.entity.resource.name}."
+        if self.cooldown != 0:
+            result += f"\n{self.cooldown} turn cooldown."
+        return result
+
 
 class TargetedAbility(Ability):
     def __init__(
             self,
             caster: Fighter,
             target: Optional[Fighter],
+            cost: int = 0,
             cooldown: int = 0,
             name: str = "<UnnamedTargetedAbility>",
             description: str = "<None>"
     ):
-        super().__init__(caster=caster, cooldown=cooldown, name=name, description=description)
+        super().__init__(caster=caster, cost=cost, cooldown=cooldown, name=name, description=description)
         self.target = target
 
 
@@ -268,6 +288,8 @@ class WeaponAttack(TargetedAbility):
                 f"{attack_desc} but misses.", attack_color
             )
         elif damage > 0:
+            if self.entity.fighter_class == FighterClass.WARRIOR:
+                self.entity.resource.gain(damage)
             self.engine.message_log.add_message(
                 f"{attack_desc} for {damage} hit points.", attack_color
             )
@@ -288,10 +310,53 @@ class MeleeAttack(TargetedAbility):
         super().__init__(
             caster=caster,
             target=target,
-            name="Weapon Attack",
+            name="Melee Attack",
             description="Attack a single enemy with your equipped weapons."
         )
 
     def perform(self) -> None:
         WeaponAttack(caster=self.entity, target=self.target, slot=EquipmentSlot.MAINHAND).perform()
         WeaponAttack(caster=self.entity, target=self.target, slot=EquipmentSlot.OFFHAND).perform()
+
+
+class SanguineStrike(TargetedAbility):
+    def __init__(
+            self,
+            caster: Fighter,
+            target: Optional[Fighter],
+    ):
+        super().__init__(
+            caster=caster,
+            target=target,
+            cost=30,
+            cooldown=3,
+            name="Sanguine Strike",
+            description="Attack a single enemy with your main weapon, causing them to bleed for 3 turns."
+        )
+
+    def perform(self) -> None:
+        self.start_cooldown()
+        attack = self.entity.roll_weapon_attack(slot=EquipmentSlot.MAINHAND, advantage=False)
+        attack_desc = f"{self.entity.name.capitalize()} strikes at {self.target.name}"
+        if attack == sys.maxsize:
+            attack_desc += " and critically hits!"
+            bleed_amount = self.entity.agility
+        else:
+            bleed_amount = self.entity.agility // 2
+        attack -= self.target.avoidance
+        if attack < 0:
+            attack_desc += " but misses."
+        else:
+            self.target.status_effects.append(Bleed(
+                caster=self.entity,
+                duration=3,
+                target=self.target,
+                amount=bleed_amount
+            ))
+
+        if self.entity.parent is self.engine.player:
+            attack_color = colors.player_atk
+        else:
+            attack_color = colors.enemy_atk
+        self.engine.message_log.add_message(text=attack_desc, fg=attack_color)
+

@@ -4,7 +4,7 @@ import copy
 import random
 import sys
 
-from actions import MeleeAttack
+from actions import MeleeAttack, SanguineStrike
 import colors
 from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
@@ -13,6 +13,7 @@ from components.fighter import Fighter, Enemy
 from components.inventory import Inventory
 from components.level import Level
 from components.loot_table import HealingItemTable, WeaponsTable
+from components.resoucre import Rage
 from dropgen.RDSNullValue import RDSNullValue
 from dropgen.RDSTable import RDSTable
 from dropgen.RDSValue import RDSValue
@@ -352,6 +353,10 @@ class Janitor(Enemy):
 
         self.abilities = [MeleeAttack(caster=self, target=None)]
 
+        self.abilities_by_level = {
+            4: SanguineStrike(caster=self, target=None)
+        }
+
         self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
 
 
@@ -370,6 +375,7 @@ class Lumberjack(Enemy):
             name="Lumberjack",
             sprite='images/lumberjack_sprite.png',
             ai_cls=HostileEnemy,
+            resource=Rage(),
             equipment=Equipment(),
             inventory=Inventory(capacity=26),
             level=Level(xp_given=100),

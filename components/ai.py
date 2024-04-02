@@ -124,8 +124,9 @@ class HostileEnemy(BaseAI):
                 if item.consumable is not None and isinstance(item.consumable, HealingConsumable):
                     return item.consumable.activate(ItemAction(entity=self.entity, item=item))
         for ability in self.entity.abilities:
-            if not ability.is_on_cooldown():
+            if not ability.is_on_cooldown() and ability.cost <= self.entity.resource.current_amount:
                 if isinstance(ability, TargetedAbility):
                     ability.target = self.entity.engine.player[0]
                 ability.start_cooldown()
+                self.entity.resource.spend(ability.cost)
                 return ability.perform()

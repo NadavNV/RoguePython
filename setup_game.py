@@ -8,7 +8,7 @@ import lzma
 import colors
 from components.resoucre import Mana, Rage, Stamina
 from engine import Engine
-from actions import MeleeAttack
+from actions import MeleeAttack, SanguineStrike
 import entity_factories
 from game_map import GameWorld
 from equipment_slots import EquipmentSlot
@@ -38,40 +38,43 @@ def new_game(player_class: FighterClass) -> Engine:
     player = copy.deepcopy(entity_factories.player)
 
     if player_class == FighterClass.WARRIOR:
-        player.fighters[0].fighter_class = FighterClass.WARRIOR
-        player.fighters[0].strength = 7
-        player.fighters[0].agility = 4
+        player[0].fighter_class = FighterClass.WARRIOR
+        player[0].strength = 7
+        player[0].agility = 4
 
         club = copy.deepcopy(entity_factories.club)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
-        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, club, add_message=False)
-        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
-        player.fighters[0].resource = Rage()
+        player[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, club, add_message=False)
+        player[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
+        player[0].resource = Rage()
 
     elif player_class == FighterClass.ROGUE:
-        player.fighters[0].fighter_class = FighterClass.ROGUE
-        player.fighters[0].strength = 4
-        player.fighters[0].agility = 7
+        player[0].fighter_class = FighterClass.ROGUE
+        player[0].strength = 4
+        player[0].agility = 7
 
         dagger = copy.deepcopy(entity_factories.dagger)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
-        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
-        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
-        player.fighters[0].resource = Stamina()
+        player[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
+        player[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
+        player[0].resource = Stamina()
+        player[0].abilities_by_level = {
+            2: SanguineStrike(caster=player[0], target=None)
+        }
 
     elif player_class == FighterClass.MAGE:
-        player.fighters[0].fighter_class = FighterClass.MAGE
-        player.fighters[0].magic = 7
-        player.fighters[0].agility = 4
+        player[0].fighter_class = FighterClass.MAGE
+        player[0].magic = 7
+        player[0].agility = 4
 
         wand = copy.deepcopy(entity_factories.wand)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
-        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, wand, add_message=False)
-        player.fighters[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
-        player.fighters[0].resource = Mana()
+        player[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, wand, add_message=False)
+        player[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
+        player[0].resource = Mana()
 
     player[0].resource.parent = player[0]
     player[0].abilities.append(MeleeAttack(caster=player[0], target=None))

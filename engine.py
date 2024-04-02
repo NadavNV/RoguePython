@@ -44,6 +44,20 @@ class Engine:
             for entity in self.active_enemies.fighters:
                 if entity.ai:
                     entity.ai.perform()
+                    for status in entity.status_effects:
+                        status.per_turn()
+                    # Remove status effects that expired
+                    entity.status_effects[:] = [x for x in entity.status_effects if x.duration > 0]
+                    entity.resource.on_turn_end()
+                    for ability in entity.abilities:
+                        ability.reduce_cooldown()
+            for status in self.player[0].status_effects:
+                status.per_turn()
+            # Remove status effects that expired
+            self.player[0].status_effects[:] = [x for x in self.player[0].status_effects if x.duration > 0]
+            self.player[0].resource.on_turn_end()
+            for ability in self.player[0].abilities:
+                ability.reduce_cooldown()
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""

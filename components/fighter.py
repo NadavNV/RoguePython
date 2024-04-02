@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import copy
-from typing import List, Tuple, Type, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, Type, TYPE_CHECKING
 
 import random
 
@@ -24,14 +24,17 @@ from weapon_types import WeaponType
 if TYPE_CHECKING:
     from actions import Ability
     from components.ai import BaseAI
+    from components.status_effects import StatusEffect
     from engine import Engine
     from entity import FighterGroup
+    from game_map import GameMap
 
 BASE_DEFENSE = 10
 
 
 class Fighter(BaseComponent, RDSObject):
     parent: FighterGroup
+    status_effects: List[StatusEffect]
     """
     Strength - Affects damage with weapons and block amount with shields.
     Perseverance - Affects max hp.
@@ -62,7 +65,8 @@ class Fighter(BaseComponent, RDSObject):
             inventory: Inventory = Inventory(capacity=26),
             equipment: Equipment = Equipment(),
             level: Level = Level(),
-            abilities: List[Ability] = None,
+            abilities_by_level: Optional[Dict[int, Ability]] = None,
+            abilities: Optional[List[Ability]] = None,
             weapon_crit_threshold: int = 20,
             spell_crit_threshold: int = 20,
             char: str = "?",
@@ -96,11 +100,14 @@ class Fighter(BaseComponent, RDSObject):
         self.inventory.parent = self
         self.level = level
         self.level.parent = self
+        self.abilities_by_level = {} if abilities_by_level is None else copy.deepcopy(abilities_by_level)
         self.abilities = [] if abilities is None else copy.deepcopy(abilities)
         self.ai = ai_cls(self)
 
         self.weapon_crit_threshold = weapon_crit_threshold
         self.spell_crit_threshold = spell_crit_threshold
+
+        self.status_effects = []
 
         self.roll_hitpoints()
 
@@ -236,6 +243,10 @@ class Fighter(BaseComponent, RDSObject):
     def engine(self) -> Engine:
         return self.parent.engine
 
+    @property
+    def game_map(self) -> GameMap:
+        return self.parent.game_map
+
     def roll_weapon_damage(self, slot: EquipmentSlot):
         if slot == EquipmentSlot.MAINHAND:
             return ((self.strength + self.equipment.strength_bonus) // 2 +
@@ -261,6 +272,7 @@ class Enemy(Fighter):
             max_hp_per_level: int,
             fighter_class: FighterClass,
             ai_cls,
+            resource: Resource = Stamina(),
             inventory: Inventory = Inventory(capacity=26),
             equipment: Equipment = Equipment(),
             level: Level = Level(),
@@ -281,6 +293,7 @@ class Enemy(Fighter):
             max_hp_per_level=max_hp_per_level,
             fighter_class=fighter_class,
             ai_cls=ai_cls,
+            resource=resource,
             inventory=inventory,
             equipment=equipment,
             level=level,

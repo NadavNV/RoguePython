@@ -62,6 +62,9 @@ class Level(BaseComponent):
         if fighter.fighter_class == FighterClass.MAGE:
             fighter.resource.max_amount += 10
 
+        if self.current_level in fighter.abilities_by_level:
+            fighter.abilities.insert(0, fighter.abilities_by_level[self.current_level])
+
     def increase_stat(self, stat: str):
         if stat == "Strength":
             self.increase_strength()

@@ -7,8 +7,6 @@ from tcod.console import Console
 if TYPE_CHECKING:
     from components.fighter import Fighter
 
-
-
 import colors
 
 
@@ -22,13 +20,10 @@ class Resource:
         self.current_amount = current_amount
 
     def spend(self, amount: int) -> None:
-        self.current_amount -= amount
+        self.current_amount = max(self.current_amount - amount, 0)
 
     def gain(self, amount: int):
-        if amount + self.current_amount >= self.max_amount:
-            self.current_amount = self.max_amount
-        else:
-            self.current_amount += amount
+        self.current_amount = min(self.current_amount + amount, self.max_amount)
 
     def on_turn_end(self) -> None:
         raise NotImplementedError()
@@ -50,7 +45,9 @@ class Resource:
         )
 
         console.print(
-            x=x + 1, y=y, string=f"{self.name.capitalize()}: {self.current_amount}/{self.max_amount}", fg=colors.bar_text
+            x=x + 1,
+            y=y,
+            string=f"{self.name.capitalize()}: {self.current_amount}/{self.max_amount}", fg=colors.bar_text
         )
 
 
