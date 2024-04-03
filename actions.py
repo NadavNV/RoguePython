@@ -12,6 +12,7 @@ from fighter_classes import FighterClass
 from entity import FighterGroup, Trader
 from components.fighter import Fighter
 from components.status_effects import Bleed
+from components.ai import StunnedEnemy
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -360,3 +361,21 @@ class SanguineStrike(TargetedAbility):
             attack_color = colors.enemy_atk
         self.engine.message_log.add_message(text=attack_desc, fg=attack_color)
 
+
+class SmokeBomb(Ability):
+    def __init__(
+            self,
+            caster: Fighter,
+    ):
+        super().__init__(
+            caster=caster,
+            cost=40,
+            cooldown=5,
+            name="Smoke Bomb",
+            description="Drop a smoke bomb, stunning all enemies for 2 turns."
+        )
+
+    def perform(self) -> None:
+        self.start_cooldown()
+        for enemy in self.engine.active_enemies.fighters:
+            enemy.ai = StunnedEnemy(entity=enemy, previous_ai=enemy.ai, turns_remaining=2)

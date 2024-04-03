@@ -1692,7 +1692,7 @@ class SelectTargetEventHandler(AskUserEventHandler):
         self.action = action
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        self.parent.on_render(console)
+        CombatEventHandler(self.engine).on_render(console)
 
         frame_width = console.width * 2 // 3
 
@@ -1720,6 +1720,7 @@ class SelectTargetEventHandler(AskUserEventHandler):
                 target = self.engine.active_enemies[self.cursor]
                 if target.is_alive:
                     self.action.target = target
+                    self.action.entity.resource.spend(self.action.cost)
                     return self.action
                 else:
                     self.engine.message_log.add_message("Can't target dead enemies.", colors.invalid)
@@ -1825,10 +1826,16 @@ class SelectAbilityEventHandler(AskUserEventHandler):
         elif key in CONFIRM_KEYS:
             ability = self.engine.player[0].abilities[self.cursor]
             if ability.cooldown_remaining <= 0:
-                if isinstance(ability, TargetedAbility):
-                    return SelectTargetEventHandler(engine=self.engine, parent=self, action=ability)
+                if ability.cost < self.engine.player[0].resource.current_amount:
+                    if isinstance(ability, TargetedAbility):
+                        return SelectTargetEventHandler(engine=self.engine, parent=self, action=ability)
+                    else:
+                        return ability
                 else:
-                    return ability
+                    self.engine.message_log.add_message(
+                        text=f"Not enough {self.engine.player[0].resource.name}.",
+                        fg=colors.invalid
+                    )
             else:
                 self.engine.message_log.add_message("Ability on cooldown.", colors.invalid)
                 return self
