@@ -155,6 +155,8 @@ class Fighter(BaseComponent, RDSObject):
         weapon = self.equipment.items[slot]
         bonus = (self.agility + self.equipment.agility_bonus) // 2
         if weapon is not None and hasattr(weapon, 'weapon_type'):
+            if weapon.weapon_type == WeaponType.MAGIC:
+                bonus =(self.magic + self.equipment.magic_bonus) // 2
             if self.fighter_class == FighterClass.ROGUE and (
                     weapon.weapon_type == WeaponType.AGILITY or
                     weapon.weapon_type == WeaponType.FINESSE

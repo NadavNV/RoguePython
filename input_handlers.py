@@ -7,7 +7,6 @@ from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 import numpy as np
 import tcod
 from tcod import libtcodpy
-import textwrap
 import traceback
 
 import actions
@@ -706,7 +705,7 @@ class InventoryEventHandler(AskUserEventHandler):
             console.print(
                 x=console.width // 2 + 2,
                 y=1,
-                string=wrap(
+                string=render_functions.wrap(
                     text=self.engine.player.inventory.items[self.cursor][0].description,
                     width=console.width // 4 - 2
                 ),
@@ -1084,17 +1083,6 @@ class CutsceneEventHandler(BaseEventHandler):
         raise exceptions.QuitWithoutSaving()
 
 
-def wrap(text: str, width: int):
-    """"Returns 'text' split into lines up to the given width"""
-    # Taken from https://stackoverflow.com/questions/1166317/python-textwrap-library-how-to-preserve-line-breaks
-    return '\n'.join(['\n'.join(textwrap.wrap(line,
-                                              width,
-                                              break_long_words=False,
-                                              replace_whitespace=False
-                                              )
-                                ) for line in text.splitlines()])
-
-
 class IntroEventHandler(CutsceneEventHandler):
 
     def __init__(self):
@@ -1121,7 +1109,7 @@ class IntroEventHandler(CutsceneEventHandler):
             self.cutscene_skip = False
 
         end = self.chars_printed
-        self.text = wrap(self.text, console.width // 2)
+        self.text = render_functions.wrap(self.text, console.width // 2)
 
         for line in self.text.splitlines():
             if end > len(line):
@@ -1571,7 +1559,7 @@ class ClassSelectEventHandler(BaseEventHandler):
         console.print(
             x=1,
             y=console.height * 2 // 3 + 2,
-            string=wrap(class_descriptions[self.cursor], console.width - 2),
+            string=render_functions.wrap(class_descriptions[self.cursor], console.width - 2),
             fg=(255, 255, 255),
             bg=(0, 0, 0)
         )
@@ -1817,7 +1805,7 @@ class SelectAbilityEventHandler(AskUserEventHandler):
                 bg=colors.black
             )
 
-            text = wrap(self.engine.player[0].abilities[self.cursor].description, console.width // 4)
+            text = render_functions.wrap(self.engine.player[0].abilities[self.cursor].description, console.width // 4)
 
             console.print(
                 x=x + 1,
@@ -2118,7 +2106,7 @@ class TraderEventHandler(AskUserEventHandler):
         else:
             text = self.trader.inventory.items[self.cursor[1]][0].description
 
-        text = wrap(text, width - 2)
+        text = render_functions.wrap(text, width - 2)
 
         console.draw_frame(
             x=x,

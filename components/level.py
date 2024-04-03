@@ -18,7 +18,7 @@ class Level(BaseComponent):
             current_level: int = 1,
             current_xp: int = 0,
             level_up_base: int = 0,
-            level_up_factor: float = 1.65,
+            level_up_factor: float = 1.85,
             level_up_coefficient: int = 50,
             xp_given: int = 0,
     ):

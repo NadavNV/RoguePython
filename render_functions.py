@@ -2,16 +2,29 @@ from __future__ import annotations
 
 from typing import Optional, Tuple, TYPE_CHECKING
 
+import textwrap
 import numpy as np
 from tcod import libtcodpy
 
 import colors
 from components.fighter import Fighter
 
+
 if TYPE_CHECKING:
     from tcod.console import Console
     from engine import Engine
     from game_map import GameMap
+
+
+def wrap(text: str, width: int):
+    """"Returns 'text' split into lines up to the given width"""
+    # Taken from https://stackoverflow.com/questions/1166317/python-textwrap-library-how-to-preserve-line-breaks
+    return '\n'.join(['\n'.join(textwrap.wrap(line,
+                                              width,
+                                              break_long_words=False,
+                                              replace_whitespace=False
+                                              )
+                                ) for line in text.splitlines()])
 
 
 def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
@@ -80,7 +93,6 @@ def render_player_bars(
         y=console.height * 2 // 3 + 4,
         width=total_width,
     )
-
 
 
 def render_dungeon_level(
@@ -266,4 +278,13 @@ def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
         current_value=enemy.hp,
         maximum_value=enemy.max_hp,
         total_width=console.width // 8
+    )
+    console.print_box(
+        x=x,
+        y=y+2,
+        width=console.width // 8,
+        height=2,
+        string=wrap(text=f"Level {enemy.level.current_level} {enemy.name}", width=console.width // 8),
+        fg=colors.white,
+        bg=colors.black,
     )
