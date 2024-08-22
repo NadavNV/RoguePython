@@ -11,7 +11,7 @@ Built on the foundation of the fantastic tutorial at [Roguelike Tutorials](https
 adjusting the game and adding features to it, for my own enjoyment, experience, and learning.
 
 The plan is to add an RPG system with player classes, various abilities and items, and an instanced, turn-based combat 
-system similar to classic JRPGs.
+system blatantly stolen from [Knock on the Coffin lid](https://store.steampowered.com/app/1232580/Knock_on_the_Coffin_Lid/).
 ## Technologies Used
 * Python 3.12.2
 * python-tcod 16.2.2
