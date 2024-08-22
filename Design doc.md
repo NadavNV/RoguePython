@@ -32,6 +32,8 @@ when taking attack damage that isn't blocked.
 the turn.
 * **Strength** - Damage dealt by attacks is increased by 1 per stack. Does not reduce at the end of the turn.
 * **Agility** - Block gained from cards is increased by 1 per stack. Does not reduce at the end of the turn.
+* **Ward** - Negate the next debuff application and remove a stack. Does not reduce at the end of the turn.
+* **Barbed** - When attacked, inflict 1 damage to the attacker per stack. Does not reduce at the end of the turn.
 
 #### Debuffs
 * **Poison** - Deals 1 damage per stack at the end of the turn. Does not reduce at the end of the turn.
