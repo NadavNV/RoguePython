@@ -9,7 +9,6 @@ from tcod import libtcodpy
 import colors
 from components.fighter import Fighter
 
-
 if TYPE_CHECKING:
     from tcod.console import Console
     from engine import Engine
@@ -86,6 +85,17 @@ def render_player_bars(
         bar_color=colors.bar_hp_filled,
         name="HP"
     )
+
+    if player.block > 0:
+        console.draw_rect(
+            x=total_width + 2,
+            y=console.height * 2 // 3 + 2,
+            width=2 + len(str(player.block)),
+            height=1,
+            ch=1,
+            bg=colors.bar_mana_filled
+        )
+        console.print(x=total_width + 3, y=console.height * 2 // 3 + 2, string=str(player.block))
 
     player.resource.render_bar(
         console=console,
@@ -281,7 +291,7 @@ def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
     )
     console.print_box(
         x=x,
-        y=y+2,
+        y=y + 2,
         width=console.width // 8,
         height=2,
         string=wrap(text=f"Level {enemy.level.current_level} {enemy.name}", width=console.width // 8),

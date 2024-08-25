@@ -80,7 +80,7 @@ class Engine:
         render_functions.render_player_bars(
             console=console,
             player=self.player.fighters[0],
-            total_width=console.width // 3 - 2,
+            total_width=console.width // 5,
         )
 
         render_functions.render_dungeon_level(

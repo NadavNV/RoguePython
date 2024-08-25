@@ -12,7 +12,6 @@ from fighter_classes import FighterClass
 from entity import FighterGroup, Trader
 from components.fighter import Fighter
 from components.status_effects import Bleed
-from components.ai import StunnedEnemy
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -378,4 +377,4 @@ class SmokeBomb(Ability):
     def perform(self) -> None:
         self.start_cooldown()
         for enemy in self.engine.active_enemies.fighters:
-            enemy.ai = StunnedEnemy(entity=enemy, previous_ai=enemy.ai, turns_remaining=2)
+            enemy.stun(turns_remaining=1)

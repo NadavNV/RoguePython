@@ -97,10 +97,6 @@ player = FighterGroup(
     x=0,
     y=0,
     fighters=[Fighter(
-        strength=1,
-        perseverance=1,
-        agility=1,
-        magic=1,
         min_hp_per_level=10,
         max_hp_per_level=15,
         fighter_class=FighterClass.ROGUE,
@@ -309,10 +305,6 @@ class Gold(RDSValue):
 class Janitor(Enemy):
     def __init__(self, target_level: int):
         super().__init__(
-            strength=2,
-            perseverance=1,
-            agility=4,
-            magic=1,
             min_hp_per_level=3,
             max_hp_per_level=8,
             fighter_class=FighterClass.ROGUE,
@@ -324,7 +316,6 @@ class Janitor(Enemy):
             equipment=Equipment(),
             inventory=Inventory(capacity=26),
             level=Level(xp_given=50),
-            weapon_crit_threshold=20,
             target_level=target_level,
             loot_table=RDSTable(
                 contents=[
@@ -363,10 +354,6 @@ class Janitor(Enemy):
 class Lumberjack(Enemy):
     def __init__(self, target_level: int):
         super().__init__(
-            strength=8,
-            perseverance=3,
-            agility=4,
-            magic=1,
             min_hp_per_level=10,
             max_hp_per_level=25,
             fighter_class=FighterClass.WARRIOR,
@@ -379,7 +366,6 @@ class Lumberjack(Enemy):
             equipment=Equipment(),
             inventory=Inventory(capacity=26),
             level=Level(xp_given=100),
-            weapon_crit_threshold=20,
             target_level=target_level,
             loot_table=RDSTable(
                 contents=[
@@ -416,7 +402,3 @@ if __name__ == "__main__":
     janitor = Janitor(target_level=3)
     print(janitor.hp)
     print(janitor.level.current_level)
-    print(f"Strength: {janitor.strength}")
-    print(f"Perseverance: {janitor.perseverance}")
-    print(f"Agility: {janitor.agility}")
-    print(f"Magic: {janitor.magic}")

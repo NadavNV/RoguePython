@@ -19,6 +19,7 @@ from entity import Item
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
 from fighter_classes import FighterClass
+from status_types import StatusTypes
 from weapon_types import WeaponType
 
 if TYPE_CHECKING:
@@ -35,28 +36,9 @@ BASE_DEFENSE = 10
 class Fighter(BaseComponent, RDSObject):
     parent: FighterGroup
     status_effects: List[StatusEffect]
-    """
-    Strength - Affects damage with weapons and block amount with shields.
-    Perseverance - Affects max hp.
-    Agility - Affects chance to hit with weapons and chance to avoid attacks.
-    Magic - Affects damage and chance to hit with spells, magic resistance, and max mana.
-    
-    Bonus = stat // 2
-    
-    3 points to spend when leveling up.
-    Avoidance = 10 + Agility bonus.
-    Armor reduces weapon damage, heavier armor penalizes Agility. (You're easier to hit, but you take less damage)
-    Proficiency bonus = 1 + level // 4, added to attack rolls with proficient weapons and spell attacks.
-    Warrior is proficient with swords and axes, rogue is proficient with daggers and rapiers. Mage
-    is proficient with spells.
-    """
 
     def __init__(
             self,
-            strength: int,
-            perseverance: int,
-            agility: int,
-            magic: int,
             min_hp_per_level: int,
             max_hp_per_level: int,
             fighter_class: FighterClass,
@@ -67,8 +49,6 @@ class Fighter(BaseComponent, RDSObject):
             level: Level = Level(),
             abilities_by_level: Optional[Dict[int, Ability]] = None,
             abilities: Optional[List[Ability]] = None,
-            weapon_crit_threshold: int = 20,
-            spell_crit_threshold: int = 20,
             char: str = "?",
             color: Tuple[int, int, int] = colors.white,
             name: str = "<Unnamed>",
@@ -82,15 +62,29 @@ class Fighter(BaseComponent, RDSObject):
 
         self.fighter_class = fighter_class
 
-        self.strength = strength
-        self.perseverance = perseverance
-        self.agility = agility
-        self.magic = magic
+        self.buffs: Dict[StatusTypes, int] = {
+            StatusTypes.AGILITY: 0,
+            StatusTypes.ARMOR: 0,
+            StatusTypes.BALM: 0,
+            StatusTypes.BARBED: 0,
+            StatusTypes.EVASION: 0,
+            StatusTypes.STRENGTH: 0,
+            StatusTypes.WARD: 0,
+        }
+        self.debuffs: Dict[StatusTypes, int] = {
+            StatusTypes.BLEED: 0,
+            StatusTypes.BLIGHT: 0,
+            StatusTypes.BURN: 0,
+            StatusTypes.EXPOSED: 0,
+            StatusTypes.POISON: 0,
+            StatusTypes.SHATTERED: 0,
+        }
 
         self.max_hp_per_level = max_hp_per_level
         self.min_hp_per_level = min_hp_per_level
         self._hp = 0
         self.max_hp = 0
+        self.block = 5
 
         self.resource = resource
         self.resource.parent = self
@@ -103,9 +97,6 @@ class Fighter(BaseComponent, RDSObject):
         self.abilities_by_level = {} if abilities_by_level is None else copy.deepcopy(abilities_by_level)
         self.abilities = [] if abilities is None else copy.deepcopy(abilities)
         self.ai = ai_cls(self)
-
-        self.weapon_crit_threshold = weapon_crit_threshold
-        self.spell_crit_threshold = spell_crit_threshold
 
         self.status_effects = []
 
@@ -130,11 +121,11 @@ class Fighter(BaseComponent, RDSObject):
 
     @property
     def avoidance(self) -> int:
-        return BASE_DEFENSE + (self.agility + self.equipment.agility_bonus) // 2 + self.equipment.avoidance_bonus
+        return BASE_DEFENSE + self.equipment.agility_bonus // 2 + self.equipment.avoidance_bonus
 
     @property
     def magic_defense(self) -> int:
-        return BASE_DEFENSE + (self.magic + self.equipment.magic_bonus) // 2 + self.equipment.magic_resistance
+        return BASE_DEFENSE + self.equipment.magic_bonus // 2 + self.equipment.magic_resistance
 
     @property
     def mainhand_attack_bonus(self) -> int:
@@ -146,17 +137,17 @@ class Fighter(BaseComponent, RDSObject):
 
     @property
     def spell_attack_bonus(self) -> int:
-        bonus = (self.magic + self.equipment.magic_bonus) // 2
+        bonus = self.equipment.magic_bonus // 2
         if self.fighter_class == FighterClass.MAGE:
             bonus += self.level.proficiency
         return bonus
 
     def weapon_base_attack_bonus(self, slot: EquipmentSlot) -> int:
         weapon = self.equipment.items[slot]
-        bonus = (self.agility + self.equipment.agility_bonus) // 2
+        bonus = self.equipment.agility_bonus // 2
         if weapon is not None and hasattr(weapon, 'weapon_type'):
             if weapon.weapon_type == WeaponType.MAGIC:
-                bonus =(self.magic + self.equipment.magic_bonus) // 2
+                bonus = self.equipment.magic_bonus // 2
             if self.fighter_class == FighterClass.ROGUE and (
                     weapon.weapon_type == WeaponType.AGILITY or
                     weapon.weapon_type == WeaponType.FINESSE
@@ -207,32 +198,28 @@ class Fighter(BaseComponent, RDSObject):
         self.hp -= amount
 
     @staticmethod
-    def roll_attack(crit_threshold: int, attack_bonus: int, advantage: bool = False) -> int:
+    def roll_attack(attack_bonus: int, advantage: bool = False) -> int:
         roll = random.randint(1, 20)
         if advantage:
             roll = max(roll, random.randint(1, 20))
-        if roll >= crit_threshold:
-            return sys.maxsize
-        else:
-            return roll + attack_bonus
+        return roll + attack_bonus
 
     def roll_weapon_attack(self, slot: EquipmentSlot, advantage: bool = False):
         if slot == EquipmentSlot.MAINHAND:
-            return self.roll_attack(self.weapon_crit_threshold, self.mainhand_attack_bonus, advantage=advantage)
+            return self.roll_attack(self.mainhand_attack_bonus, advantage=advantage)
         elif slot == EquipmentSlot.OFFHAND and self.equipment.items[slot].equipment_type == EquipmentType.WEAPON:
-            return self.roll_attack(self.weapon_crit_threshold, self.offhand_attack_bonus, advantage=advantage)
+            return self.roll_attack(self.offhand_attack_bonus, advantage=advantage)
         else:
             return 0
 
     def roll_spell_attack(self) -> int:
         return self.roll_attack(
-            self.spell_crit_threshold,
             self.spell_attack_bonus,
         )
 
     def roll_hitpoints(self) -> None:
         new_hp = random.randint(self.min_hp_per_level, self.max_hp_per_level)
-        new_hp += (self.perseverance + self.equipment.perseverance_bonus) // 2
+        new_hp += self.equipment.perseverance_bonus // 2
         self.max_hp += new_hp
         self._hp += new_hp
 
@@ -251,10 +238,10 @@ class Fighter(BaseComponent, RDSObject):
 
     def roll_weapon_damage(self, slot: EquipmentSlot):
         if slot == EquipmentSlot.MAINHAND:
-            return ((self.strength + self.equipment.strength_bonus) // 2 +
+            return (self.equipment.strength_bonus // 2 +
                     random.randint(self.equipment.mainhand_min_damage, self.equipment.mainhand_max_damage))
         elif slot == EquipmentSlot.OFFHAND and self.equipment.items[slot].equipment_type == EquipmentType.WEAPON:
-            return ((self.strength + self.equipment.strength_bonus) // 2 +
+            return (self.equipment.strength_bonus // 2 +
                     random.randint(self.equipment.offhand_min_damage, self.equipment.offhand_max_damage))
         else:
             return 0
@@ -266,10 +253,6 @@ class Enemy(Fighter):
             target_level: int,
             loot_table: RDSTable,
             stat_prio: RDSTable,
-            strength: int,
-            perseverance: int,
-            agility: int,
-            magic: int,
             min_hp_per_level: int,
             max_hp_per_level: int,
             fighter_class: FighterClass,
@@ -279,18 +262,12 @@ class Enemy(Fighter):
             equipment: Equipment = Equipment(),
             level: Level = Level(),
             abilities: List[Ability] = None,
-            weapon_crit_threshold: int = 20,
-            spell_crit_threshold: int = 20,
             char: str = "?",
             color: Tuple[int, int, int] = colors.white,
             name: str = "<Unnamed>",
             sprite: str = "images/rogue_icon.png",
     ):
         super().__init__(
-            strength=strength,
-            perseverance=perseverance,
-            agility=agility,
-            magic=magic,
             min_hp_per_level=min_hp_per_level,
             max_hp_per_level=max_hp_per_level,
             fighter_class=fighter_class,
@@ -300,8 +277,6 @@ class Enemy(Fighter):
             equipment=equipment,
             level=level,
             abilities=abilities,
-            weapon_crit_threshold=weapon_crit_threshold,
-            spell_crit_threshold=spell_crit_threshold,
             name=name,
             color=color,
             char=char,
@@ -311,7 +286,7 @@ class Enemy(Fighter):
         self.loot_table = loot_table
 
         while self.level.current_level < target_level:
-            self.level.increase_level(stats=[x.rds_value for x in stat_prio.rds_result])
+            self.level.increase_level()
 
         self.level.xp_given *= self.level.current_level
 
@@ -327,3 +302,6 @@ class Enemy(Fighter):
             elif isinstance(item, Item):
                 print(f"Dropped {item.name}")
                 self.inventory.add_item(item)
+
+    def stun(self, turns_remaining: int) -> None:
+        pass
