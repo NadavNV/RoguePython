@@ -1664,22 +1664,34 @@ class CombatEventHandler(EventHandler):
         if key in CURSOR_X_KEYS:
             self.cursor[0] = (self.cursor[0] + CURSOR_X_KEYS[key]) % 2
         elif key in CURSOR_Y_KEYS:
-            self.cursor[1] = (self.cursor[1] + CURSOR_Y_KEYS[key]) % 2
+            self.cursor[1] = (self.cursor[1] + CURSOR_Y_KEYS[key]) % 4
         elif key == tcod.event.KeySym.ESCAPE:
             raise SystemExit()
         elif key in CONFIRM_KEYS:
-            if np.array_equal(self.cursor, (0, 1)):
+            if np.array_equal(self.cursor, (0, 3)):
+                # Run
                 return PopupMessage(parent_handler=self, text="You can't run, you don't have legs!")
             elif np.array_equal(self.cursor, (0, 0)):
-                return SelectTargetEventHandler(
-                    engine=self.engine,
-                    action=self.engine.player.fighters[0].abilities[-1],  # Melee attack is always the least priority
-                    parent=self,
-                )
+                # Hand
+                pass
+            elif np.array_equal(self.cursor, (0, 1)):
+                # Inspect Enemies
+                pass
+            elif np.array_equal(self.cursor, (0, 2)):
+                # Show Discard Pile
+                pass
             elif np.array_equal(self.cursor, (1, 0)):
-                return SelectAbilityEventHandler(self.engine, parent=self)
+                # Use Item
+                pass
             elif np.array_equal(self.cursor, (1, 1)):
-                return InventoryActivateHandler(self.engine, parent=self)
+                # Show Draw Pile
+                pass
+            elif np.array_equal(self.cursor, (1, 2)):
+                # Show Burn Pile
+                pass
+            elif np.array_equal(self.cursor, (1, 3)):
+                # End Turn
+                pass
 
 
 class SelectTargetEventHandler(AskUserEventHandler):

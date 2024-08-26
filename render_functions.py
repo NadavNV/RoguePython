@@ -161,9 +161,9 @@ def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
         bg = colors.black
 
     console.print(
-        x=frame_x + width // 5,
-        y=frame_y + height // 5,
-        string="Attack",
+        x=frame_x + 4,
+        y=frame_y + 4,
+        string="Hand",
         fg=fg,
         bg=bg,
     )
@@ -176,8 +176,38 @@ def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
         bg = colors.black
 
     console.print(
-        x=frame_x + width // 5,
-        y=frame_y + height * 3 // 5,
+        x=frame_x + 4,
+        y=frame_y + 7,
+        string="Inspect Enemies",
+        fg=fg,
+        bg=bg,
+    )
+
+    if cursor is not None and np.array_equal(cursor, [0, 2]):
+        fg = colors.black
+        bg = colors.white
+    else:
+        fg = colors.white
+        bg = colors.black
+
+    console.print(
+        x=frame_x + 4,
+        y=frame_y + 10,
+        string="Discard Pile",
+        fg=fg,
+        bg=bg,
+    )
+
+    if cursor is not None and np.array_equal(cursor, [0, 3]):
+        fg = colors.black
+        bg = colors.white
+    else:
+        fg = colors.white
+        bg = colors.black
+
+    console.print(
+        x=frame_x + 4,
+        y=frame_y + 13,
         string="Run",
         fg=fg,
         bg=bg,
@@ -191,9 +221,9 @@ def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
         bg = colors.black
 
     console.print(
-        x=frame_x + width * 3 // 5,
-        y=frame_y + height // 5,
-        string="Use ability",
+        x=frame_x + 22,
+        y=frame_y + 4,
+        string="Use Item",
         fg=fg,
         bg=bg,
     )
@@ -206,9 +236,39 @@ def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
         bg = colors.black
 
     console.print(
-        x=frame_x + width * 3 // 5,
-        y=frame_y + height * 3 // 5,
-        string="Use item",
+        x=frame_x + 22,
+        y=frame_y + 7,
+        string="Draw Pile",
+        fg=fg,
+        bg=bg,
+    )
+
+    if cursor is not None and np.array_equal(cursor, [1, 2]):
+        fg = colors.black
+        bg = colors.white
+    else:
+        fg = colors.white
+        bg = colors.black
+
+    console.print(
+        x=frame_x + 22,
+        y=frame_y + 10,
+        string="Burn Pile",
+        fg=fg,
+        bg=bg,
+    )
+
+    if cursor is not None and np.array_equal(cursor, [1, 3]):
+        fg = colors.black
+        bg = colors.white
+    else:
+        fg = colors.white
+        bg = colors.black
+
+    console.print(
+        x=frame_x + 22,
+        y=frame_y + 13,
+        string="End Turn",
         fg=fg,
         bg=bg,
     )

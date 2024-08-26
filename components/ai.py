@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 import numpy as np  # type: ignore
 import tcod
 
-from actions import Action, BumpAction, MovementAction, WaitAction, TargetedAbility, MeleeAttack
+from actions import Action, BumpAction, MovementAction, WaitAction, TargetedAbility, AttackAction
 
 if TYPE_CHECKING:
     from entity import FighterGroup
@@ -62,18 +62,20 @@ class ConfusedEnemy(BaseAI):
         self.previous_ai = previous_ai
         self.turns_remaining = turns_remaining
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
         # Revert the AI back to the original state if the effect has run its course.
         if self.turns_remaining <= 0:
             self.engine.message_log.add_message(
                 f"The {self.entity.name} is no longer confused."
             )
             self.entity.ai = self.previous_ai
+            return True
         else:
             if random.random() < 0.5:
                 self.engine.message_log.add_message(
                     f"The {self.entity.name} shuffles around aimlessly."
                 )
+                return True
             else:
                 target = random.choice(list(filter(
                     lambda x: x.is_alive,
@@ -82,7 +84,7 @@ class ConfusedEnemy(BaseAI):
                 self.engine.message_log.add_message(
                     f"The confused {self.entity.name} strikes the {target.name}!"
                 )
-                MeleeAttack(caster=self.entity, target=target).perform()
+                return AttackAction(caster=self.entity, target=target, damage=5).perform()
 
 
 class RoamingEnemy(BaseAI):
@@ -90,7 +92,7 @@ class RoamingEnemy(BaseAI):
         super().__init__(entity)
         self.path: List[Tuple[int, int]] = []
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
         target = self.engine.player
         dx = target.x - self.entity.x
         dy = target.y - self.entity.y
@@ -115,15 +117,12 @@ class HostileEnemy(BaseAI):
     def __init__(self, entity: Fighter):
         super().__init__(entity)
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
 
         for ability in self.entity.abilities:
-            if not ability.is_on_cooldown() and ability.cost <= self.entity.resource.current_amount:
-                if isinstance(ability, TargetedAbility):
-                    ability.target = self.entity.engine.player[0]
-                ability.start_cooldown()
-                self.entity.resource.spend(ability.cost)
-                return ability.perform()
+            if isinstance(ability, TargetedAbility):
+                ability.target = self.entity.engine.player[0]
+            return ability.perform()
 
 
 class StunnedEnemy(BaseAI):

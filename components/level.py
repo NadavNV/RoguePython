@@ -56,7 +56,6 @@ class Level(BaseComponent):
 
         fighter = self.parent
         fighter.proficiency = 1 + self.current_level % 4
-        fighter.roll_hitpoints()
         if fighter.fighter_class == FighterClass.MAGE:
             fighter.resource.max_amount += 10
 

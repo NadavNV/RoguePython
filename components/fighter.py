@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import sys
 import copy
 from typing import Dict, List, Optional, Tuple, Type, TYPE_CHECKING
-
-import random
 
 import colors
 from components.base_component import BaseComponent
@@ -16,14 +13,12 @@ from dropgen.RDSObject import RDSObject
 from dropgen.RDSValue import RDSValue
 from dropgen.RDSTable import RDSTable
 from entity import Item
-from equipment_slots import EquipmentSlot
-from equipment_types import EquipmentType
 from fighter_classes import FighterClass
 from status_types import StatusTypes
-from weapon_types import WeaponType
 
 if TYPE_CHECKING:
     from actions import Ability
+    from cards import Card
     from components.ai import BaseAI
     from components.status_effects import StatusEffect
     from engine import Engine
@@ -80,11 +75,17 @@ class Fighter(BaseComponent, RDSObject):
             StatusTypes.SHATTERED: 0,
         }
 
+        self.deck: List[Card] = []
+        self.hand: List[Card] = []
+        self.draw: List[Card] = []
+        self.discard: List[Card] = []
+        self.burn: List[Card] = []
+
         self.max_hp_per_level = max_hp_per_level
         self.min_hp_per_level = min_hp_per_level
         self._hp = 0
         self.max_hp = 0
-        self.block = 5
+        self.block = 0
 
         self.resource = resource
         self.resource.parent = self
@@ -98,10 +99,6 @@ class Fighter(BaseComponent, RDSObject):
         self.abilities = [] if abilities is None else copy.deepcopy(abilities)
         self.ai = ai_cls(self)
 
-        self.status_effects = []
-
-        self.roll_hitpoints()
-
     @property
     def hp(self) -> int:
         return self._hp
@@ -111,56 +108,6 @@ class Fighter(BaseComponent, RDSObject):
         self._hp = max(0, min(value, self.max_hp))
         if self._hp == 0 and self.parent.ai:
             self.die()
-
-    @property
-    def armor(self) -> int:
-        if self.equipment:
-            return self.equipment.armor_bonus
-        else:
-            return 0
-
-    @property
-    def avoidance(self) -> int:
-        return BASE_DEFENSE + self.equipment.agility_bonus // 2 + self.equipment.avoidance_bonus
-
-    @property
-    def magic_defense(self) -> int:
-        return BASE_DEFENSE + self.equipment.magic_bonus // 2 + self.equipment.magic_resistance
-
-    @property
-    def mainhand_attack_bonus(self) -> int:
-        return self.weapon_base_attack_bonus(EquipmentSlot.MAINHAND) + self.equipment.mainhand_attack_bonus
-
-    @property
-    def offhand_attack_bonus(self) -> int:
-        return self.weapon_base_attack_bonus(EquipmentSlot.OFFHAND) + self.equipment.offhand_attack_bonus
-
-    @property
-    def spell_attack_bonus(self) -> int:
-        bonus = self.equipment.magic_bonus // 2
-        if self.fighter_class == FighterClass.MAGE:
-            bonus += self.level.proficiency
-        return bonus
-
-    def weapon_base_attack_bonus(self, slot: EquipmentSlot) -> int:
-        weapon = self.equipment.items[slot]
-        bonus = self.equipment.agility_bonus // 2
-        if weapon is not None and hasattr(weapon, 'weapon_type'):
-            if weapon.weapon_type == WeaponType.MAGIC:
-                bonus = self.equipment.magic_bonus // 2
-            if self.fighter_class == FighterClass.ROGUE and (
-                    weapon.weapon_type == WeaponType.AGILITY or
-                    weapon.weapon_type == WeaponType.FINESSE
-            ):
-                bonus += self.level.proficiency
-            elif self.fighter_class == FighterClass.WARRIOR and (
-                    weapon.weapon_type == WeaponType.STRENGTH or
-                    weapon.weapon_type == WeaponType.FINESSE
-            ):
-                bonus += self.level.proficiency
-            elif self.fighter_class == FighterClass.MAGE and weapon.weapon_type == WeaponType.MAGIC:
-                bonus += self.level.proficiency
-        return bonus
 
     def die(self) -> None:
         if self.engine.player is self.parent:
@@ -197,32 +144,6 @@ class Fighter(BaseComponent, RDSObject):
     def take_damage(self, amount: int) -> None:
         self.hp -= amount
 
-    @staticmethod
-    def roll_attack(attack_bonus: int, advantage: bool = False) -> int:
-        roll = random.randint(1, 20)
-        if advantage:
-            roll = max(roll, random.randint(1, 20))
-        return roll + attack_bonus
-
-    def roll_weapon_attack(self, slot: EquipmentSlot, advantage: bool = False):
-        if slot == EquipmentSlot.MAINHAND:
-            return self.roll_attack(self.mainhand_attack_bonus, advantage=advantage)
-        elif slot == EquipmentSlot.OFFHAND and self.equipment.items[slot].equipment_type == EquipmentType.WEAPON:
-            return self.roll_attack(self.offhand_attack_bonus, advantage=advantage)
-        else:
-            return 0
-
-    def roll_spell_attack(self) -> int:
-        return self.roll_attack(
-            self.spell_attack_bonus,
-        )
-
-    def roll_hitpoints(self) -> None:
-        new_hp = random.randint(self.min_hp_per_level, self.max_hp_per_level)
-        new_hp += self.equipment.perseverance_bonus // 2
-        self.max_hp += new_hp
-        self._hp += new_hp
-
     @property
     def is_alive(self) -> bool:
         """Returns True as long as this fighter can perform actions."""
@@ -235,16 +156,6 @@ class Fighter(BaseComponent, RDSObject):
     @property
     def game_map(self) -> GameMap:
         return self.parent.game_map
-
-    def roll_weapon_damage(self, slot: EquipmentSlot):
-        if slot == EquipmentSlot.MAINHAND:
-            return (self.equipment.strength_bonus // 2 +
-                    random.randint(self.equipment.mainhand_min_damage, self.equipment.mainhand_max_damage))
-        elif slot == EquipmentSlot.OFFHAND and self.equipment.items[slot].equipment_type == EquipmentType.WEAPON:
-            return (self.equipment.strength_bonus // 2 +
-                    random.randint(self.equipment.offhand_min_damage, self.equipment.offhand_max_damage))
-        else:
-            return 0
 
 
 class Enemy(Fighter):

@@ -4,7 +4,7 @@ import copy
 import random
 import sys
 
-from actions import MeleeAttack, SanguineStrike
+from actions import AttackAction, SanguineStrike
 import colors
 from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
@@ -108,17 +108,6 @@ player = FighterGroup(
         level=Level(level_up_base=200),
     )],
     ai_cls=RoamingEnemy
-)
-
-confusion_scroll = Item(
-    buy_price=400,
-    sell_price=60,
-    char=SCROLL_CHAR,
-    color=(207, 63, 255),
-    name="Confusion Scroll",
-    description="Confuse a single enemy, causing them to spend the next 5 turns doing nothing or attacking randomly.",
-    consumable=consumable.ConfusionConsumable(number_of_turns=5),
-    stackable=True
 )
 
 fireball_scroll = Item(
@@ -342,7 +331,7 @@ class Janitor(Enemy):
         self.equipment.parent = self
         self.inventory.parent = self
 
-        self.abilities = [MeleeAttack(caster=self, target=None)]
+        self.abilities = [AttackAction(caster=self, target=None, damage = 5)]
 
         self.abilities_by_level = {
             4: SanguineStrike(caster=self, target=None)
@@ -392,7 +381,7 @@ class Lumberjack(Enemy):
         self.equipment.parent = self
         self.inventory.parent = self
 
-        self.abilities = [MeleeAttack(caster=self, target=None)]
+        self.abilities = [AttackAction(caster=self, target=None, damage=5)]
 
         self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(handaxe), add_message=False)
         self.inventory.add_item(copy.deepcopy(tasty_rat))

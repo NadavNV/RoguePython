@@ -41,7 +41,6 @@ max_enemies_per_group_by_floor = [
 
 item_chances: Dict[int, List[Tuple[Entity, int]]] = {
     0: [(entity_factories.tasty_rat, 40), (entity_factories.mana_potion, 12)],
-    2: [(entity_factories.confusion_scroll, 12), (entity_factories.dagger, 3)],
     4: [(entity_factories.lightning_scroll, 25), (entity_factories.short_sword, 5)],
     6: [(entity_factories.fireball_scroll, 25), (entity_factories.chain_mail, 15)],
 }

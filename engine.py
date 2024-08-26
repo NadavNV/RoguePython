@@ -31,14 +31,6 @@ class Engine:
         self.active_trader: Optional[Trader] = None
 
     def handle_enemy_turns(self) -> None:
-        # Handle player's turn end
-        for status in self.player[0].status_effects:
-            status.per_turn()
-        # Remove status effects that expired
-        self.player[0].status_effects[:] = [x for x in self.player[0].status_effects if x.duration > 0]
-        self.player[0].resource.on_turn_end()
-        for ability in self.player[0].abilities:
-            ability.reduce_cooldown()
 
         if not self.in_combat:
             for entity in set(self.game_map.actors) - {self.player}:

@@ -2,16 +2,13 @@ from __future__ import annotations
 
 from typing import Optional, Tuple, TYPE_CHECKING, Union
 
-import sys
-
 import colors
 import exceptions
 from equipment_slots import EquipmentSlot
-from equipment_types import EquipmentType
 from fighter_classes import FighterClass
+from status_types import StatusTypes
 from entity import FighterGroup, Trader
 from components.fighter import Fighter
-from components.status_effects import Bleed
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -30,7 +27,7 @@ class Action:
         """Return the engine this action belongs to."""
         return self.entity.engine
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
         """Perform this action with the objects needed to determine its scope.
 
         `self.engine` is the scope this action is being performed in.
@@ -38,6 +35,8 @@ class Action:
         `self.entity` is the object performing the action.
 
         This method must be overridden by Action subclasses.
+
+        returns True if the action was performed successfully
         """
         raise NotImplementedError()
 
@@ -48,7 +47,7 @@ class PickupAction(Action):
     def __init__(self, entity: Actor):
         super().__init__(entity)
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
         actor_location_x, actor_location_y = self.entity.x, self.entity.y
         inventory = self.entity.inventory
 
@@ -62,7 +61,7 @@ class PickupAction(Action):
                     raise exc
 
                 self.engine.message_log.add_message(f"You picked up the {item.name}!")
-                return
+                return True
 
         raise exceptions.Impossible("There is nothing here to pick up.")
 
@@ -77,15 +76,16 @@ class ItemAction(Action):
             target = entity
         self.target = target
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
         """Invoke the item's ability, this action will be given to provide context."""
         if self.item.consumable:
-            self.item.consumable.activate(self)
+            return self.item.consumable.activate(self)
 
 
 class DropItem(ItemAction):
-    def perform(self) -> None:
+    def perform(self) -> bool:
         self.entity.inventory.drop(self.item)
+        return True
 
 
 class EquipAction(Action):
@@ -95,20 +95,21 @@ class EquipAction(Action):
         self.item = item
         self.slot = slot
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
         if self.entity.equipment.item_is_equipped(self.slot):
             self.entity.equipment.unequip_from_slot(self.slot, add_message=True)
         else:
             self.entity.equipment.equip_to_slot(slot=self.slot, item=self.item, add_message=True)
+        return True
 
 
 class WaitAction(Action):
-    def perform(self) -> None:
-        pass
+    def perform(self) -> bool:
+        return True
 
 
 class TakeStairsAction(Action):
-    def perform(self) -> None:
+    def perform(self) -> bool:
         """
         Take the stairs, if any exist at the entity's location.
         """
@@ -117,6 +118,7 @@ class TakeStairsAction(Action):
             self.engine.message_log.add_message(
                 "You descend the staircase.", colors.descend
             )
+            return True
         else:
             raise exceptions.Impossible("There are no stairs here.")
 
@@ -149,7 +151,7 @@ class ActionWithDirection(Action):
 
 class MovementAction(ActionWithDirection):
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
         dest_x, dest_y = self.dest_xy
 
         if not self.engine.game_map.in_bounds(dest_x, dest_y):
@@ -163,26 +165,27 @@ class MovementAction(ActionWithDirection):
             raise exceptions.Impossible("That way is blocked.")
 
         self.entity.move(self.dx, self.dy)
+        return True
 
 
 class BumpAction(ActionWithDirection):
-    def perform(self) -> None:
+    def perform(self) -> bool:
         if self.target_actor:
             if isinstance(self.target_actor, Trader) and self.entity is self.engine.player:
                 self.engine.active_trader = self.target_actor
-                return
+                return True
             if (
                     self.target_actor is not self.engine.player and
                     self.entity is not self.engine.player
             ):
-                return
+                return True
             else:
                 self.engine.in_combat = True
                 if self.entity is self.engine.player:
                     self.engine.active_enemies = self.target_actor
                 else:
                     self.engine.active_enemies = self.entity
-                return
+                return True
 
         else:
             return MovementAction(self.entity, self.dx, self.dy).perform()
@@ -193,7 +196,6 @@ class Ability(Action):
             self,
             caster: Fighter,
             cost: int = 0,
-            cooldown: int = 0,
             name: str = "<Unnamed>",
             description: str = "<None>"
     ):
@@ -201,25 +203,12 @@ class Ability(Action):
         self.name = name
         self._description = description
         self.cost = cost
-        self.cooldown = cooldown
-        self.cooldown_remaining = 0
-
-    def reduce_cooldown(self) -> None:
-        self.cooldown_remaining = max(0, self.cooldown_remaining - 1)
-
-    def start_cooldown(self) -> None:
-        self.cooldown_remaining = self.cooldown
-
-    def is_on_cooldown(self) -> bool:
-        return self.cooldown_remaining > 0
 
     @property
     def description(self) -> str:
         result = self._description
         if self.cost != 0:
             result += f"\nCosts {self.cost} {self.entity.resource.name}."
-        if self.cooldown != 0:
-            result += f"\n{self.cooldown} turn cooldown."
         return result
 
 
@@ -229,64 +218,47 @@ class TargetedAbility(Ability):
             caster: Fighter,
             target: Optional[Fighter],
             cost: int = 0,
-            cooldown: int = 0,
             name: str = "<UnnamedTargetedAbility>",
             description: str = "<None>"
     ):
-        super().__init__(caster=caster, cost=cost, cooldown=cooldown, name=name, description=description)
+        super().__init__(caster=caster, cost=cost, name=name, description=description)
         self.target = target
 
 
-class WeaponAttack(TargetedAbility):
+class AttackAction(TargetedAbility):
     def __init__(
             self,
             caster: Fighter,
-            target: Fighter,
-            slot: EquipmentSlot,
-            cooldown: int = 0,
-            with_advantage: bool = False,
-            name: str = "<WeaponAttack>",
-            description: str = "<Single weapon attack>"
+            target: Optional[Fighter],
+            damage: int,
+            name: str = "<AttackAction>",
+            description: str = "<Standard attack>"
     ):
         super().__init__(
             caster=caster,
-            cooldown=cooldown,
             target=target,
             name=name,
             description=description,
         )
-        self.with_advantage = with_advantage
-        self.slot = slot
+        self.damage = damage
 
-    def perform(self) -> None:
+    def perform(self) -> bool:
         attack_desc = f"{self.entity.name.capitalize()} attacks {self.target.name}"
 
-        if (
-                self.slot == EquipmentSlot.OFFHAND and
-                (
-                    not self.entity.equipment.item_is_equipped(self.slot) or
-                    self.entity.equipment.items[self.slot].equipment_type != EquipmentType.WEAPON
-                )
-        ):
-            # Don't attack with shield or magical focus, or empty slot
-            return
-        attack = self.entity.roll_weapon_attack(slot=self.slot, advantage=self.with_advantage)
-        if attack == sys.maxsize:  # Critical hit
-            attack_desc = f"{attack_desc} and critically hits"
-            damage = self.entity.roll_weapon_damage(self.slot)
-        else:
+        damage = self.damage
+        if damage <= self.target.block:
+            self.target.block -= damage
             damage = 0
-        attack -= self.target.avoidance
-        damage += self.entity.roll_weapon_damage(self.slot) - self.target.armor
 
         if self.entity.parent is self.engine.player:
             attack_color = colors.player_atk
         else:
             attack_color = colors.enemy_atk
-        if attack < 0:
+        if self.target.buffs[StatusTypes.EVASION] > 0:
             self.engine.message_log.add_message(
                 f"{attack_desc} but misses.", attack_color
             )
+            self.target.buffs[StatusTypes.EVASION] -= 1
         elif damage > 0:
             if self.entity.fighter_class == FighterClass.WARRIOR:
                 self.entity.resource.gain(damage)
@@ -294,29 +266,12 @@ class WeaponAttack(TargetedAbility):
                 f"{attack_desc} for {damage} hit points.", attack_color
             )
             self.target.hp -= damage
+            return True
         else:
             self.engine.message_log.add_message(
                 f"{attack_desc} but does no damage.", attack_color
             )
-
-
-class MeleeAttack(TargetedAbility):
-
-    def __init__(
-            self,
-            caster: Fighter,
-            target: Optional[Fighter],
-    ):
-        super().__init__(
-            caster=caster,
-            target=target,
-            name="Melee Attack",
-            description="Attack a single enemy with your equipped weapons."
-        )
-
-    def perform(self) -> None:
-        WeaponAttack(caster=self.entity, target=self.target, slot=EquipmentSlot.MAINHAND).perform()
-        WeaponAttack(caster=self.entity, target=self.target, slot=EquipmentSlot.OFFHAND).perform()
+            return False
 
 
 class SanguineStrike(TargetedAbility):
@@ -329,52 +284,25 @@ class SanguineStrike(TargetedAbility):
             caster=caster,
             target=target,
             cost=30,
-            cooldown=3,
             name="Sanguine Strike",
-            description="Attack a single enemy with your main weapon, causing them to bleed for 3 turns."
+            description=f"Attack a single enemy, dealing {4 + caster.buffs[StatusTypes.STRENGTH]} damage." +
+                        f" If HP damage is done, inflict 4 bleed."
         )
 
-    def perform(self) -> None:
-        self.start_cooldown()
-        attack = self.entity.roll_weapon_attack(slot=EquipmentSlot.MAINHAND, advantage=False)
-        attack_desc = f"{self.entity.name.capitalize()} strikes at {self.target.name}"
-        if attack == sys.maxsize:
-            attack_desc += " and critically hits!"
-            bleed_amount = self.entity.agility
-        else:
-            bleed_amount = self.entity.agility // 2
-        attack -= self.target.avoidance
-        if attack < 0:
-            attack_desc += " but misses."
-        else:
-            self.target.status_effects.append(Bleed(
+    def perform(self) -> bool:
+        if AttackAction(
                 caster=self.entity,
-                duration=3,
                 target=self.target,
-                amount=bleed_amount
-            ))
-
-        if self.entity.parent is self.engine.player:
-            attack_color = colors.player_atk
-        else:
-            attack_color = colors.enemy_atk
-        self.engine.message_log.add_message(text=attack_desc, fg=attack_color)
-
-
-class SmokeBomb(Ability):
-    def __init__(
-            self,
-            caster: Fighter,
-    ):
-        super().__init__(
-            caster=caster,
-            cost=40,
-            cooldown=5,
-            name="Smoke Bomb",
-            description="Drop a smoke bomb, stunning all enemies for 2 turns."
-        )
-
-    def perform(self) -> None:
-        self.start_cooldown()
-        for enemy in self.engine.active_enemies.fighters:
-            enemy.stun(turns_remaining=1)
+                damage=4 + self.entity.buffs[StatusTypes.STRENGTH],
+        ):
+            self.target.debuffs[StatusTypes.BLEED] += 4
+            if self.entity.parent is self.engine.player:
+                attack_color = colors.player_atk
+            else:
+                attack_color = colors.enemy_atk
+            self.engine.message_log.add_message(
+                text=f"{self.target.name.capitalize()} received 4 bleed!",
+                fg=attack_color
+            )
+            return True
+        return False

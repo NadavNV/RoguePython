@@ -8,7 +8,7 @@ import lzma
 import colors
 from components.resoucre import Mana, Rage, Stamina
 from engine import Engine
-from actions import MeleeAttack, SanguineStrike, SmokeBomb
+from actions import AttackAction, SanguineStrike
 import entity_factories
 from game_map import GameWorld
 from equipment_slots import EquipmentSlot
@@ -62,7 +62,6 @@ def new_game(player_class: FighterClass) -> Engine:
         player[0].resource = Stamina()
         player[0].abilities_by_level = {
             2: SanguineStrike(caster=player[0], target=None),
-            5: SmokeBomb(caster=player[0]),
         }
 
     elif player_class == FighterClass.MAGE:
@@ -78,7 +77,7 @@ def new_game(player_class: FighterClass) -> Engine:
         player[0].resource = Mana()
 
     player[0].resource.parent = player[0]
-    player[0].abilities.append(MeleeAttack(caster=player[0], target=None))
+    player[0].abilities.append(AttackAction(caster=player[0], target=None, damage=5))
     player[0].parent = player
 
     engine = Engine(player=player)
