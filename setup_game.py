@@ -5,6 +5,7 @@ import copy
 import pickle
 import lzma
 
+from cards import AttackCard
 import colors
 from components.resoucre import Mana, Rage, Stamina
 from engine import Engine
@@ -79,6 +80,18 @@ def new_game(player_class: FighterClass) -> Engine:
     player[0].resource.parent = player[0]
     player[0].abilities.append(AttackAction(caster=player[0], target=None, damage=5))
     player[0].parent = player
+
+    player[0].draw = [AttackCard(
+        parent=player[0],
+        name='Attack',
+        description='Deal <damage> damage to a single enemy.',
+        damage=5,
+    ) for _ in range(10)] + [AttackCard(
+        parent=player[0],
+        name="Super Attack",
+        description='Deal <damage> damage to a single enemy.',
+        damage=10,
+    ) for _ in range(5)]
 
     engine = Engine(player=player)
 

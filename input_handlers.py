@@ -27,6 +27,7 @@ from equipment_types import EquipmentType
 from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
+    from cards import Card
     from entity import Item
     from engine import Engine
 
@@ -530,7 +531,7 @@ class LevelUpEventHandler(AskUserEventHandler):
 
         width = len("┤Current Attributes├") + 4
         height = 8
-        x = x - width-1
+        x = x - width - 1
         y = 1
 
         console.draw_frame(
@@ -1679,19 +1680,64 @@ class CombatEventHandler(EventHandler):
                 pass
             elif np.array_equal(self.cursor, (0, 2)):
                 # Show Discard Pile
-                pass
+                return InspectPileEventHandler(engine=self.engine, pile=self.engine.player[0].discard,
+                                               name="Discard Pile")
             elif np.array_equal(self.cursor, (1, 0)):
                 # Use Item
                 pass
             elif np.array_equal(self.cursor, (1, 1)):
                 # Show Draw Pile
-                pass
+                return InspectPileEventHandler(engine=self.engine, pile=self.engine.player[0].draw, name="Draw Pile")
             elif np.array_equal(self.cursor, (1, 2)):
                 # Show Burn Pile
-                pass
+                return InspectPileEventHandler(engine=self.engine, pile=self.engine.player[0].burn, name="Burn Pile")
             elif np.array_equal(self.cursor, (1, 3)):
                 # End Turn
                 pass
+
+
+class InspectPileEventHandler(EventHandler):
+    LENGTH = 10
+
+    def __init__(self, engine: Engine, pile: List[Card], name: str):
+        super().__init__(engine)
+        self.cursor = 0
+        self.start = 0
+        self.pile = pile
+        self.name = name
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        super().on_render(console)
+        render_functions.render_card_list(
+            console=console,
+            cards=self.pile[self.start: self.start + self.LENGTH],
+            cursor=self.cursor,
+            name=self.name,
+            up_arrow=self.start > 0,
+            down_arrow=self.start + self.LENGTH < len(self.pile)
+        )
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+
+        if key in [tcod.event.KeySym.UP, tcod.event.KeySym.KP_8]:
+            if self.cursor == 0:
+                self.start = max(0, self.start - 1)
+            else:
+                self.cursor -= 1
+        elif key == tcod.event.KeySym.PAGEUP:
+            self.start = max(0, self.start - 10)
+        elif key in [tcod.event.KeySym.DOWN, tcod.event.KeySym.KP_2]:
+            if self.cursor == self.LENGTH - 1:
+                self.start = min(len(self.pile) - self.LENGTH, self.start + 1)
+            else:
+                self.cursor += 1
+        elif key == tcod.event.KeySym.PAGEDOWN:
+            self.start = min(len(self.pile) - self.LENGTH, self.start + 10)
+        elif key == tcod.event.KeySym.ESCAPE:
+            return CombatEventHandler(engine=self.engine)
+        return self
 
 
 class SelectTargetEventHandler(AskUserEventHandler):

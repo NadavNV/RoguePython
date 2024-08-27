@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import textwrap
 import numpy as np
@@ -10,6 +10,7 @@ import colors
 from components.fighter import Fighter
 
 if TYPE_CHECKING:
+    from cards import Card
     from tcod.console import Console
     from engine import Engine
     from game_map import GameMap
@@ -272,6 +273,69 @@ def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
         fg=fg,
         bg=bg,
     )
+
+
+def render_card_list(console: Console, cards: List[Card], cursor: int,
+                     name: str, up_arrow: bool, down_arrow: bool) -> None:
+    frame_x = console.width // 3
+    frame_y = console.height * 2 // 3
+    width = console.width // 3 + 1
+    height = console.height // 3
+    console.draw_frame(
+        x=frame_x,
+        y=frame_y,
+        width=width,
+        height=height,
+        clear=True,
+        fg=colors.white,
+        bg=colors.black,
+    )
+
+    console.print_box(
+        x=frame_x,
+        y=frame_y,
+        width=console.width // 3 - 1,
+        height=1,
+        string=f"┤{name}├",
+        fg=colors.white,
+        bg=colors.black,
+        alignment=libtcodpy.CENTER
+    )
+
+    if up_arrow:
+        console.print(
+            x=frame_x + 2,
+            y=frame_y + 2,
+            string="▲",
+            fg=colors.white,
+            bg=colors.black,
+        )
+
+    for i in range(len(cards)):
+        if i == cursor:
+            fg = colors.black
+            bg = colors.white
+        else:
+            fg = colors.white
+            bg = colors.black
+        console.print(
+            x=frame_x + 2,
+            y=frame_y + 3 + i,
+            string=cards[i].name,
+            fg=fg,
+            bg=bg,
+        )
+
+    # TODO: Add card tooltip
+
+    if down_arrow:
+        console.print(
+            x=frame_x + 2,
+            y=frame_y + 2 + len(cards) + 1,
+            string="▼",
+            fg=colors.white,
+            bg=colors.black,
+        )
 
 
 def render_dungeon_ui(console: Console) -> None:
