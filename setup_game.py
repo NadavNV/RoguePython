@@ -36,9 +36,8 @@ def new_game(player_class: FighterClass) -> Engine:
     room_min_size = 6
     max_rooms = 30
 
-    player = copy.deepcopy(entity_factories.player)
-
     if player_class == FighterClass.WARRIOR:
+        player = copy.deepcopy(entity_factories.warrior)
         player[0].fighter_class = FighterClass.WARRIOR
         player[0].strength = 7
         player[0].agility = 4
@@ -51,6 +50,7 @@ def new_game(player_class: FighterClass) -> Engine:
         player[0].resource = Rage()
 
     elif player_class == FighterClass.ROGUE:
+        player = copy.deepcopy(entity_factories.rogue)
         player[0].fighter_class = FighterClass.ROGUE
         player[0].strength = 4
         player[0].agility = 7
@@ -66,6 +66,7 @@ def new_game(player_class: FighterClass) -> Engine:
         }
 
     elif player_class == FighterClass.MAGE:
+        player = copy.deepcopy(entity_factories.mage)
         player[0].fighter_class = FighterClass.MAGE
         player[0].magic = 7
         player[0].agility = 4
@@ -78,24 +79,7 @@ def new_game(player_class: FighterClass) -> Engine:
         player[0].resource = Mana()
 
     player[0].resource.parent = player[0]
-    player[0].abilities.append(AttackAction(caster=player[0], target=None, damage=5))
     player[0].parent = player
-
-    player[0].draw = [AttackCard(
-        parent=player[0],
-        name='Attack',
-        description='Deal <damage> damage to a single enemy.',
-        damage=5,
-        burn=True,
-        ethereal=True,
-    ) for _ in range(10)] + [AttackCard(
-        parent=player[0],
-        name="Super Attack",
-        description='Deal <damage> damage to a single enemy.',
-        damage=10,
-        burn=True,
-        ethereal=True,
-    ) for _ in range(5)]
 
     engine = Engine(player=player)
 

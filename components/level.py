@@ -55,9 +55,8 @@ class Level(BaseComponent):
         self.current_level += 1
 
         fighter = self.parent
-        fighter.proficiency = 1 + self.current_level % 4
         if fighter.fighter_class == FighterClass.MAGE:
             fighter.resource.max_amount += 10
 
-        if self.current_level in fighter.abilities_by_level:
-            fighter.abilities.insert(0, fighter.abilities_by_level[self.current_level])
+        fighter.max_hp += fighter.hp_per_level
+        fighter.hp += fighter.hp_per_level
