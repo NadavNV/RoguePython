@@ -4,16 +4,16 @@ import copy
 import random
 import sys
 
-from actions import AttackAction, SanguineStrike
 import colors
+from cards import AttackCard
 from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
 from components.equipment import Equipment
-from components.fighter import Fighter, Enemy
+from components.fighter import Enemy, Rogue, Warrior, Mage
 from components.inventory import Inventory
 from components.level import Level
 from components.loot_table import HealingItemTable, WeaponsTable
-from components.resoucre import Rage
+from components.resoucre import Rage, Stamina, Mana
 from dropgen.RDSNullValue import RDSNullValue
 from dropgen.RDSTable import RDSTable
 from dropgen.RDSValue import RDSValue
@@ -93,19 +93,59 @@ class WeaponItem(Item):
             self.equippable.enhance_item(n)
 
 
-player = FighterGroup(
+rogue = FighterGroup(
     x=0,
     y=0,
-    fighters=[Fighter(
-        min_hp_per_level=10,
-        max_hp_per_level=15,
-        fighter_class=FighterClass.ROGUE,
-        char="@",
-        color=colors.player_icon,
-        name="Player",
+    fighters=[Rogue(
         ai_cls=HostileEnemy,
-        inventory=Inventory(capacity=26),
-        level=Level(level_up_base=200),
+        deck=[AttackCard(
+            name='Attack',
+            damage=5,
+            description="Deal <damage> damage to a single enemy.",
+        ) for _ in range(10)] +
+             [AttackCard(
+                 name='Super Attack',
+                 damage=10,
+                 description="Deal <damage> damage to a single enemy.",
+             ) for _ in range(5)]
+    )],
+    ai_cls=RoamingEnemy
+)
+
+warrior = FighterGroup(
+    x=0,
+    y=0,
+    fighters=[Warrior(
+        ai_cls=HostileEnemy,
+        deck=[AttackCard(
+            name='Attack',
+            damage=5,
+            description="Deal <damage> damage to a single enemy.",
+        ) for _ in range(10)] +
+             [AttackCard(
+                 name='Super Attack',
+                 damage=10,
+                 description="Deal <damage> damage to a single enemy.",
+             ) for _ in range(5)]
+    )],
+    ai_cls=RoamingEnemy
+)
+
+mage = FighterGroup(
+    x=0,
+    y=0,
+    fighters=[Mage(
+        ai_cls=HostileEnemy,
+        deck=[AttackCard(
+            name='Attack',
+            damage=5,
+            description="Deal <damage> damage to a single enemy.",
+        ) for _ in range(10)] +
+             [AttackCard(
+                 name='Super Attack',
+                 damage=10,
+                 description="Deal <damage> damage to a single enemy.",
+             ) for _ in range(5)]
     )],
     ai_cls=RoamingEnemy
 )
@@ -291,12 +331,18 @@ class Gold(RDSValue):
         )
 
 
+janitor_deck = [AttackCard(name='Smack', damage=5, description="Deal <damage> damage to the player.")]
+
+
 class Janitor(Enemy):
     def __init__(self, target_level: int):
         super().__init__(
-            min_hp_per_level=3,
-            max_hp_per_level=8,
+            min_hp_on_spawn=30,
+            max_hp_on_spawn=50,
+            hp_per_level=10,
             fighter_class=FighterClass.ROGUE,
+            resource=Stamina(),
+            deck=janitor_deck,
             char="j",
             color=colors.janitor_icon,
             name="Janitor",
@@ -316,35 +362,23 @@ class Janitor(Enemy):
                 ],
                 count=2,
             ),
-            stat_prio=RDSTable(
-                contents=[
-                    RDSValue(probability=3, value="Strength"),
-                    RDSValue(probability=2, value="Perseverance"),
-                    RDSValue(probability=4, value="Agility"),
-                    RDSValue(probability=1, value="Magic"),
-                ],
-                count=3,
-                always=True
-            ),
         )
 
         self.equipment.parent = self
         self.inventory.parent = self
 
-        self.abilities = [AttackAction(caster=self, target=None, damage = 5)]
-
-        self.abilities_by_level = {
-            4: SanguineStrike(caster=self, target=None)
-        }
-
         self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
+
+
+lumberjack_deck = [AttackCard(name='Chop', damage=5, description="Deal <damage> damage to the player.")]
 
 
 class Lumberjack(Enemy):
     def __init__(self, target_level: int):
         super().__init__(
-            min_hp_per_level=10,
-            max_hp_per_level=25,
+            min_hp_on_spawn=45,
+            max_hp_on_spawn=65,
+            hp_per_level=20,
             fighter_class=FighterClass.WARRIOR,
             char="L",
             color=colors.lumberjack_icon,
@@ -352,6 +386,7 @@ class Lumberjack(Enemy):
             sprite='images/lumberjack_sprite.png',
             ai_cls=HostileEnemy,
             resource=Rage(),
+            deck=lumberjack_deck,
             equipment=Equipment(),
             inventory=Inventory(capacity=26),
             level=Level(xp_given=100),
@@ -366,22 +401,10 @@ class Lumberjack(Enemy):
                 ],
                 count=2,
             ),
-            stat_prio=RDSTable(
-                contents=[
-                    RDSValue(probability=3, value="Strength"),
-                    RDSValue(probability=2, value="Perseverance"),
-                    RDSValue(probability=4, value="Agility"),
-                    RDSValue(probability=1, value="Magic"),
-                ],
-                count=3,
-                always=True
-            ),
         )
 
         self.equipment.parent = self
         self.inventory.parent = self
-
-        self.abilities = [AttackAction(caster=self, target=None, damage=5)]
 
         self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(handaxe), add_message=False)
         self.inventory.add_item(copy.deepcopy(tasty_rat))

@@ -46,7 +46,6 @@ class Engine:
                 if entity.ai:
                     entity.ai.perform()
 
-
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""
         save_data = lzma.compress(pickle.dumps(self))
@@ -94,3 +93,11 @@ class Engine:
         )
         # If a tile is "visible" it should be added to "explored".
         self.game_map.explored |= self.game_map.visible
+
+    def start_combat(self, enemies: FighterGroup) -> None:
+        self.in_combat = True
+        self.active_enemies = enemies
+        for enemy in enemies:
+            enemy.start_combat()
+        self.player[0].start_combat()
+

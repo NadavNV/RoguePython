@@ -1674,6 +1674,7 @@ class CombatEventHandler(EventHandler):
                 return PopupMessage(parent_handler=self, text="You can't run, you don't have legs!")
             elif np.array_equal(self.cursor, (0, 0)):
                 # Hand
+                # TODO: Add hand event handler
                 pass
             elif np.array_equal(self.cursor, (0, 1)):
                 # Inspect Enemies

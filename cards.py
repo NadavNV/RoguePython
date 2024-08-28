@@ -45,8 +45,9 @@ def keyword_to_description(keyword: str) -> str:
 
 
 class Card:
-    def __init__(self, parent: Fighter, playable: bool = True, burn: bool = False, ethereal: bool = False):
-        self.parent: Fighter = parent
+    parent: Fighter
+
+    def __init__(self, playable: bool = True, burn: bool = False, ethereal: bool = False):
         self.playable: bool = playable
         self.burn: bool = burn
         self.ethereal: bool = ethereal
@@ -95,7 +96,6 @@ class Card:
 class AttackCard(Card):
     def __init__(
             self,
-            parent: Fighter,
             name: str,
             description: str,
             damage: int,
@@ -103,7 +103,7 @@ class AttackCard(Card):
             burn: bool = False,
             ethereal: bool = False,
     ):
-        super().__init__(parent=parent, playable=playable, burn=burn, ethereal=ethereal)
+        super().__init__(playable=playable, burn=burn, ethereal=ethereal)
         self._name = name
         self._damage = damage
         self._description = description
