@@ -86,11 +86,15 @@ def new_game(player_class: FighterClass) -> Engine:
         name='Attack',
         description='Deal <damage> damage to a single enemy.',
         damage=5,
+        burn=True,
+        ethereal=True,
     ) for _ in range(10)] + [AttackCard(
         parent=player[0],
         name="Super Attack",
         description='Deal <damage> damage to a single enemy.',
         damage=10,
+        burn=True,
+        ethereal=True,
     ) for _ in range(5)]
 
     engine = Engine(player=player)
