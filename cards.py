@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Set, TYPE_CHECKING
+from typing import Optional, Set, TYPE_CHECKING
 
 from components.fighter import Fighter
 from status_types import StatusTypes
@@ -91,6 +91,19 @@ class Card:
         Can be overridden by Card subclasses.
         """
         pass
+
+
+class TargetedCard(Card):
+    def __init__(self, burn: bool = False, ethereal: bool = False):
+        super().__init__(playable=True, burn=burn, ethereal=ethereal)
+        self.target: Optional[Fighter] = None
+
+    def on_play(self) -> None:
+        """
+        Sanity check that a targeted card isn't activated without setting a target first. Must be called by
+        subclasses' on_play method.
+        """
+        assert self.target is not None
 
 
 class AttackCard(Card):

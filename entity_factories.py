@@ -340,16 +340,12 @@ class Janitor(Enemy):
             min_hp_on_spawn=30,
             max_hp_on_spawn=50,
             hp_per_level=10,
-            fighter_class=FighterClass.ROGUE,
-            resource=Stamina(),
             deck=janitor_deck,
             char="j",
             color=colors.janitor_icon,
             name="Janitor",
             sprite='images/janitor_sprite.png',
             ai_cls=HostileEnemy,
-            equipment=Equipment(),
-            inventory=Inventory(capacity=26),
             level=Level(xp_given=50),
             target_level=target_level,
             loot_table=RDSTable(
@@ -364,11 +360,6 @@ class Janitor(Enemy):
             ),
         )
 
-        self.equipment.parent = self
-        self.inventory.parent = self
-
-        self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(broom), add_message=False)
-
 
 lumberjack_deck = [AttackCard(name='Chop', damage=5, description="Deal <damage> damage to the player.")]
 
@@ -379,16 +370,12 @@ class Lumberjack(Enemy):
             min_hp_on_spawn=45,
             max_hp_on_spawn=65,
             hp_per_level=20,
-            fighter_class=FighterClass.WARRIOR,
             char="L",
             color=colors.lumberjack_icon,
             name="Lumberjack",
             sprite='images/lumberjack_sprite.png',
             ai_cls=HostileEnemy,
-            resource=Rage(),
             deck=lumberjack_deck,
-            equipment=Equipment(),
-            inventory=Inventory(capacity=26),
             level=Level(xp_given=100),
             target_level=target_level,
             loot_table=RDSTable(
@@ -402,12 +389,6 @@ class Lumberjack(Enemy):
                 count=2,
             ),
         )
-
-        self.equipment.parent = self
-        self.inventory.parent = self
-
-        self.equipment.equip_to_slot(EquipmentSlot.MAINHAND, copy.deepcopy(handaxe), add_message=False)
-        self.inventory.add_item(copy.deepcopy(tasty_rat))
 
 
 if __name__ == "__main__":

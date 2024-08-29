@@ -29,19 +29,16 @@ MAX_HAND_SIZE = 10
 
 class Fighter(BaseComponent, RDSObject):
     parent: FighterGroup
-    hand_size: int
+    default_hand_size: int
+    current_hand_size: int
 
     def __init__(
             self,
             min_hp_on_spawn: int,
             max_hp_on_spawn: int,
             hp_per_level: int,
-            fighter_class: FighterClass,
-            ai_cls: Type[BaseAI],
             deck: List[Card],
-            resource: Resource,
             inventory: Inventory = Inventory(capacity=26),
-            equipment: Equipment = Equipment(),
             level: Level = Level(),
             char: str = "?",
             color: Tuple[int, int, int] = colors.white,
@@ -53,8 +50,6 @@ class Fighter(BaseComponent, RDSObject):
         self.name = name
         self.color = color
         self.sprite = colors.image_to_rgb(sprite)
-
-        self.fighter_class = fighter_class
 
         self.buffs: Dict[StatusTypes, int] = {
             StatusTypes.AGILITY: 0,
@@ -87,15 +82,10 @@ class Fighter(BaseComponent, RDSObject):
         self.hp_per_level = hp_per_level
         self.block = 0
 
-        self.resource = resource
-        self.resource.parent = self
-        self.equipment = equipment
-        self.equipment.parent = self
         self.inventory = inventory
         self.inventory.parent = self
         self.level = level
         self.level.parent = self
-        self.ai = ai_cls(self)
 
     @property
     def hp(self) -> int:
@@ -145,7 +135,7 @@ class Fighter(BaseComponent, RDSObject):
     @property
     def is_alive(self) -> bool:
         """Returns True as long as this fighter can perform actions."""
-        return bool(self.ai)
+        return self._hp > 0
 
     @property
     def engine(self) -> Engine:
@@ -156,7 +146,7 @@ class Fighter(BaseComponent, RDSObject):
         return self.parent.game_map
 
     def start_turn(self) -> None:
-        while len(self.hand) < self.hand_size:
+        while len(self.hand) < self.current_hand_size:
             next_card = self.draw.pop(random.randint(0, len(self.draw) - 1))
             next_card.on_draw()
             self.hand.append(next_card)
@@ -164,6 +154,41 @@ class Fighter(BaseComponent, RDSObject):
     def start_combat(self) -> None:
         self.draw = copy.deepcopy(self.deck)
         self.start_turn()
+
+
+class Player(Fighter):
+    def __init__(
+            self,
+            min_hp_on_spawn: int,
+            max_hp_on_spawn: int,
+            hp_per_level: int,
+            fighter_class: FighterClass,
+            deck: List[Card],
+            resource: Resource,
+            inventory: Inventory = Inventory(capacity=26),
+            equipment: Equipment = Equipment(),
+            level: Level = Level(),
+            sprite: str = "images/rogue_icon.png"
+    ):
+        super().__init__(
+            min_hp_on_spawn=min_hp_on_spawn,
+            max_hp_on_spawn=max_hp_on_spawn,
+            hp_per_level=hp_per_level,
+            deck=deck,
+            level=level,
+            char="@",
+            color=colors.player_icon,
+            name="Player",
+            sprite=sprite,
+            inventory=inventory,
+        )
+
+        self.fighter_class = fighter_class
+
+        self.resource = resource
+        self.resource.parent = self
+        self.equipment = equipment
+        self.equipment.parent = self
 
 
 class Enemy(Fighter):
@@ -174,12 +199,8 @@ class Enemy(Fighter):
             min_hp_on_spawn: int,
             max_hp_on_spawn: int,
             hp_per_level: int,
-            fighter_class: FighterClass,
             ai_cls: Type[BaseAI],
-            resource: Resource,
             deck: List[Card],
-            inventory: Inventory = Inventory(capacity=26),
-            equipment: Equipment = Equipment(),
             level: Level = Level(),
             char: str = "?",
             color: Tuple[int, int, int] = colors.white,
@@ -190,11 +211,6 @@ class Enemy(Fighter):
             min_hp_on_spawn=min_hp_on_spawn,
             max_hp_on_spawn=max_hp_on_spawn,
             hp_per_level=hp_per_level,
-            fighter_class=fighter_class,
-            ai_cls=ai_cls,
-            resource=resource,
-            inventory=inventory,
-            equipment=equipment,
             level=level,
             name=name,
             color=color,
@@ -202,7 +218,9 @@ class Enemy(Fighter):
             sprite=sprite,
             deck=deck,
         )
-        self.hand_size = 1
+        self.ai=ai_cls
+        self.default_hand_size = 1
+        self.current_hand_size = 1
         self.loot_table = loot_table
 
         while self.level.current_level < target_level:
@@ -227,7 +245,7 @@ class Enemy(Fighter):
         pass
 
 
-class Rogue(Fighter):
+class Rogue(Player):
     def __init__(
             self,
             ai_cls: Type[BaseAI],
@@ -239,19 +257,15 @@ class Rogue(Fighter):
             max_hp_on_spawn=80,
             hp_per_level=10,
             fighter_class=FighterClass.ROGUE,
-            ai_cls=ai_cls,
             resource=Stamina(),
-            char="@",
-            color=colors.player_icon,
-            name="Player",
-            inventory=Inventory(capacity=26),
             level=Level(level_up_base=200),
             deck=deck,
         )
-        self.hand_size = 5
+        self.default_hand_size = 5
+        self.current_hand_size = 5
 
 
-class Warrior(Fighter):
+class Warrior(Player):
     def __init__(
             self,
             ai_cls: Type[BaseAI],
@@ -263,19 +277,15 @@ class Warrior(Fighter):
             max_hp_on_spawn=100,
             hp_per_level=10,
             fighter_class=FighterClass.WARRIOR,
-            ai_cls=ai_cls,
             resource=Rage(),
-            char="@",
-            color=colors.player_icon,
-            name="Player",
-            inventory=Inventory(capacity=26),
             level=Level(level_up_base=200),
             deck=deck,
         )
-        self.hand_size = 4
+        self.default_hand_size = 4
+        self.current_hand_size = 4
 
 
-class Mage(Fighter):
+class Mage(Player):
     def __init__(
             self,
             ai_cls: Type[BaseAI],
@@ -287,13 +297,9 @@ class Mage(Fighter):
             max_hp_on_spawn=80,
             hp_per_level=5,
             fighter_class=FighterClass.MAGE,
-            ai_cls=ai_cls,
             resource=Mana(),
-            char="@",
-            color=colors.player_icon,
-            name="Player",
-            inventory=Inventory(capacity=26),
             level=Level(level_up_base=200),
             deck=deck,
         )
-        self.hand_size = 6
+        self.default_hand_size = 6
+        self.current_hand_size = 6
