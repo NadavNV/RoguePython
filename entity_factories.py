@@ -5,7 +5,7 @@ import random
 import sys
 
 import colors
-from cards import AttackCard
+from cards import AttackCard, Jab
 from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
 from components.equipment import Equipment
@@ -93,21 +93,14 @@ class WeaponItem(Item):
             self.equippable.enhance_item(n)
 
 
+rogue_deck = [Jab() for _ in range(10)]
+
 rogue = FighterGroup(
     x=0,
     y=0,
     fighters=[Rogue(
         ai_cls=HostileEnemy,
-        deck=[AttackCard(
-            name='Attack',
-            damage=5,
-            description="Deal <damage> damage to a single enemy.",
-        ) for _ in range(10)] +
-             [AttackCard(
-                 name='Super Attack',
-                 damage=10,
-                 description="Deal <damage> damage to a single enemy.",
-             ) for _ in range(5)]
+        deck=rogue_deck
     )],
     ai_cls=RoamingEnemy
 )
@@ -120,12 +113,12 @@ warrior = FighterGroup(
         deck=[AttackCard(
             name='Attack',
             damage=5,
-            description="Deal <damage> damage to a single enemy.",
+            description="Deal <1> damage to a single enemy.",
         ) for _ in range(10)] +
              [AttackCard(
                  name='Super Attack',
                  damage=10,
-                 description="Deal <damage> damage to a single enemy.",
+                 description="Deal <1> damage to a single enemy.",
              ) for _ in range(5)]
     )],
     ai_cls=RoamingEnemy
@@ -139,12 +132,12 @@ mage = FighterGroup(
         deck=[AttackCard(
             name='Attack',
             damage=5,
-            description="Deal <damage> damage to a single enemy.",
+            description="Deal <1> damage to a single enemy.",
         ) for _ in range(10)] +
              [AttackCard(
                  name='Super Attack',
                  damage=10,
-                 description="Deal <damage> damage to a single enemy.",
+                 description="Deal <1> damage to a single enemy.",
              ) for _ in range(5)]
     )],
     ai_cls=RoamingEnemy
@@ -331,7 +324,7 @@ class Gold(RDSValue):
         )
 
 
-janitor_deck = [AttackCard(name='Smack', damage=5, description="Deal <damage> damage to the player.")]
+janitor_deck = [AttackCard(name='Smack', damage=5, description="Deal <1> damage to the player.")]
 
 
 class Janitor(Enemy):
@@ -361,7 +354,7 @@ class Janitor(Enemy):
         )
 
 
-lumberjack_deck = [AttackCard(name='Chop', damage=5, description="Deal <damage> damage to the player.")]
+lumberjack_deck = [AttackCard(name='Chop', damage=5, description="Deal <1> damage to the player.")]
 
 
 class Lumberjack(Enemy):

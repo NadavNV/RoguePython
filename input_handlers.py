@@ -19,6 +19,7 @@ from actions import (
     TargetedAbility,
     ItemAction,
 )
+from cards import TargetedCard
 from components.equippable import Weapon
 import colors
 import exceptions
@@ -27,6 +28,7 @@ from equipment_types import EquipmentType
 from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
+    from components.fighter import Player
     from cards import Card
     from entity import Item
     from engine import Engine
@@ -1674,8 +1676,7 @@ class CombatEventHandler(EventHandler):
                 return PopupMessage(parent_handler=self, text="You can't run, you don't have legs!")
             elif np.array_equal(self.cursor, (0, 0)):
                 # Hand
-                # TODO: Add hand event handler
-                pass
+                return PlayerHandEventHandler(self.engine)
             elif np.array_equal(self.cursor, (0, 1)):
                 # Inspect Enemies
                 pass
@@ -1695,6 +1696,70 @@ class CombatEventHandler(EventHandler):
             elif np.array_equal(self.cursor, (1, 3)):
                 # End Turn
                 pass
+
+
+class PlayerHandEventHandler(EventHandler):
+    def __init__(self, engine: Engine):
+        super().__init__(engine)
+        self.cursor = 0
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        super().on_render(console)
+        self.cursor = min(self.cursor, len(self.engine.player[0].hand) - 1)
+
+        number_of_enemies = len(self.engine.active_enemies)
+
+        frame_width = console.width * 2 // 3
+
+        for i in range(number_of_enemies):
+            render_functions.render_enemy(
+                enemy=self.engine.active_enemies.fighters[i],
+                console=console,
+                x=frame_width * (i + 1) // (number_of_enemies + 1) - console.width // 16,
+                y=console.height // 8,
+            )
+
+        render_functions.render_card_list(
+            console=console,
+            cards=self.engine.player[0].hand,
+            cursor=self.cursor,
+            name="Hand",
+        )
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+        player: Player = self.engine.player[0]
+        hand_size = len(player.hand)
+
+        if key in [tcod.event.KeySym.UP, tcod.event.KeySym.KP_8]:
+            if self.cursor > 0:
+                self.cursor -= 1
+        elif key == tcod.event.KeySym.PAGEUP:
+            self.cursor = 0
+        elif key in [tcod.event.KeySym.DOWN, tcod.event.KeySym.KP_2]:
+            if self.cursor < hand_size - 1:
+                self.cursor += 1
+        elif key == tcod.event.KeySym.PAGEDOWN:
+            self.cursor = hand_size - 1
+        elif key == tcod.event.KeySym.ESCAPE:
+            return CombatEventHandler(engine=self.engine)
+        elif key in CONFIRM_KEYS:
+            if player.resource.current_amount >= player.hand[self.cursor].cost:
+                if isinstance(player.hand[self.cursor], TargetedCard):
+                    return SelectTargetEventHandler(engine=self.engine, parent=self, card=self.cursor)
+                else:
+                    card = player.hand.pop(self.cursor)
+                    player.resource.spend(card.cost)
+                    card.on_play()
+                self.cursor = min(self.cursor, len(player.hand) - 1)
+            else:
+                self.engine.message_log.add_message(
+                    text=f"Not enough {player.resource.name}.",
+                    fg=colors.impossible,
+                    stack=True
+                )
+        return self
 
 
 class InspectPileEventHandler(EventHandler):
@@ -1743,15 +1808,16 @@ class InspectPileEventHandler(EventHandler):
 
 class SelectTargetEventHandler(AskUserEventHandler):
 
-    def __init__(self, engine: Engine, parent: EventHandler, action: Union[TargetedAbility, ItemAction]):
+    def __init__(self, engine: Engine, parent: EventHandler, card: int):
         super().__init__(engine, parent)
+        self.card = card
         self.cursor = 0
         self.number_of_enemies = len(self.engine.active_enemies)
         self.engine.message_log.add_message(text="Select an enemy to target", stack=False)
-        self.action = action
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        CombatEventHandler(self.engine).on_render(console)
+        self.parent.on_render(console)
+        self.engine.player[0].hand[self.card].target = self.engine.active_enemies[self.cursor]
 
         frame_width = console.width * 2 // 3
 
@@ -1771,18 +1837,18 @@ class SelectTargetEventHandler(AskUserEventHandler):
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
+        player: Player = self.engine.player[0]
 
         if key in CURSOR_X_KEYS:
             self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % self.number_of_enemies
+            player.hand[self.card].target = self.engine.active_enemies[self.cursor]
+
         elif key in CONFIRM_KEYS:
             try:
-                target = self.engine.active_enemies[self.cursor]
-                if target.is_alive:
-                    self.action.target = target
-                    self.action.entity.resource.spend(self.action.cost)
-                    return self.action
-                else:
-                    self.engine.message_log.add_message("Can't target dead enemies.", colors.invalid)
+                card = player.hand.pop(self.card)
+                player.resource.spend(card.cost)
+                card.on_play()
+                return self.parent
             except IndexError:
                 self.engine.message_log.add_message("Invalid entry.", colors.invalid)
                 return self

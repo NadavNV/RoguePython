@@ -104,10 +104,10 @@ class Fighter(BaseComponent, RDSObject):
         else:
             death_message = f"{self.name} is dead!"
             death_message_color = colors.enemy_die
+            self.engine.active_enemies.fighters.remove(self)
 
         self.char = "%"
         self.color = (191, 0, 0)
-        self.ai = None
         self.name = f"Dead {self.parent.name}"
 
         self.engine.message_log.add_message(death_message, death_message_color)
@@ -129,8 +129,23 @@ class Fighter(BaseComponent, RDSObject):
 
         return amount_recovered
 
-    def take_damage(self, amount: int) -> None:
+    def take_damage(self, amount: int) -> int:
+        """
+        Receive an attack worth 'amount' damage. Reduce hp, block, and armor as necessary
+        and return the amount of hp damage done.
+        """
+        if amount <= self.block:
+            self.block -= amount
+            amount = 0
+        else:
+            if self.block > 0:
+                self.block = 0
+                amount -= self.block
+        if amount > 0 and self.buffs[StatusTypes.ARMOR] > 0:
+            self.buffs[StatusTypes.ARMOR] -= 1
+
         self.hp -= amount
+        return amount
 
     @property
     def is_alive(self) -> bool:
@@ -218,7 +233,7 @@ class Enemy(Fighter):
             sprite=sprite,
             deck=deck,
         )
-        self.ai=ai_cls
+        self.ai = ai_cls
         self.default_hand_size = 1
         self.current_hand_size = 1
         self.loot_table = loot_table

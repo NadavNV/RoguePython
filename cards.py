@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Optional, Set, TYPE_CHECKING
 
+from tcod.constants import COLCTRL_FORE_RGB, COLCTRL_STOP
+
+import colors
 from components.fighter import Fighter
 from status_types import StatusTypes
 
@@ -24,8 +27,8 @@ def keyword_to_description(keyword: str) -> str:
         case "blight":
             return "At the end of the turn, take 1 damage per stack and increase stacks by 1."
         case "block":
-            return "Absorbs 1 attack damage per stack. Does not block damage-over-time effects like bleed or poison." +\
-                   " Removed at the start of the turn."
+            return "Absorbs 1 attack damage per stack. Does not block damage-over-time effects like bleed or poison." + \
+                " Removed at the start of the turn."
         case "burn":
             return "When played, does not go to the discard pile."
         case "burning":
@@ -47,7 +50,8 @@ def keyword_to_description(keyword: str) -> str:
 class Card:
     parent: Fighter
 
-    def __init__(self, playable: bool = True, burn: bool = False, ethereal: bool = False):
+    def __init__(self, cost: int, playable: bool = True, burn: bool = False, ethereal: bool = False):
+        self.cost = cost
         self.playable: bool = playable
         self.burn: bool = burn
         self.ethereal: bool = ethereal
@@ -93,9 +97,47 @@ class Card:
         pass
 
 
-class TargetedCard(Card):
-    def __init__(self, burn: bool = False, ethereal: bool = False):
-        super().__init__(playable=True, burn=burn, ethereal=ethereal)
+class AttackCard(Card):
+    def __init__(self, damage: int, cost: int, burn: bool = False, ethereal: bool = False):
+        super().__init__(cost=cost, playable=True, burn=burn, ethereal=ethereal)
+        self.damage = damage
+
+    def attack(self, target: Fighter) -> bool:
+        """
+        Performs an attack action against target, including adding a messsage to
+        the message log. Returns True if the attack deals HP damage, False otherwise.
+        """
+        attack_desc = f"{self.parent.name.capitalize()} attacks {target.name}"
+        if self.parent.parent is self.engine.player:
+            attack_color = colors.player_atk
+        else:
+            attack_color = colors.enemy_atk
+        if target.buffs[StatusTypes.EVASION] > 0:
+            self.engine.message_log.add_message(
+                f"{attack_desc} but misses.", attack_color
+            )
+            target.buffs[StatusTypes.EVASION] -= 1
+            return False
+        else:
+            damage = target.take_damage(
+                (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
+                (1.5 if target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+            )
+            if damage > 0:
+                self.engine.message_log.add_message(
+                    f"{attack_desc} for {damage} hit points.", attack_color
+                )
+                return True
+            else:
+                self.engine.message_log.add_message(
+                    f"{attack_desc} but does no damage.", attack_color
+                )
+                return False
+
+
+class TargetedCard(AttackCard):
+    def __init__(self, damage: int, cost: int, burn: bool = False, ethereal: bool = False):
+        super().__init__(damage=damage, cost=cost, burn=burn, ethereal=ethereal)
         self.target: Optional[Fighter] = None
 
     def on_play(self) -> None:
@@ -104,6 +146,44 @@ class TargetedCard(Card):
         subclasses' on_play method.
         """
         assert self.target is not None
+
+
+################
+# Player Cards #
+################
+
+###############
+# Rogue Cards #
+###############
+
+
+class Jab(TargetedCard):
+    def __init__(self):
+        super().__init__(damage=3, cost=1)
+        self._name = "Jab"
+        self._description = f"Quickly stab an enemy for {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+                            f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage."
+
+    @property
+    def description(self) -> str:
+        if self.target:
+            return self._description.replace("<1>", f"{
+            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
+            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+            }")
+        else:
+            return self._description.replace("<1>", f"{
+                self.damage + self.parent.buffs[StatusTypes.STRENGTH]
+            }")
+
+    def on_play(self) -> None:
+        super().on_play()
+        self.attack(self.target)
+
+
+###############
+# Enemy Cards #
+###############
 
 
 class AttackCard(Card):
@@ -116,7 +196,7 @@ class AttackCard(Card):
             burn: bool = False,
             ethereal: bool = False,
     ):
-        super().__init__(playable=playable, burn=burn, ethereal=ethereal)
+        super().__init__(cost=0, playable=playable, burn=burn, ethereal=ethereal)
         self._name = name
         self._damage = damage
         self._description = description
@@ -127,4 +207,4 @@ class AttackCard(Card):
 
     @property
     def description(self) -> str:
-        return self._description.replace('<damage>', f"{self.parent.buffs[StatusTypes.STRENGTH] + self._damage}")
+        return self._description.replace('<1>', f"{self.parent.buffs[StatusTypes.STRENGTH] + self._damage}")

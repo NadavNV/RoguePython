@@ -277,7 +277,7 @@ def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
 
 
 def render_card_list(console: Console, cards: List[Card], cursor: int,
-                     name: str, up_arrow: bool, down_arrow: bool) -> None:
+                     name: str, up_arrow: bool = False, down_arrow: bool = False) -> None:
     frame_x = console.width // 3
     frame_y = console.height * 2 // 3
     width = console.width // 3 + 1
@@ -327,41 +327,15 @@ def render_card_list(console: Console, cards: List[Card], cursor: int,
             bg=bg,
         )
 
-    # Display card tooltip
-    tooltip_x = console.width * 2 // 3
-    tooltip_y = 0
-    width = console.width // 3 + 1
-    title = wrap(cards[cursor].name, width - 2)
-    text = wrap(cards[cursor].description, width - 2)
-    height = len(title.split('\n')) + len(text.split('\n')) + 3
+    if 0 <= cursor < len(cards):
+        # Display card tooltip
+        tooltip_x = console.width * 2 // 3
+        tooltip_y = 0
+        width = console.width // 3 + 1
+        title = wrap(cards[cursor].name, width - 2)
+        text = wrap(cards[cursor].description, width - 2)
+        height = len(title.split('\n')) + len(text.split('\n')) + 3
 
-    console.draw_frame(
-        x=tooltip_x,
-        y=tooltip_y,
-        width=width,
-        height=height,
-        clear=True,
-        fg=colors.white,
-        bg=colors.black,
-    )
-    console.print_box(
-        x=tooltip_x + 1,
-        y=tooltip_y + 1,
-        width=width - 2,
-        height=height - 2,
-        string=title + '\n\n' + text,
-        fg=colors.white,
-        bg=colors.black,
-    )
-
-    # Display keyword descriptions
-    if len(cards[cursor].keywords) > 0:
-        tooltip_y += height
-        text = []
-        for keyword in cards[cursor].keywords:
-            text.append(f"{keyword.capitalize()} - {keyword_to_description(keyword)}")
-        text = wrap('\n\n'.join(text), width - 2)
-        height = len(text.split('\n')) + 2
         console.draw_frame(
             x=tooltip_x,
             y=tooltip_y,
@@ -376,10 +350,37 @@ def render_card_list(console: Console, cards: List[Card], cursor: int,
             y=tooltip_y + 1,
             width=width - 2,
             height=height - 2,
-            string=text,
+            string=title + '\n\n' + text,
             fg=colors.white,
             bg=colors.black,
         )
+
+        # Display keyword descriptions
+        if len(cards[cursor].keywords) > 0:
+            tooltip_y += height
+            text = []
+            for keyword in cards[cursor].keywords:
+                text.append(f"{keyword.capitalize()} - {keyword_to_description(keyword)}")
+            text = wrap('\n\n'.join(text), width - 2)
+            height = len(text.split('\n')) + 2
+            console.draw_frame(
+                x=tooltip_x,
+                y=tooltip_y,
+                width=width,
+                height=height,
+                clear=True,
+                fg=colors.white,
+                bg=colors.black,
+            )
+            console.print_box(
+                x=tooltip_x + 1,
+                y=tooltip_y + 1,
+                width=width - 2,
+                height=height - 2,
+                string=text,
+                fg=colors.white,
+                bg=colors.black,
+            )
 
     if down_arrow:
         console.print(
