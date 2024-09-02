@@ -26,7 +26,7 @@ class Resource:
         self.current_amount = min(self.current_amount + amount, self.max_amount)
 
     def on_turn_end(self) -> None:
-        raise NotImplementedError()
+        pass
 
     def render_bar(self, console: Console, x: int, y: int, width: int):
         filled_width = int(float(self.current_amount) / self.max_amount * width)
@@ -53,21 +53,16 @@ class Resource:
 
 class Rage(Resource):
     def __init__(self):
-        super().__init__(max_amount=100, current_amount=0)
+        super().__init__(max_amount=100, current_amount=50)
 
         self.name = 'rage'
         self.color = colors.bar_rage_filled
-        self.stable_amount = 0
-
-    def on_turn_end(self) -> None:
-        if not self.parent.engine.in_combat:
-            if self.current_amount != self.stable_amount:
-                self.current_amount -= (self.current_amount - self.stable_amount) // 3
+        self.starting_amount = 0
 
 
 class Stamina(Resource):
     def __init__(self):
-        super().__init__(max_amount=100, current_amount=100)
+        super().__init__(max_amount=5, current_amount=5)
 
         self.name = 'stamina'
         self.color = colors.bar_stamina_filled
@@ -79,7 +74,7 @@ class Stamina(Resource):
 
 class Mana(Resource):
     def __init__(self):
-        super().__init__(max_amount=10, current_amount=10)
+        super().__init__(max_amount=100, current_amount=100)
 
         self.name = 'mana'
         self.color = colors.bar_mana_filled

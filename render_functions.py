@@ -8,13 +8,14 @@ from tcod import libtcodpy
 
 import colors
 from cards import keyword_to_description
-from components.fighter import Fighter
+from components.fighter import Fighter, Player
 
 if TYPE_CHECKING:
     from cards import Card
     from tcod.console import Console
     from engine import Engine
     from game_map import GameMap
+    from status_types import StatusTypes
 
 
 def wrap(text: str, width: int):
@@ -73,7 +74,7 @@ def render_bar(
 
 
 def render_player_bars(
-        console: Console, player: Fighter, total_width: int
+        console: Console, player: Player, total_width: int
 ) -> None:
     """Render the player's hit points and mana as data bars."""
 
@@ -95,7 +96,7 @@ def render_player_bars(
             width=2 + len(str(player.block)),
             height=1,
             ch=1,
-            bg=colors.bar_mana_filled
+            bg=colors.block
         )
         console.print(x=total_width + 3, y=console.height * 2 // 3 + 2, string=str(player.block))
 
@@ -457,6 +458,7 @@ def render_dungeon_ui(console: Console) -> None:
 def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
     """Renders the given enemy's sprite and HP bar at the given xy coordinates"""
     console.draw_semigraphics(enemy.sprite, x=x, y=y)
+    width = console.width // 8
     render_bar(
         console=console,
         x=x,
@@ -465,14 +467,46 @@ def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
         name='HP',
         current_value=enemy.hp,
         maximum_value=enemy.max_hp,
-        total_width=console.width // 8
+        total_width=width,
     )
     console.print_box(
         x=x,
         y=y + 2,
-        width=console.width // 8,
+        width=width,
         height=2,
         string=wrap(text=f"Level {enemy.level.current_level} {enemy.name}", width=console.width // 8),
         fg=colors.white,
         bg=colors.black,
     )
+
+    dx = 0
+    dy = 20
+
+    def print_status(string: str, status: StatusTypes) -> Tuple[int, int]:
+        nonlocal dx
+        nonlocal dy
+        length = len(string)
+        if dx + length > width:
+            dx = 0
+            dy += 1
+        console.print(
+            x=x + dx,
+            y=y + dy,
+            string=string,
+            fg=colors.status_to_color(status),
+            bg=colors.black,
+        )
+        dx += length + 1
+        return dx, dy
+
+    for buff in enemy.buffs:
+        if enemy.buffs[buff] > 0:
+            dx, dy = print_status(str(enemy.buffs[buff]), buff)
+
+    dx = 0
+    dy += 2
+
+    for debuff in enemy.debuffs:
+        if enemy.debuffs[debuff] > 0:
+            dx, dy = print_status(str(enemy.debuffs[debuff]), debuff)
+

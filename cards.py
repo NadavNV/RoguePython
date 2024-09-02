@@ -50,7 +50,8 @@ def keyword_to_description(keyword: str) -> str:
 class Card:
     parent: Fighter
 
-    def __init__(self, cost: int, playable: bool = True, burn: bool = False, ethereal: bool = False):
+    def __init__(self, cost: int, playable: bool = True, burn: bool = False, ethereal: bool = False, **kwargs):
+        super().__init__(**kwargs)
         self.cost = cost
         self.playable: bool = playable
         self.burn: bool = burn
@@ -97,9 +98,26 @@ class Card:
         pass
 
 
+class BlockCard(Card):
+    def __init__(self, *, amount: int, cost: int, burn: bool = False, ethereal: bool = False, **kwargs):
+        super().__init__(cost=cost, playable=True, burn=burn, ethereal=ethereal, **kwargs)
+        self.amount = amount
+
+    def block(self) -> None:
+        desc = f"{self.parent.name.capitalize()} gained {
+            self.amount + self.parent.buffs[StatusTypes.AGILITY]
+        } block."
+        self.parent.block += self.amount + self.parent.buffs[StatusTypes.AGILITY]
+        self.engine.message_log.add_message(
+            text=desc,
+            fg=colors.block,
+            stack=False,
+        )
+
+
 class AttackCard(Card):
-    def __init__(self, damage: int, cost: int, burn: bool = False, ethereal: bool = False):
-        super().__init__(cost=cost, playable=True, burn=burn, ethereal=ethereal)
+    def __init__(self, *, damage: int, cost: int, burn: bool = False, ethereal: bool = False, **kwargs):
+        super().__init__(cost=cost, playable=True, burn=burn, ethereal=ethereal, **kwargs)
         self.damage = damage
 
     def attack(self, target: Fighter) -> bool:
@@ -136,8 +154,8 @@ class AttackCard(Card):
 
 
 class TargetedCard(AttackCard):
-    def __init__(self, damage: int, cost: int, burn: bool = False, ethereal: bool = False):
-        super().__init__(damage=damage, cost=cost, burn=burn, ethereal=ethereal)
+    def __init__(self, damage: int, cost: int, burn: bool = False, ethereal: bool = False, **kwargs):
+        super().__init__(damage=damage, cost=cost, burn=burn, ethereal=ethereal, **kwargs)
         self.target: Optional[Fighter] = None
 
     def on_play(self) -> None:
@@ -158,8 +176,8 @@ class TargetedCard(AttackCard):
 
 
 class Jab(TargetedCard):
-    def __init__(self):
-        super().__init__(damage=3, cost=1)
+    def __init__(self, **kwargs):
+        super().__init__(damage=5, cost=1, **kwargs)
         self._name = "Jab"
         self._description = f"Quickly stab an enemy for {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage."
@@ -179,6 +197,23 @@ class Jab(TargetedCard):
     def on_play(self) -> None:
         super().on_play()
         self.attack(self.target)
+        self.parent.discard.append(self)
+
+
+class Dodge(BlockCard):
+    def __init__(self, **kwargs):
+        super().__init__(amount=5, cost=1, **kwargs)
+        self._name = "Dodge"
+        self._description = f"Anticipate your opponent's attacks, gaining {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+                            f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} block"
+
+    @property
+    def description(self) -> str:
+        return self._description.replace("<1>", f"{self.amount + self.parent.buffs[StatusTypes.AGILITY]}")
+
+    def on_play(self) -> None:
+        self.block()
+        self.parent.discard.append(self)
 
 
 ###############
