@@ -5,7 +5,7 @@ import random
 import sys
 
 import colors
-from cards import AttackCard, Jab, Dodge
+from cards import Jab, Dodge, Smack, Chop
 from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
 from components.equipment import Equipment
@@ -110,16 +110,7 @@ warrior = FighterGroup(
     y=0,
     fighters=[Warrior(
         ai_cls=HostileEnemy,
-        deck=[AttackCard(
-            name='Attack',
-            damage=5,
-            description="Deal <1> damage to a single enemy.",
-        ) for _ in range(10)] +
-             [AttackCard(
-                 name='Super Attack',
-                 damage=10,
-                 description="Deal <1> damage to a single enemy.",
-             ) for _ in range(5)]
+        deck=[]
     )],
     ai_cls=RoamingEnemy
 )
@@ -129,16 +120,7 @@ mage = FighterGroup(
     y=0,
     fighters=[Mage(
         ai_cls=HostileEnemy,
-        deck=[AttackCard(
-            name='Attack',
-            damage=5,
-            description="Deal <1> damage to a single enemy.",
-        ) for _ in range(10)] +
-             [AttackCard(
-                 name='Super Attack',
-                 damage=10,
-                 description="Deal <1> damage to a single enemy.",
-             ) for _ in range(5)]
+        deck=[]
     )],
     ai_cls=RoamingEnemy
 )
@@ -324,7 +306,7 @@ class Gold(RDSValue):
         )
 
 
-janitor_deck = [AttackCard(name='Smack', damage=5, description="Deal <1> damage to the player.")]
+janitor_deck = [Smack()]
 
 
 class Janitor(Enemy):
@@ -354,7 +336,7 @@ class Janitor(Enemy):
         )
 
 
-lumberjack_deck = [AttackCard(name='Chop', damage=5, description="Deal <1> damage to the player.")]
+lumberjack_deck = [Chop()]
 
 
 class Lumberjack(Enemy):

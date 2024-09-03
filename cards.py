@@ -111,7 +111,7 @@ class BlockCard(Card):
 
     def block(self) -> None:
         desc = f"{self.parent.name.capitalize()} gained {
-            self.amount + self.parent.buffs[StatusTypes.AGILITY]
+        self.amount + self.parent.buffs[StatusTypes.AGILITY]
         } block."
         self.parent.block += self.amount + self.parent.buffs[StatusTypes.AGILITY]
         self.engine.message_log.add_message(
@@ -197,13 +197,12 @@ class Jab(TargetedCard):
             }")
         else:
             return self._description.replace("<1>", f"{
-                self.damage + self.parent.buffs[StatusTypes.STRENGTH]
+            self.damage + self.parent.buffs[StatusTypes.STRENGTH]
             }")
 
     def on_play(self) -> None:
         super().on_play()
         self.attack(self.target)
-        self.parent.discard.append(self)
 
 
 class Dodge(BlockCard):
@@ -219,7 +218,6 @@ class Dodge(BlockCard):
 
     def on_play(self) -> None:
         self.block()
-        self.parent.discard.append(self)
 
 
 ###############
@@ -231,4 +229,51 @@ class Dodge(BlockCard):
 #################
 
 
+class Smack(TargetedCard):
+    def __init__(self, **kwargs):
+        super().__init__(damage=5, cost=0, **kwargs)
+        self._name = "Smack"
+        self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.red[0]:c}" + \
+                            f"{colors.red[1]:c}{colors.red[2]:c}<1>{COLCTRL_STOP:c} damage."
 
+    def on_draw(self) -> None:
+        self.target = self.engine.player[0]
+
+    @property
+    def description(self) -> str:
+        return self._description.replace("<1>", f"{
+            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
+            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+        }")
+
+    def on_play(self) -> None:
+        super().on_play()
+        self.attack(self.target)
+
+
+####################
+# Lumberjack Cards #
+####################
+
+
+class Chop(TargetedCard):
+    def __init__(self, **kwargs):
+        super().__init__(damage=3, cost=0, **kwargs)
+        self._name = "Chop"
+        self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.red[0]:c}" + \
+                            f"{colors.red[1]:c}{colors.red[2]:c}<1>{COLCTRL_STOP:c} damage twice."
+
+    def on_draw(self) -> None:
+        self.target = self.engine.player[0]
+
+    @property
+    def description(self) -> str:
+        return self._description.replace("<1>", f"{
+            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
+            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+        }")
+
+    def on_play(self) -> None:
+        super().on_play()
+        self.attack(self.target)
+        self.attack(self.target)

@@ -43,8 +43,13 @@ class Engine:
                         pass  # Ignore impossible action exceptions from AI.
         else:
             for entity in self.active_enemies.fighters:
-                if entity.ai:
-                    entity.ai.perform()
+                while entity.hand:
+                    card = entity.hand.pop()
+                    card.on_play()
+                    if card.burn:
+                        entity.burn.append(card)
+                    else:
+                        entity.discard.append(card)
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""
@@ -63,7 +68,7 @@ class Engine:
 
         render_functions.render_player_bars(
             console=console,
-            player=self.player.fighters[0],
+            player=self.player[0],
             total_width=console.width // 5,
         )
 

@@ -1679,7 +1679,7 @@ class CombatEventHandler(EventHandler):
                 return PlayerHandEventHandler(self.engine, parent=self)
             elif np.array_equal(self.cursor, (0, 1)):
                 # Inspect Enemies
-                pass
+                return InspectEnemiesEventHandler(engine=self.engine, parent=self)
             elif np.array_equal(self.cursor, (0, 2)):
                 # Show Discard Pile
                 return InspectPileEventHandler(
@@ -1703,7 +1703,7 @@ class CombatEventHandler(EventHandler):
                 # Show Burn Pile
                 return InspectPileEventHandler(
                     engine=self.engine,
-                    pile=sorted(self.engine.player[0].burn, key = lambda x: x.name),
+                    pile=sorted(self.engine.player[0].burn, key=lambda x: x.name),
                     name="Burn Pile",
                     parent=self
                 )
@@ -1711,6 +1711,43 @@ class CombatEventHandler(EventHandler):
                 # End Turn
                 self.engine.player[0].end_turn()
                 return WaitAction(self.engine.player)
+
+
+class InspectEnemiesEventHandler(EventHandler):
+    def __init__(self, engine: Engine, parent: CombatEventHandler):
+        super().__init__(engine)
+        self.parent = parent
+        self.cursor = 0
+        self.number_of_enemies = len(self.engine.active_enemies)
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        self.parent.on_render(console)
+
+        frame_width = console.width * 2 // 3
+
+        for i in range(self.number_of_enemies):
+            if self.cursor == i:
+                console.draw_frame(
+                    x=frame_width * (i + 1) // (self.number_of_enemies + 1) - console.width // 16 - 1,
+                    y=console.height // 8 - 1,
+                    width=console.width // 8 + 2,
+                    height=console.width // 4 + 2,
+                    clear=False,
+                    fg=colors.white,
+                    bg=colors.black,
+                )
+
+        render_functions.render_enemy_tooltip(console=console, enemy=self.engine.active_enemies[self.cursor])
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+
+        if key in CURSOR_X_KEYS:
+            self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % self.number_of_enemies
+        elif key == tcod.event.KeySym.ESCAPE:
+            return self.parent
 
 
 class PlayerHandEventHandler(EventHandler):
@@ -1851,7 +1888,6 @@ class SelectTargetEventHandler(AskUserEventHandler):
 
         if key in CURSOR_X_KEYS:
             self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % self.number_of_enemies
-            # player.hand[self.card].target = self.engine.active_enemies[self.cursor]
 
         elif key in CONFIRM_KEYS:
             try:

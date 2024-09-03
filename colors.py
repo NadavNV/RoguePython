@@ -56,7 +56,7 @@ exposed = (0x37, 0xFF, 0x33)
 poison = (0xCA, 0xFF, 0x33)
 shattered = (0xA0, 0x40, 0x0)
 strength = (0xFF, 0xBC, 0x1B)
-ward = (0xC8, 0xA2, 0xC8)  # (0xBD, 0x1B, 0xFF)
+ward = (0xC8, 0xA2, 0xC8)
 
 def status_to_color(status: StatusTypes) -> Tuple[int, int, int]:
     match status:
@@ -72,7 +72,7 @@ def status_to_color(status: StatusTypes) -> Tuple[int, int, int]:
             return bleed
         case StatusTypes.BLIGHT:
             return blight
-        case StatusTypes.BURN:
+        case StatusTypes.BURNING:
             return burn
         case StatusTypes.EVASION:
             return evasion

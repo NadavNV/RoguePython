@@ -8,7 +8,7 @@ class StatusTypes(Enum):
     BARBED = auto()
     BLEED = auto()
     BLIGHT = auto()
-    BURN = auto()
+    BURNING = auto()
     EVASION = auto()
     EXPOSED = auto()
     POISON = auto()

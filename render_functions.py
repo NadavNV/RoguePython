@@ -4,7 +4,9 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import textwrap
 import numpy as np
+import tcod.constants
 from tcod import libtcodpy
+from tcod.constants import COLCTRL_FORE_RGB, COLCTRL_STOP, CENTER
 
 import colors
 from cards import keyword_to_description
@@ -301,7 +303,7 @@ def render_card_list(console: Console, cards: List[Card], cursor: int,
         string=f"┤{name}├",
         fg=colors.white,
         bg=colors.black,
-        alignment=libtcodpy.CENTER
+        alignment=CENTER
     )
 
     if up_arrow:
@@ -413,7 +415,7 @@ def render_dungeon_ui(console: Console) -> None:
         string=f"┤Keyboard Commands├",
         fg=colors.white,
         bg=colors.black,
-        alignment=libtcodpy.CENTER
+        alignment=CENTER
     )
 
     console.print(x=frame_x + 1, y=frame_y + 1, string="Use item from inventory:         i")
@@ -444,7 +446,7 @@ def render_dungeon_ui(console: Console) -> None:
         string=f"┤Map Legend├",
         fg=colors.white,
         bg=colors.black,
-        alignment=libtcodpy.CENTER
+        alignment=CENTER
     )
 
     console.print(x=frame_x + 1, y=frame_y + 1, string="@: Player / Trader")
@@ -480,7 +482,7 @@ def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
     )
 
     dx = 0
-    dy = 20
+    dy = 25
 
     def print_status(string: str, status: StatusTypes) -> Tuple[int, int]:
         nonlocal dx
@@ -510,3 +512,72 @@ def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
         if enemy.debuffs[debuff] > 0:
             dx, dy = print_status(str(enemy.debuffs[debuff]), debuff)
 
+def render_enemy_tooltip(console: Console, enemy: Fighter):
+    x = console.width * 2 // 3
+    y = 0
+    width = console.width // 3
+    height = console.height * 2 // 3
+
+    console.draw_frame(
+        x=x,
+        y=y,
+        width=width,
+        height=height,
+        fg=colors.white,
+        bg=colors.black,
+    )
+    console.print_box(
+        x=x,
+        y=y,
+        width=width,
+        height=1,
+        string=f"┤{enemy.name}├",
+        fg=colors.white,
+        bg=colors.black,
+        alignment=CENTER,
+    )
+
+    height_buffs = 0
+    height_debuffs = 0
+
+    for buff in enemy.buffs:
+        if enemy.buffs[buff] > 0:
+            color = colors.status_to_color(buff)
+            console.print(
+                x=x + 1,
+                y=y + 1 + height_buffs,
+                string=f"{COLCTRL_FORE_RGB:c}{color[0]:c}{color[1]:c}{color[2]:c}{buff.name.capitalize()}" + \
+                       f"{COLCTRL_STOP:c}: {enemy.buffs[buff]}",
+                fg=colors.white,
+                bg=colors.black,
+            )
+            height_buffs += 1
+
+    for debuff in enemy.debuffs:
+        if enemy.debuffs[debuff] > 0:
+            color = colors.status_to_color(debuff)
+            console.print(
+                x=x + width // 2,
+                y=y + 1 + height_debuffs,
+                string=f"{COLCTRL_FORE_RGB:c}{color[0]:c}{color[1]:c}{color[2]:c}{debuff.name.capitalize()}" + \
+                       f"{COLCTRL_STOP:c}: {enemy.debuffs[debuff]}",
+                fg=colors.white,
+                bg=colors.black,
+            )
+            height_debuffs += 1
+
+    y += 3 + max(height_buffs, height_debuffs)
+    console.print(
+        x=x + 1,
+        y=y,
+        string="Intention:",
+        fg=colors.white,
+        bg=colors.black,
+    )
+    console.print(
+        x=x + 1,
+        y=y + 1,
+        string=wrap(enemy.hand[0].description, width - 2),
+        fg=colors.white,
+        bg=colors.black,
+    )

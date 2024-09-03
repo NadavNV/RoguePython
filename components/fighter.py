@@ -63,7 +63,7 @@ class Fighter(BaseComponent, RDSObject):
         self.debuffs: Dict[StatusTypes, int] = {
             StatusTypes.BLEED: 0,
             StatusTypes.BLIGHT: 0,
-            StatusTypes.BURN: 0,
+            StatusTypes.BURNING: 0,
             StatusTypes.EXPOSED: 0,
             StatusTypes.POISON: 0,
             StatusTypes.SHATTERED: 0,
@@ -104,6 +104,7 @@ class Fighter(BaseComponent, RDSObject):
         else:
             death_message = f"{self.name} is dead!"
             death_message_color = colors.enemy_die
+            # TODO: Fix x not in list error
             self.engine.active_enemies.fighters.remove(self)
 
         self.char = "%"
@@ -165,9 +166,9 @@ class Fighter(BaseComponent, RDSObject):
         if self.debuffs[StatusTypes.BLEED] > 0:
             self.hp -= self.debuffs[StatusTypes.BLEED]
             self.debuffs[StatusTypes.BLEED] -= 1
-        if self.debuffs[StatusTypes.BURN] > 0:
-            self.hp -= self.debuffs[StatusTypes.BURN]
-            self.debuffs[StatusTypes.BURN] //= 2
+        if self.debuffs[StatusTypes.BURNING] > 0:
+            self.hp -= self.debuffs[StatusTypes.BURNING]
+            self.debuffs[StatusTypes.BURNING] //= 2
         if not self.is_alive:
             self.die()
             return
