@@ -161,14 +161,48 @@ class Fighter(BaseComponent, RDSObject):
         return self.parent.game_map
 
     def start_turn(self) -> None:
+        self.block = 0
+        if self.debuffs[StatusTypes.BLEED] > 0:
+            self.hp -= self.debuffs[StatusTypes.BLEED]
+            self.debuffs[StatusTypes.BLEED] -= 1
+        if self.debuffs[StatusTypes.BURN] > 0:
+            self.hp -= self.debuffs[StatusTypes.BURN]
+            self.debuffs[StatusTypes.BURN] //= 2
+        if not self.is_alive:
+            self.die()
+            return
+        self.hp += self.buffs[StatusTypes.BALM]
         while len(self.hand) < self.current_hand_size:
-            next_card = self.draw.pop(random.randint(0, len(self.draw) - 1))
+            if len(self.draw) == 0:
+                self.draw = self.discard
+                self.discard = []
+                random.shuffle(self.draw)
+            next_card = self.draw.pop()
             next_card.on_draw()
             self.hand.append(next_card)
 
     def start_combat(self) -> None:
         self.draw = copy.deepcopy(self.deck)
+        random.shuffle(self.draw)
         self.start_turn()
+
+    def end_turn(self) -> None:
+        if self.debuffs[StatusTypes.POISON] > 0:
+            self.hp -= self.debuffs[StatusTypes.POISON]
+        if self.debuffs[StatusTypes.BLIGHT] > 0:
+            self.hp -= self.debuffs[StatusTypes.BLIGHT]
+            self.debuffs[StatusTypes.BLIGHT] += 1
+        if not self.is_alive:
+            self.die()
+            return
+        self.block += self.buffs[StatusTypes.ARMOR]
+        while self.hand:
+            card = self.hand.pop()
+            card.on_turn_end()
+            if card.ethereal:
+                self.burn.append(card)
+            else:
+                self.discard.append(card)
 
 
 class Player(Fighter):
@@ -255,9 +289,6 @@ class Enemy(Fighter):
             elif isinstance(item, Item):
                 print(f"Dropped {item.name}")
                 self.inventory.add_item(item)
-
-    def stun(self, turns_remaining: int) -> None:
-        pass
 
 
 class Rogue(Player):

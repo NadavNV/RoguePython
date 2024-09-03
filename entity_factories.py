@@ -5,7 +5,7 @@ import random
 import sys
 
 import colors
-from cards import AttackCard, Jab
+from cards import AttackCard, Jab, Dodge
 from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
 from components.equipment import Equipment
@@ -93,7 +93,7 @@ class WeaponItem(Item):
             self.equippable.enhance_item(n)
 
 
-rogue_deck = [Jab() for _ in range(10)]
+rogue_deck = [Jab() for _ in range(4)] + [Dodge() for _ in range(4)]
 
 rogue = FighterGroup(
     x=0,

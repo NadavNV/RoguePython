@@ -1661,7 +1661,7 @@ class CombatEventHandler(EventHandler):
 
         return self
 
-    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[BaseEventHandler]:
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
 
         if key in CURSOR_X_KEYS:
@@ -1676,48 +1676,52 @@ class CombatEventHandler(EventHandler):
                 return PopupMessage(parent_handler=self, text="You can't run, you don't have legs!")
             elif np.array_equal(self.cursor, (0, 0)):
                 # Hand
-                return PlayerHandEventHandler(self.engine)
+                return PlayerHandEventHandler(self.engine, parent=self)
             elif np.array_equal(self.cursor, (0, 1)):
                 # Inspect Enemies
                 pass
             elif np.array_equal(self.cursor, (0, 2)):
                 # Show Discard Pile
-                return InspectPileEventHandler(engine=self.engine, pile=self.engine.player[0].discard,
-                                               name="Discard Pile")
+                return InspectPileEventHandler(
+                    engine=self.engine,
+                    pile=sorted(self.engine.player[0].discard, key=lambda x: x.name),
+                    name="Discard Pile",
+                    parent=self
+                )
             elif np.array_equal(self.cursor, (1, 0)):
                 # Use Item
                 pass
             elif np.array_equal(self.cursor, (1, 1)):
                 # Show Draw Pile
-                return InspectPileEventHandler(engine=self.engine, pile=self.engine.player[0].draw, name="Draw Pile")
+                return InspectPileEventHandler(
+                    engine=self.engine,
+                    pile=sorted(self.engine.player[0].draw, key=lambda x: x.name),
+                    name="Draw Pile",
+                    parent=self
+                )
             elif np.array_equal(self.cursor, (1, 2)):
                 # Show Burn Pile
-                return InspectPileEventHandler(engine=self.engine, pile=self.engine.player[0].burn, name="Burn Pile")
+                return InspectPileEventHandler(
+                    engine=self.engine,
+                    pile=sorted(self.engine.player[0].burn, key = lambda x: x.name),
+                    name="Burn Pile",
+                    parent=self
+                )
             elif np.array_equal(self.cursor, (1, 3)):
                 # End Turn
-                pass
+                self.engine.player[0].end_turn()
+                return WaitAction(self.engine.player)
 
 
 class PlayerHandEventHandler(EventHandler):
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: Engine, parent: CombatEventHandler):
         super().__init__(engine)
         self.cursor = 0
+        self.parent = parent
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        super().on_render(console)
+        self.parent.on_render(console)
         self.cursor = min(self.cursor, len(self.engine.player[0].hand) - 1)
-
-        number_of_enemies = len(self.engine.active_enemies)
-
-        frame_width = console.width * 2 // 3
-
-        for i in range(number_of_enemies):
-            render_functions.render_enemy(
-                enemy=self.engine.active_enemies.fighters[i],
-                console=console,
-                x=frame_width * (i + 1) // (number_of_enemies + 1) - console.width // 16,
-                y=console.height // 8,
-            )
 
         render_functions.render_card_list(
             console=console,
@@ -1752,6 +1756,10 @@ class PlayerHandEventHandler(EventHandler):
                     card = player.hand.pop(self.cursor)
                     player.resource.spend(card.cost)
                     card.on_play()
+                    if card.burn:
+                        player.burn.append(card)
+                    else:
+                        player.discard.append(card)
                 self.cursor = min(self.cursor, len(player.hand) - 1)
             else:
                 self.engine.message_log.add_message(
@@ -1765,15 +1773,17 @@ class PlayerHandEventHandler(EventHandler):
 class InspectPileEventHandler(EventHandler):
     LENGTH = 10
 
-    def __init__(self, engine: Engine, pile: List[Card], name: str):
+    def __init__(self, engine: Engine, pile: List[Card], name: str, parent: CombatEventHandler):
         super().__init__(engine)
+        self.parent = parent
         self.cursor = 0
         self.start = 0
         self.pile = pile
         self.name = name
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        super().on_render(console)
+        self.parent.on_render(console)
+
         render_functions.render_card_list(
             console=console,
             cards=self.pile[self.start: self.start + self.LENGTH],
@@ -1802,7 +1812,7 @@ class InspectPileEventHandler(EventHandler):
         elif key == tcod.event.KeySym.PAGEDOWN:
             self.start = min(len(self.pile) - self.LENGTH, self.start + 10)
         elif key == tcod.event.KeySym.ESCAPE:
-            return CombatEventHandler(engine=self.engine)
+            return self.parent
         return self
 
 
@@ -1841,13 +1851,17 @@ class SelectTargetEventHandler(AskUserEventHandler):
 
         if key in CURSOR_X_KEYS:
             self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % self.number_of_enemies
-            player.hand[self.card].target = self.engine.active_enemies[self.cursor]
+            # player.hand[self.card].target = self.engine.active_enemies[self.cursor]
 
         elif key in CONFIRM_KEYS:
             try:
                 card = player.hand.pop(self.card)
                 player.resource.spend(card.cost)
                 card.on_play()
+                if card.burn:
+                    player.burn.append(card)
+                else:
+                    player.discard.append(card)
                 return self.parent
             except IndexError:
                 self.engine.message_log.add_message("Invalid entry.", colors.invalid)

@@ -97,6 +97,12 @@ class Card:
         """
         pass
 
+    def __str__(self) -> str:
+        return self.name
+
+    def __repr__(self) -> str:
+        return str(self) + ' ' + hex(id(self))
+
 
 class BlockCard(Card):
     def __init__(self, *, amount: int, cost: int, burn: bool = False, ethereal: bool = False, **kwargs):
@@ -220,26 +226,9 @@ class Dodge(BlockCard):
 # Enemy Cards #
 ###############
 
+#################
+# Janitor Cards #
+#################
 
-class AttackCard(Card):
-    def __init__(
-            self,
-            name: str,
-            description: str,
-            damage: int,
-            playable: bool = True,
-            burn: bool = False,
-            ethereal: bool = False,
-    ):
-        super().__init__(cost=0, playable=playable, burn=burn, ethereal=ethereal)
-        self._name = name
-        self._damage = damage
-        self._description = description
 
-    @property
-    def damage(self) -> int:
-        return self._damage
 
-    @property
-    def description(self) -> str:
-        return self._description.replace('<1>', f"{self.parent.buffs[StatusTypes.STRENGTH] + self._damage}")
