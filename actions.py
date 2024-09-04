@@ -180,7 +180,6 @@ class BumpAction(ActionWithDirection):
             ):
                 return True
             else:
-                self.engine.in_combat = True
                 if self.entity is self.engine.player:
                     self.engine.start_combat(self.target_actor)
                 else:

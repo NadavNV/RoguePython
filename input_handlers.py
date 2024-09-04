@@ -159,9 +159,9 @@ class EventHandler(BaseEventHandler):
                         self.engine.in_combat = False
                         return LootEventHandler(engine=self.engine, parent=MainGameEventHandler(self.engine))
                     else:
-                        return CombatEventHandler(self.engine)
+                        return CombatEventHandler(engine=self.engine)
                 else:
-                    return MainGameEventHandler(self.engine)  # Return to the main handler.
+                    return MainGameEventHandler(engine=self.engine)  # Return to the main handler.
         except exceptions.Impossible as exc:
             self.engine.message_log.add_message(text=exc.args[0], fg=colors.impossible)
         return self
@@ -1784,7 +1784,7 @@ class PlayerHandEventHandler(EventHandler):
         elif key == tcod.event.KeySym.PAGEDOWN:
             self.cursor = hand_size - 1
         elif key == tcod.event.KeySym.ESCAPE:
-            return CombatEventHandler(engine=self.engine)
+            return self.parent
         elif key in CONFIRM_KEYS:
             if player.resource.current_amount >= player.hand[self.cursor].cost:
                 if isinstance(player.hand[self.cursor], TargetedCard):

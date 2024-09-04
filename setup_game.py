@@ -39,37 +39,26 @@ def new_game(player_class: FighterClass) -> Engine:
     if player_class == FighterClass.WARRIOR:
         player = copy.deepcopy(entity_factories.warrior)
         player[0].fighter_class = FighterClass.WARRIOR
-        player[0].strength = 7
-        player[0].agility = 4
 
         club = copy.deepcopy(entity_factories.club)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
         player[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, club, add_message=False)
         player[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
-        player[0].resource = Rage()
 
     elif player_class == FighterClass.ROGUE:
         player = copy.deepcopy(entity_factories.rogue)
         player[0].fighter_class = FighterClass.ROGUE
-        player[0].strength = 4
-        player[0].agility = 7
 
         dagger = copy.deepcopy(entity_factories.dagger)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
 
         player[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, dagger, add_message=False)
         player[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
-        player[0].resource = Stamina()
-        player[0].abilities_by_level = {
-            2: SanguineStrike(caster=player[0], target=None),
-        }
 
     elif player_class == FighterClass.MAGE:
         player = copy.deepcopy(entity_factories.mage)
         player[0].fighter_class = FighterClass.MAGE
-        player[0].magic = 7
-        player[0].agility = 4
 
         wand = copy.deepcopy(entity_factories.wand)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)

@@ -16,7 +16,16 @@ if TYPE_CHECKING:
     from game_map import GameMap, GameWorld
 
 
-class Engine:
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class Engine(metaclass=Singleton):
     game_map: GameMap
     game_world: GameWorld
     in_combat: bool
@@ -105,4 +114,3 @@ class Engine:
         for enemy in enemies:
             enemy.start_combat()
         self.player[0].start_combat()
-

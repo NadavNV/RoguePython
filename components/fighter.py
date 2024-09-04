@@ -183,7 +183,7 @@ class Fighter(BaseComponent, RDSObject):
             self.hand.append(next_card)
 
     def start_combat(self) -> None:
-        self.draw = copy.deepcopy(self.deck)
+        self.draw = self.deck[:]
         random.shuffle(self.draw)
         self.start_turn()
 

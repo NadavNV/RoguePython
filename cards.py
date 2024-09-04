@@ -48,7 +48,7 @@ def keyword_to_description(keyword: str) -> str:
 
 
 class Card:
-    parent: Fighter
+    parent: Fighter = None
 
     def __init__(self, cost: int, playable: bool = True, burn: bool = False, ethereal: bool = False, **kwargs):
         super().__init__(**kwargs)
@@ -111,7 +111,7 @@ class BlockCard(Card):
 
     def block(self) -> None:
         desc = f"{self.parent.name.capitalize()} gained {
-        self.amount + self.parent.buffs[StatusTypes.AGILITY]
+            self.amount + self.parent.buffs[StatusTypes.AGILITY]
         } block."
         self.parent.block += self.amount + self.parent.buffs[StatusTypes.AGILITY]
         self.engine.message_log.add_message(
@@ -242,8 +242,8 @@ class Smack(TargetedCard):
     @property
     def description(self) -> str:
         return self._description.replace("<1>", f"{
-            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
-            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+        (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
+        (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
         }")
 
     def on_play(self) -> None:
@@ -269,8 +269,8 @@ class Chop(TargetedCard):
     @property
     def description(self) -> str:
         return self._description.replace("<1>", f"{
-            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
-            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+        (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
+        (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
         }")
 
     def on_play(self) -> None:
