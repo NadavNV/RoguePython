@@ -1645,7 +1645,7 @@ class CombatEventHandler(EventHandler):
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
         super().on_render(console=console)
-        render_functions.render_combat_ui(console=console, cursor=self.cursor)
+        render_functions.render_combat_ui(console=console, cursor=self.cursor, player=self.engine.player[0])
 
         number_of_enemies = len(self.engine.active_enemies)
 
@@ -1710,6 +1710,7 @@ class CombatEventHandler(EventHandler):
             elif np.array_equal(self.cursor, (1, 3)):
                 # End Turn
                 self.engine.player[0].end_turn()
+                self.engine.player[0].resource.on_turn_end()
                 return WaitAction(self.engine.player)
 
 

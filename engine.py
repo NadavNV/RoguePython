@@ -88,7 +88,7 @@ class Engine(metaclass=Singleton):
         )
 
         if self.in_combat:
-            render_functions.render_combat_ui(console=console, cursor=None)
+            render_functions.render_combat_ui(console=console, cursor=None, player=self.player[0])
         else:
             self.game_map.render(console)
 

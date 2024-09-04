@@ -62,14 +62,13 @@ class Rage(Resource):
 
 class Stamina(Resource):
     def __init__(self):
-        super().__init__(max_amount=5, current_amount=5)
+        super().__init__(max_amount=3, current_amount=3)
 
         self.name = 'stamina'
         self.color = colors.bar_stamina_filled
-        self.stamina_per_turn = 5
 
     def on_turn_end(self) -> None:
-        self.gain(self.stamina_per_turn)
+        self.gain(self.max_amount)
 
 
 class Mana(Resource):

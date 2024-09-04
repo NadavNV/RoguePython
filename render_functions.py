@@ -133,7 +133,7 @@ def render_names_at_mouse_location(
     console.print(x=x, y=y, string=names_at_mouse_location)
 
 
-def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
+def render_combat_ui(console: Console, cursor: Optional[np.ndarray], player: Fighter) -> None:
     console.draw_frame(
         x=0,
         y=0,
@@ -277,6 +277,60 @@ def render_combat_ui(console: Console, cursor: Optional[np.ndarray]) -> None:
         fg=fg,
         bg=bg,
     )
+
+    # Draw player stats:
+    width = console.width // 3 - 1
+    frame_x = console.width * 2 // 3 + 1
+    frame_y = console.height * 2 // 3 + 1
+    console.draw_frame(
+        x=frame_x,
+        y=frame_y,
+        width=console.width // 3 - 1,
+        height=console.height // 3 - 2,
+        clear=True,
+        fg=colors.white,
+        bg=colors.black,
+    )
+    console.print_box(
+        x=frame_x,
+        y=frame_y,
+        width=console.width // 3 - 1,
+        height=1,
+        string=f"┤Player Stats├",
+        fg=colors.white,
+        bg=colors.black,
+        alignment=CENTER
+    )
+
+    dy = 0
+
+    for buff in player.buffs:
+        if player.buffs[buff] > 0:
+            color = colors.status_to_color(buff)
+            console.print(
+                x=frame_x + 1,
+                y=frame_y + 1 + dy,
+                string=f"{COLCTRL_FORE_RGB:c}{color[0]:c}{color[1]:c}{color[2]:c}{buff.name.capitalize()}" + \
+                       f"{COLCTRL_STOP:c}: {player.buffs[buff]}",
+                fg=colors.white,
+                bg=colors.black,
+            )
+            dy += 1
+
+    dy = 0
+
+    for debuff in player.debuffs:
+        if player.debuffs[debuff] > 0:
+            color = colors.status_to_color(debuff)
+            console.print(
+                x=frame_x + width // 2,
+                y=frame_y + 1 + dy,
+                string=f"{COLCTRL_FORE_RGB:c}{color[0]:c}{color[1]:c}{color[2]:c}{debuff.name.capitalize()}" + \
+                       f"{COLCTRL_STOP:c}: {player.debuffs[debuff]}",
+                fg=colors.white,
+                bg=colors.black,
+            )
+            dy += 1
 
 
 def render_card_list(console: Console, cards: List[Card], cursor: int,
