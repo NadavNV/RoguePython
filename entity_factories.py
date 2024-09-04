@@ -8,18 +8,13 @@ import colors
 from cards import Jab, Dodge, Smack, Chop
 from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
-from components.equipment import Equipment
 from components.fighter import Enemy, Rogue, Warrior, Mage
-from components.inventory import Inventory
 from components.level import Level
 from components.loot_table import HealingItemTable, WeaponsTable
-from components.resoucre import Rage, Stamina, Mana
 from dropgen.RDSNullValue import RDSNullValue
 from dropgen.RDSTable import RDSTable
 from dropgen.RDSValue import RDSValue
 from entity import FighterGroup, Item
-from equipment_slots import EquipmentSlot
-from fighter_classes import FighterClass
 
 SCROLL_CHAR = '~'
 POTION_CHAR = '!'

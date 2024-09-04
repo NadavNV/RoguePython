@@ -4,8 +4,6 @@ from typing import List, TYPE_CHECKING
 
 from components.base_component import BaseComponent
 
-from fighter_classes import FighterClass
-
 if TYPE_CHECKING:
     from components.fighter import Fighter
 

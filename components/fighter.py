@@ -14,7 +14,6 @@ from dropgen.RDSObject import RDSObject
 from dropgen.RDSValue import RDSValue
 from dropgen.RDSTable import RDSTable
 from entity import Item
-from fighter_classes import FighterClass
 from status_types import StatusTypes
 
 if TYPE_CHECKING:
@@ -51,7 +50,7 @@ class Fighter(BaseComponent, RDSObject):
         self.color = color
         self.sprite = colors.image_to_rgb(sprite)
 
-        self.buffs: Dict[StatusTypes, int] = {
+        self.baseline_buffs: Dict[StatusTypes, int] = {
             StatusTypes.AGILITY: 0,
             StatusTypes.ARMOR: 0,
             StatusTypes.BALM: 0,
@@ -60,7 +59,7 @@ class Fighter(BaseComponent, RDSObject):
             StatusTypes.STRENGTH: 0,
             StatusTypes.WARD: 0,
         }
-        self.debuffs: Dict[StatusTypes, int] = {
+        self.baseline_debuffs: Dict[StatusTypes, int] = {
             StatusTypes.BLEED: 0,
             StatusTypes.BLIGHT: 0,
             StatusTypes.BURNING: 0,
@@ -68,6 +67,8 @@ class Fighter(BaseComponent, RDSObject):
             StatusTypes.POISON: 0,
             StatusTypes.SHATTERED: 0,
         }
+        self.buffs: Dict[StatusTypes, int] = dict(self.baseline_buffs)
+        self.debuffs: Dict[StatusTypes, int] = dict(self.baseline_debuffs)
 
         self.deck: List[Card] = copy.deepcopy(deck)
         for card in self.deck:
@@ -183,6 +184,8 @@ class Fighter(BaseComponent, RDSObject):
             self.hand.append(next_card)
 
     def start_combat(self) -> None:
+        self.buffs = dict(self.baseline_buffs)
+        self.debuffs = dict(self.baseline_debuffs)
         self.draw = self.deck[:]
         random.shuffle(self.draw)
         self.start_turn()
@@ -212,7 +215,6 @@ class Player(Fighter):
             min_hp_on_spawn: int,
             max_hp_on_spawn: int,
             hp_per_level: int,
-            fighter_class: FighterClass,
             deck: List[Card],
             resource: Resource,
             inventory: Inventory = Inventory(capacity=26),
@@ -233,12 +235,12 @@ class Player(Fighter):
             inventory=inventory,
         )
 
-        self.fighter_class = fighter_class
-
         self.resource = resource
         self.resource.parent = self
         self.equipment = equipment
         self.equipment.parent = self
+
+        # TODO: Add talents
 
 
 class Enemy(Fighter):
@@ -295,7 +297,6 @@ class Enemy(Fighter):
 class Rogue(Player):
     def __init__(
             self,
-            ai_cls: Type[BaseAI],
             deck: List[Card],
 
     ):
@@ -303,7 +304,6 @@ class Rogue(Player):
             min_hp_on_spawn=80,
             max_hp_on_spawn=80,
             hp_per_level=10,
-            fighter_class=FighterClass.ROGUE,
             resource=Stamina(),
             level=Level(level_up_base=200),
             deck=deck,
@@ -315,7 +315,6 @@ class Rogue(Player):
 class Warrior(Player):
     def __init__(
             self,
-            ai_cls: Type[BaseAI],
             deck: List[Card],
 
     ):
@@ -323,7 +322,6 @@ class Warrior(Player):
             min_hp_on_spawn=100,
             max_hp_on_spawn=100,
             hp_per_level=10,
-            fighter_class=FighterClass.WARRIOR,
             resource=Rage(),
             level=Level(level_up_base=200),
             deck=deck,
@@ -335,7 +333,6 @@ class Warrior(Player):
 class Mage(Player):
     def __init__(
             self,
-            ai_cls: Type[BaseAI],
             deck: List[Card],
 
     ):
@@ -343,7 +340,6 @@ class Mage(Player):
             min_hp_on_spawn=80,
             max_hp_on_spawn=80,
             hp_per_level=5,
-            fighter_class=FighterClass.MAGE,
             resource=Mana(),
             level=Level(level_up_base=200),
             deck=deck,

@@ -5,7 +5,6 @@ from typing import Optional, Tuple, TYPE_CHECKING, Union
 import colors
 import exceptions
 from equipment_slots import EquipmentSlot
-from fighter_classes import FighterClass
 from status_types import StatusTypes
 from entity import FighterGroup, Trader
 from components.fighter import Fighter
@@ -259,8 +258,6 @@ class AttackAction(TargetedAbility):
             )
             self.target.buffs[StatusTypes.EVASION] -= 1
         elif damage > 0:
-            if self.entity.fighter_class == FighterClass.WARRIOR:
-                self.entity.resource.gain(damage)
             self.engine.message_log.add_message(
                 f"{attack_desc} for {damage} hit points.", attack_color
             )

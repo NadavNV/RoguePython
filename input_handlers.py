@@ -25,7 +25,6 @@ import colors
 import exceptions
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
-from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
     from components.fighter import Player
