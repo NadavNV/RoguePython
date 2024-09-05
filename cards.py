@@ -6,6 +6,7 @@ from tcod.constants import COLCTRL_FORE_RGB, COLCTRL_STOP
 
 import colors
 from components.fighter import Fighter
+from dropgen import RDSObject
 from status_types import StatusTypes
 
 if TYPE_CHECKING:
@@ -47,7 +48,7 @@ def keyword_to_description(keyword: str) -> str:
             return "Damage dealt by attacks is increased by 1 per stack."
 
 
-class Card:
+class Card(RDSObject):
     parent: Fighter = None
 
     def __init__(self, cost: int, playable: bool = True, burn: bool = False, ethereal: bool = False, **kwargs):
@@ -95,7 +96,10 @@ class Card:
         What should happen at the end of the turn if this card hasn't been played.
         Can be overridden by Card subclasses.
         """
-        pass
+        if self.ethereal:
+            self.parent.burn.append(self)
+        else:
+            self.parent.discard.append(self)
 
     def __str__(self) -> str:
         return self.name
@@ -111,7 +115,7 @@ class BlockCard(Card):
 
     def block(self) -> None:
         desc = f"{self.parent.name.capitalize()} gained {
-            self.amount + self.parent.buffs[StatusTypes.AGILITY]
+        self.amount + self.parent.buffs[StatusTypes.AGILITY]
         } block."
         self.parent.block += self.amount + self.parent.buffs[StatusTypes.AGILITY]
         self.engine.message_log.add_message(
@@ -185,7 +189,7 @@ class Jab(TargetedCard):
     def __init__(self, **kwargs):
         super().__init__(damage=5, cost=1, **kwargs)
         self._name = "Jab"
-        self._description = f"Quickly stab an enemy for {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+        self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage."
 
     @property
@@ -203,13 +207,14 @@ class Jab(TargetedCard):
     def on_play(self) -> None:
         super().on_play()
         self.attack(self.target)
+        self.parent.discard.append(self)
 
 
 class Dodge(BlockCard):
     def __init__(self, **kwargs):
         super().__init__(amount=5, cost=1, **kwargs)
         self._name = "Dodge"
-        self._description = f"Anticipate your opponent's attacks, gaining {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+        self._description = f"Gain {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} block"
 
     @property
@@ -218,6 +223,95 @@ class Dodge(BlockCard):
 
     def on_play(self) -> None:
         self.block()
+        self.parent.discard.append(self)
+
+
+class SanguineStrike(TargetedCard):
+    def __init__(self, **kwargs):
+        super().__init__(damage=4, cost=2, **kwargs)
+        self._name = "Sanguine Strike"
+        self._bleed = 2
+        self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+                            f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage. If damage dealt to " + \
+                            f"HP inflict <2> bleed."
+
+    @property
+    def description(self) -> str:
+        if self.target:
+            return self._description.replace("<1>", f"{
+            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
+            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+            }").replace("<2>", str(self._bleed))
+        else:
+            return self._description.replace("<1>", f"{
+            self.damage + self.parent.buffs[StatusTypes.STRENGTH]
+            }").replace("<2>", str(self._bleed))
+
+    def on_play(self) -> None:
+        super().on_play()
+        if self.attack(self.target):
+            self.target.debuffs[StatusTypes.BLEED] += self._bleed
+        self.parent.discard.append(self)
+
+
+class SnakeBite(TargetedCard):
+    def __init__(self, **kwargs):
+        super().__init__(damage=3, cost=3, **kwargs)
+        self._name = "Sanguine Strike"
+        self._poison = 1
+        self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+                            f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage. If damage dealt to " + \
+                            f"HP inflict <2> poison."
+
+    @property
+    def description(self) -> str:
+        if self.target:
+            return self._description.replace("<1>", f"{
+            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
+            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+            }").replace("<2>", str(self._poison))
+        else:
+            return self._description.replace("<1>", f"{
+            self.damage + self.parent.buffs[StatusTypes.STRENGTH]
+            }").replace("<2>", str(self._poison))
+
+    def on_play(self) -> None:
+        super().on_play()
+        if self.attack(self.target):
+            self.target.debuffs[StatusTypes.POISON] += self._poison
+        self.parent.discard.append(self)
+
+
+class Muster(Card):
+    def __init__(self, **kwargs):
+        super().__init__(cost=1, **kwargs)
+        self._name = "Muster"
+        self.strength = 1
+        self.agility = 1
+        self._description = "Gain <1> strength and <2> agility."
+
+    @property
+    def description(self) -> str:
+        return self._description.replace("<1>", str(self.strength)).replace("<2>", str(self.agility))
+
+    def on_play(self) -> None:
+        self.parent.buffs[StatusTypes.STRENGTH] += self.strength
+        self.parent.buffs[StatusTypes.AGILITY] += self.agility
+        self.parent.discard.append(self)
+
+
+class FlashBomb(Card):
+    def __init__(self, **kwargs):
+        super().__init__(cost=2, burn=True, **kwargs)
+        self._name = "Flash Bomb"
+        self._description = "Stun all enemies for 1 round."
+
+    def on_play(self) -> None:
+        for enemy in self.engine.active_enemies.fighters:
+            enemy.stun()
+            enemy.hand.append(Stunned())
+        self.parent.burn.append(self)
+
 
 # TODO: Add more cards
 
@@ -250,6 +344,7 @@ class Smack(TargetedCard):
     def on_play(self) -> None:
         super().on_play()
         self.attack(self.target)
+        self.parent.discard.append(self)
 
 
 ####################
@@ -278,3 +373,11 @@ class Chop(TargetedCard):
         super().on_play()
         self.attack(self.target)
         self.attack(self.target)
+        self.parent.discard.append(self)
+
+
+class Stunned(Card):
+    def __init__(self, **kwargs):
+        super().__init__(cost=0, **kwargs)
+        self._name = "Stunned"
+        self._description = "The enemy skips a turn."

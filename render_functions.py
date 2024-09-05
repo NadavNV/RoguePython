@@ -100,7 +100,12 @@ def render_player_bars(
             ch=1,
             bg=colors.block
         )
-        console.print(x=total_width + 3, y=console.height * 2 // 3 + 2, string=str(player.block))
+        console.print(
+            x=total_width + 3,
+            y=console.height * 2 // 3 + 2,
+            string=str(player.block),
+            fg=colors.black
+        )
 
     player.resource.render_bar(
         console=console,
@@ -624,7 +629,7 @@ def render_enemy_tooltip(console: Console, enemy: Fighter):
     console.print(
         x=x + 1,
         y=y,
-        string="Intention:",
+        string=f"Intention: {enemy.hand[0].name}",
         fg=colors.white,
         bg=colors.black,
     )

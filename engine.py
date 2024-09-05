@@ -52,13 +52,10 @@ class Engine(metaclass=Singleton):
                         pass  # Ignore impossible action exceptions from AI.
         else:
             for entity in self.active_enemies.fighters:
-                while entity.hand:
+                if entity.is_alive:
                     card = entity.hand.pop()
                     card.on_play()
-                    if card.burn:
-                        entity.burn.append(card)
-                    else:
-                        entity.discard.append(card)
+                    entity.end_turn()
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""

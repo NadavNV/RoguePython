@@ -25,6 +25,7 @@ import colors
 import exceptions
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
+from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
     from components.fighter import Player
@@ -179,7 +180,9 @@ class EventHandler(BaseEventHandler):
             self.engine.message_log.add_message(exc.args[0], colors.impossible)
             return False  # Skip enemy turn on exceptions.
 
-        self.engine.handle_enemy_turns()
+        if not isinstance(action, BumpAction) or action.entity != self.engine.player:
+            # This is to make sure that the player gets the first turn in combat
+            self.engine.handle_enemy_turns()
 
         self.engine.update_fov()
         return True
@@ -1793,10 +1796,6 @@ class PlayerHandEventHandler(EventHandler):
                     card = player.hand.pop(self.cursor)
                     player.resource.spend(card.cost)
                     card.on_play()
-                    if card.burn:
-                        player.burn.append(card)
-                    else:
-                        player.discard.append(card)
                 self.cursor = min(self.cursor, len(player.hand) - 1)
             else:
                 self.engine.message_log.add_message(
@@ -1894,10 +1893,6 @@ class SelectTargetEventHandler(AskUserEventHandler):
                 card = player.hand.pop(self.card)
                 player.resource.spend(card.cost)
                 card.on_play()
-                if card.burn:
-                    player.burn.append(card)
-                else:
-                    player.discard.append(card)
                 return self.parent
             except IndexError:
                 self.engine.message_log.add_message("Invalid entry.", colors.invalid)

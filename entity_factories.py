@@ -94,7 +94,6 @@ rogue = FighterGroup(
     x=0,
     y=0,
     fighters=[Rogue(
-        ai_cls=HostileEnemy,
         deck=rogue_deck
     )],
     ai_cls=RoamingEnemy
@@ -104,7 +103,6 @@ warrior = FighterGroup(
     x=0,
     y=0,
     fighters=[Warrior(
-        ai_cls=HostileEnemy,
         deck=[]
     )],
     ai_cls=RoamingEnemy
@@ -114,7 +112,6 @@ mage = FighterGroup(
     x=0,
     y=0,
     fighters=[Mage(
-        ai_cls=HostileEnemy,
         deck=[]
     )],
     ai_cls=RoamingEnemy

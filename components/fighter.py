@@ -203,10 +203,6 @@ class Fighter(BaseComponent, RDSObject):
         while self.hand:
             card = self.hand.pop()
             card.on_turn_end()
-            if card.ethereal:
-                self.burn.append(card)
-            else:
-                self.discard.append(card)
 
 
 class Player(Fighter):
@@ -292,6 +288,9 @@ class Enemy(Fighter):
             elif isinstance(item, Item):
                 print(f"Dropped {item.name}")
                 self.inventory.add_item(item)
+
+    def stun(self):
+        self.draw.append(self.hand.pop())
 
 
 class Rogue(Player):
