@@ -43,6 +43,7 @@ turn.
 * **Blight** - Deals 1 damage per stack at the end of the turn. Increased by 1 at the end of the turn.
 * **Exposed** - Damage received from attacks is increased by 50%. Reduced by 1 at the end of the turn.
 * **Shattered** - Block gained from cards is reduced by 50%. Reduced by 1 at the end of the turn.
+* **Weakness** - Base damage dealt is reduced by 50%. Reduced by 1 at the end of the turn.
 
 ### Card Modifiers
 

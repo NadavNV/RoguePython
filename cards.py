@@ -6,8 +6,9 @@ from tcod.constants import COLCTRL_FORE_RGB, COLCTRL_STOP
 
 import colors
 from components.fighter import Fighter
-from dropgen import RDSObject
-from status_types import StatusTypes
+from dropgen.RDSObject import RDSObject
+from status_types import StatusType
+from talents import Talent
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -115,9 +116,9 @@ class BlockCard(Card):
 
     def block(self) -> None:
         desc = f"{self.parent.name.capitalize()} gained {
-        self.amount + self.parent.buffs[StatusTypes.AGILITY]
+        self.amount + self.parent.buffs[StatusType.AGILITY]
         } block."
-        self.parent.block += self.amount + self.parent.buffs[StatusTypes.AGILITY]
+        self.parent.block += self.amount + self.parent.buffs[StatusType.AGILITY]
         self.engine.message_log.add_message(
             text=desc,
             fg=colors.block,
@@ -140,27 +141,35 @@ class AttackCard(Card):
             attack_color = colors.player_atk
         else:
             attack_color = colors.enemy_atk
-        if target.buffs[StatusTypes.EVASION] > 0:
+        if target.buffs[StatusType.EVASION] > 0:
             self.engine.message_log.add_message(
                 f"{attack_desc} but misses.", attack_color
             )
-            target.buffs[StatusTypes.EVASION] -= 1
+            target.buffs[StatusType.EVASION] -= 1
             return False
         else:
             damage = target.take_damage(
-                (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
-                (1.5 if target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH]) *
+                (1.5 if target.debuffs[StatusType.EXPOSED] > 0 else 1)
             )
             if damage > 0:
                 self.engine.message_log.add_message(
                     f"{attack_desc} for {damage} hit points.", attack_color
                 )
-                return True
+                result = True
             else:
                 self.engine.message_log.add_message(
                     f"{attack_desc} but does no damage.", attack_color
                 )
-                return False
+                result = False
+            bleed = self.parent.talents[Talent.ATTACKS_INFLICT_BLEED]
+            if bleed > 0:
+                self.engine.message_log.add_message(
+
+                    f"{self.parent.name.capitalize()} inflicts {bleed} bleed on {target.name}.", colors.bleed
+                )
+            return result
 
 
 class TargetedCard(AttackCard):
@@ -196,12 +205,14 @@ class Jab(TargetedCard):
     def description(self) -> str:
         if self.target:
             return self._description.replace("<1>", f"{
-            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
-            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH]) *
+                (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
             }")
         else:
             return self._description.replace("<1>", f"{
-            self.damage + self.parent.buffs[StatusTypes.STRENGTH]
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH])
             }")
 
     def on_play(self) -> None:
@@ -219,7 +230,7 @@ class Dodge(BlockCard):
 
     @property
     def description(self) -> str:
-        return self._description.replace("<1>", f"{self.amount + self.parent.buffs[StatusTypes.AGILITY]}")
+        return self._description.replace("<1>", f"{self.amount + self.parent.buffs[StatusType.AGILITY]}")
 
     def on_play(self) -> None:
         self.block()
@@ -239,18 +250,20 @@ class SanguineStrike(TargetedCard):
     def description(self) -> str:
         if self.target:
             return self._description.replace("<1>", f"{
-            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
-            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH]) *
+                (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
             }").replace("<2>", str(self._bleed))
         else:
             return self._description.replace("<1>", f"{
-            self.damage + self.parent.buffs[StatusTypes.STRENGTH]
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH])
             }").replace("<2>", str(self._bleed))
 
     def on_play(self) -> None:
         super().on_play()
         if self.attack(self.target):
-            self.target.debuffs[StatusTypes.BLEED] += self._bleed
+            self.target.debuffs[StatusType.BLEED] += self._bleed
         self.parent.discard.append(self)
 
 
@@ -267,18 +280,20 @@ class SnakeBite(TargetedCard):
     def description(self) -> str:
         if self.target:
             return self._description.replace("<1>", f"{
-            (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
-            (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH]) *                 
+                (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
             }").replace("<2>", str(self._poison))
         else:
             return self._description.replace("<1>", f"{
-            self.damage + self.parent.buffs[StatusTypes.STRENGTH]
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH])
             }").replace("<2>", str(self._poison))
 
     def on_play(self) -> None:
         super().on_play()
         if self.attack(self.target):
-            self.target.debuffs[StatusTypes.POISON] += self._poison
+            self.target.debuffs[StatusType.POISON] += self._poison
         self.parent.discard.append(self)
 
 
@@ -295,8 +310,8 @@ class Muster(Card):
         return self._description.replace("<1>", str(self.strength)).replace("<2>", str(self.agility))
 
     def on_play(self) -> None:
-        self.parent.buffs[StatusTypes.STRENGTH] += self.strength
-        self.parent.buffs[StatusTypes.AGILITY] += self.agility
+        self.parent.buffs[StatusType.STRENGTH] += self.strength
+        self.parent.buffs[StatusType.AGILITY] += self.agility
         self.parent.discard.append(self)
 
 
@@ -308,9 +323,107 @@ class FlashBomb(Card):
 
     def on_play(self) -> None:
         for enemy in self.engine.active_enemies.fighters:
+            self.engine.message_log.add_message(
+                f"{enemy.name.capitalize()} is stunned!", colors.debuff
+            )
             enemy.stun()
             enemy.hand.append(Stunned())
         self.parent.burn.append(self)
+
+
+class SmokeBomb(Card):
+    def __init__(self, **kwargs):
+        super().__init__(cost=2, burn=True, **kwargs)
+        self.evasion = 2
+        self._name = "Smoke Bomb"
+        self._description = "Gain <1> Evasion"
+
+    @property
+    def description(self) -> str:
+        return self._description.replace("<1>", str(self.evasion))
+
+    def on_play(self) -> None:
+        self.parent.buffs[StatusType.EVASION] += self.evasion
+        self.engine.message_log.add_message(
+            f"{self.parent.name.capitalize()} gained {self.evasion} evasion.", colors.evasion
+        )
+        self.parent.burn.append(self)
+
+
+class ShrapnelBomb(Card):
+    def __init__(self, **kwargs):
+        super().__init__(cost=2, burn=True, **kwargs)
+        self._name = "Shrapnel Bomb"
+        self.bleed = 3
+        self._description = "Inflict <1> bleed on all enemies"
+
+    @property
+    def description(self) -> str:
+        return self._description.replace("<1>", str(self.bleed))
+
+    def on_play(self) -> None:
+        for enemy in self.engine.active_enemies.fighters:
+            enemy.debuffs[StatusType.BLEED] += self.bleed
+            self.engine.message_log.add_message(
+                f"{enemy.name.capitalize()} gained {self.bleed} bleed!", colors.bleed
+            )
+        self.parent.burn.append(self)
+
+
+class PrecisionStriket(TargetedCard):
+    def __init__(self, **kwargs):
+        super().__init__(damage=20, cost=2, ethereal=True, **kwargs)
+        self._name = "Precision Strike"
+        self._description = f"Ethereal. Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+                            f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage."
+
+    @property
+    def description(self) -> str:
+        if self.target:
+            return self._description.replace("<1>", f"{
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH]) *
+                (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
+            }")
+        else:
+            return self._description.replace("<1>", f"{
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH])
+            }")
+
+    def on_play(self) -> None:
+        super().on_play()
+        self.attack(self.target)
+        self.parent.discard.append(self)
+
+
+class SideEffects(TargetedCard):
+    def __init__(self, **kwargs):
+        super().__init__(damage=4, cost=1, **kwargs)
+        self._weakness = 1
+        self._name = "Side Effects"
+        self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+                            f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage. If the target" +\
+                            f" is poisoned, inflict <2> weakness."
+
+    @property
+    def description(self) -> str:
+        if self.target:
+            return self._description.replace("<1>", f"{
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH]) * 
+                (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
+            }")
+        else:
+            return self._description.replace("<1>", f"{
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH])
+            }").replace("<2>", str(self._weakness))
+
+    def on_play(self) -> None:
+        super().on_play()
+        self.attack(self.target)
+        self.parent.discard.append(self)
 
 
 # TODO: Add more cards
@@ -337,8 +450,8 @@ class Smack(TargetedCard):
     @property
     def description(self) -> str:
         return self._description.replace("<1>", f"{
-        (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
-        (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+        (self.damage + self.parent.buffs[StatusType.STRENGTH]) *
+        (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
         }")
 
     def on_play(self) -> None:
@@ -365,8 +478,8 @@ class Chop(TargetedCard):
     @property
     def description(self) -> str:
         return self._description.replace("<1>", f"{
-        (self.damage + self.parent.buffs[StatusTypes.STRENGTH]) *
-        (1.5 if self.target.debuffs[StatusTypes.EXPOSED] > 0 else 1)
+        (self.damage + self.parent.buffs[StatusType.STRENGTH]) *
+        (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
         }")
 
     def on_play(self) -> None:

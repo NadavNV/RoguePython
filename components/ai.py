@@ -90,6 +90,7 @@ class ConfusedEnemy(BaseAI):
 class RoamingEnemy(BaseAI):
     def __init__(self, entity: FighterGroup):
         super().__init__(entity)
+        print(f"Generating RoamingEnemy {hex(id(self))}")
         self.path: List[Tuple[int, int]] = []
 
     def perform(self) -> bool:

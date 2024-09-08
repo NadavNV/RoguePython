@@ -44,6 +44,7 @@ class Engine(metaclass=Singleton):
         if not self.in_combat:
             for entity in set(self.game_map.actors) - {self.player}:
                 if hasattr(entity, "ai") and entity.ai:
+                    print(entity)
                     try:
                         entity.ai.perform()
                         if self.in_combat:
@@ -53,9 +54,11 @@ class Engine(metaclass=Singleton):
         else:
             for entity in self.active_enemies.fighters:
                 if entity.is_alive:
+                    entity.start_turn()
                     card = entity.hand.pop()
                     card.on_play()
                     entity.end_turn()
+            self.player[0].start_turn()
 
     def save_as(self, filename: str) -> None:
         """Save this Engine instance as a compressed file."""
@@ -110,4 +113,7 @@ class Engine(metaclass=Singleton):
         self.active_enemies = enemies
         for enemy in enemies:
             enemy.start_combat()
+            enemy.start_turn()
         self.player[0].start_combat()
+        self.player[0].start_turn()
+

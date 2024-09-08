@@ -3,9 +3,14 @@ from __future__ import annotations
 from typing import Optional
 
 import copy
+import random
 
 from dropgen.RDSTable import RDSTable
+from dropgen.RDSValue import RDSValue
 import entity_factories
+from cards import (
+    SanguineStrike, Muster, PrecisionStriket, SmokeBomb, FlashBomb, ShrapnelBomb, SideEffects, SnakeBite,
+)
 
 
 class WeaponsTable(RDSTable):
@@ -34,3 +39,30 @@ class HealingItemTable(RDSTable):
         self.add_entry(entry=copy.deepcopy(entity_factories.plump_rat), enabled=False)
         self.add_entry(entry=copy.deepcopy(entity_factories.enormous_rat), enabled=False)
         self.add_entry(entry=copy.deepcopy(entity_factories.rodent_of_unusual_size), enabled=False)
+
+
+class RogueCommonCards(RDSTable):
+    def __init__(self):
+        super().__init__(count=3, unique=True)
+
+        self.add_entry(entry=SanguineStrike())
+        self.add_entry(entry=SnakeBite())
+        self.add_entry(entry=PrecisionStriket())
+        self.add_entry(entry=SideEffects())
+        self.add_entry(entry=Muster())
+        self.add_entry(entry=FlashBomb())
+        self.add_entry(entry=SmokeBomb())
+        self.add_entry(entry=ShrapnelBomb())
+
+
+class Gold(RDSValue):
+    def __init__(self, level: int, min_value: int, max_value: int, probability: float):
+        level = max(1, level)
+        value = random.randint(level * min_value, level * max_value)
+
+        super().__init__(
+            probability=probability,
+            value=value,
+            unique=True,
+        )
+

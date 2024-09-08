@@ -1,6 +1,5 @@
 from typing import Optional
 
-import copy
 import random
 import sys
 
@@ -10,7 +9,6 @@ from components.ai import RoamingEnemy, HostileEnemy
 from components import consumable, equippable
 from components.fighter import Enemy, Rogue, Warrior, Mage
 from components.level import Level
-from components.loot_table import HealingItemTable, WeaponsTable
 from dropgen.RDSNullValue import RDSNullValue
 from dropgen.RDSTable import RDSTable
 from dropgen.RDSValue import RDSValue
@@ -286,18 +284,6 @@ chain_mail = Item(
 )
 
 
-class Gold(RDSValue):
-    def __init__(self, level: int, min_value: int, max_value: int, probability: float):
-        level = max(1, level)
-        value = random.randint(level * min_value, level * max_value)
-
-        super().__init__(
-            probability=probability,
-            value=value,
-            unique=True,
-        )
-
-
 janitor_deck = [Smack()]
 
 
@@ -315,16 +301,6 @@ class Janitor(Enemy):
             ai_cls=HostileEnemy,
             level=Level(xp_given=50),
             target_level=target_level,
-            loot_table=RDSTable(
-                contents=[
-                    Gold(level=target_level, min_value=10, max_value=35, probability=30),
-                    RDSNullValue(probability=50),
-                    HealingItemTable(current_floor=max(1, target_level), count=1, probability=20),
-                    WeaponsTable(current_floor=max(1, target_level), count=1, probability=10),
-                    # TODO: Add item drops
-                ],
-                count=2,
-            ),
         )
 
 
@@ -345,16 +321,6 @@ class Lumberjack(Enemy):
             deck=lumberjack_deck,
             level=Level(xp_given=100),
             target_level=target_level,
-            loot_table=RDSTable(
-                contents=[
-                    Gold(level=target_level, min_value=35, max_value=70, probability=30),
-                    RDSNullValue(probability=50),
-                    HealingItemTable(current_floor=max(1, target_level), count=1, probability=20),
-                    WeaponsTable(current_floor=max(1, target_level), count=1, probability=10),
-                    # TODO: Add item drops
-                ],
-                count=2,
-            ),
         )
 
 

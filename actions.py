@@ -5,7 +5,7 @@ from typing import Optional, Tuple, TYPE_CHECKING, Union
 import colors
 import exceptions
 from equipment_slots import EquipmentSlot
-from status_types import StatusTypes
+from status_types import StatusType
 from entity import FighterGroup, Trader
 from components.fighter import Fighter
 
@@ -252,11 +252,11 @@ class AttackAction(TargetedAbility):
             attack_color = colors.player_atk
         else:
             attack_color = colors.enemy_atk
-        if self.target.buffs[StatusTypes.EVASION] > 0:
+        if self.target.buffs[StatusType.EVASION] > 0:
             self.engine.message_log.add_message(
                 f"{attack_desc} but misses.", attack_color
             )
-            self.target.buffs[StatusTypes.EVASION] -= 1
+            self.target.buffs[StatusType.EVASION] -= 1
         elif damage > 0:
             self.engine.message_log.add_message(
                 f"{attack_desc} for {damage} hit points.", attack_color
@@ -281,7 +281,7 @@ class SanguineStrike(TargetedAbility):
             target=target,
             cost=30,
             name="Sanguine Strike",
-            description=f"Attack a single enemy, dealing {4 + caster.buffs[StatusTypes.STRENGTH]} damage." +
+            description=f"Attack a single enemy, dealing {4 + caster.buffs[StatusType.STRENGTH]} damage." +
                         f" If HP damage is done, inflict 4 bleed."
         )
 
@@ -289,9 +289,9 @@ class SanguineStrike(TargetedAbility):
         if AttackAction(
                 caster=self.entity,
                 target=self.target,
-                damage=4 + self.entity.buffs[StatusTypes.STRENGTH],
+                damage=4 + self.entity.buffs[StatusType.STRENGTH],
         ):
-            self.target.debuffs[StatusTypes.BLEED] += 4
+            self.target.debuffs[StatusType.BLEED] += 4
             if self.entity.parent is self.engine.player:
                 attack_color = colors.player_atk
             else:

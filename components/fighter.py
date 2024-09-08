@@ -14,7 +14,8 @@ from dropgen.RDSObject import RDSObject
 from dropgen.RDSValue import RDSValue
 from dropgen.RDSTable import RDSTable
 from entity import Item
-from status_types import StatusTypes
+from status_types import StatusType
+from talents import Talent
 
 if TYPE_CHECKING:
     from cards import Card
@@ -50,25 +51,32 @@ class Fighter(BaseComponent, RDSObject):
         self.color = color
         self.sprite = colors.image_to_rgb(sprite)
 
-        self.baseline_buffs: Dict[StatusTypes, int] = {
-            StatusTypes.AGILITY: 0,
-            StatusTypes.ARMOR: 0,
-            StatusTypes.BALM: 0,
-            StatusTypes.BARBED: 0,
-            StatusTypes.EVASION: 0,
-            StatusTypes.STRENGTH: 0,
-            StatusTypes.WARD: 0,
+        self.baseline_buffs: Dict[StatusType, int] = {
+            StatusType.AGILITY: 0,
+            StatusType.ARMOR: 0,
+            StatusType.BALM: 0,
+            StatusType.BARBED: 0,
+            StatusType.EVASION: 0,
+            StatusType.STRENGTH: 0,
+            StatusType.WARD: 0,
         }
-        self.baseline_debuffs: Dict[StatusTypes, int] = {
-            StatusTypes.BLEED: 0,
-            StatusTypes.BLIGHT: 0,
-            StatusTypes.BURNING: 0,
-            StatusTypes.EXPOSED: 0,
-            StatusTypes.POISON: 0,
-            StatusTypes.SHATTERED: 0,
+        self.baseline_debuffs: Dict[StatusType, int] = {
+            StatusType.BLEED: 0,
+            StatusType.BLIGHT: 0,
+            StatusType.BURNING: 0,
+            StatusType.EXPOSED: 0,
+            StatusType.POISON: 0,
+            StatusType.SHATTERED: 0,
+            StatusType.WEAKNESS: 0,
         }
-        self.buffs: Dict[StatusTypes, int] = dict(self.baseline_buffs)
-        self.debuffs: Dict[StatusTypes, int] = dict(self.baseline_debuffs)
+        self.buffs: Dict[StatusType, int] = dict(self.baseline_buffs)
+        self.debuffs: Dict[StatusType, int] = dict(self.baseline_debuffs)
+
+        self.talents: Dict[Talent, int] = {
+            Talent.STRENGTH_PER_TURN: 0,
+            Talent.ATTACKS_INFLICT_BLEED: 0,
+            Talent.BLOCK_PER_TURN: 0,
+        }
 
         self.deck: List[Card] = copy.deepcopy(deck)
         for card in self.deck:
@@ -143,8 +151,8 @@ class Fighter(BaseComponent, RDSObject):
             if self.block > 0:
                 self.block = 0
                 amount -= self.block
-        if amount > 0 and self.buffs[StatusTypes.ARMOR] > 0:
-            self.buffs[StatusTypes.ARMOR] -= 1
+        if amount > 0 and self.buffs[StatusType.ARMOR] > 0:
+            self.buffs[StatusType.ARMOR] -= 1
 
         self.hp -= amount
         return amount
@@ -164,16 +172,17 @@ class Fighter(BaseComponent, RDSObject):
 
     def start_turn(self) -> None:
         self.block = 0
-        if self.debuffs[StatusTypes.BLEED] > 0:
-            self.hp -= self.debuffs[StatusTypes.BLEED]
-            self.debuffs[StatusTypes.BLEED] -= 1
-        if self.debuffs[StatusTypes.BURNING] > 0:
-            self.hp -= self.debuffs[StatusTypes.BURNING]
-            self.debuffs[StatusTypes.BURNING] //= 2
+        if self.debuffs[StatusType.BLEED] > 0:
+            self.hp -= self.debuffs[StatusType.BLEED]
+            self.debuffs[StatusType.BLEED] -= 1
+        if self.debuffs[StatusType.BURNING] > 0:
+            self.hp -= self.debuffs[StatusType.BURNING]
+            self.debuffs[StatusType.BURNING] //= 2
         if not self.is_alive:
             self.die()
             return
-        self.hp += self.buffs[StatusTypes.BALM]
+        self.hp += self.buffs[StatusType.BALM]
+        self.buffs[StatusType.STRENGTH] += self.talents[Talent.STRENGTH_PER_TURN]
         while len(self.hand) < self.current_hand_size:
             if len(self.draw) == 0:
                 self.draw = self.discard
@@ -188,18 +197,20 @@ class Fighter(BaseComponent, RDSObject):
         self.debuffs = dict(self.baseline_debuffs)
         self.draw = self.deck[:]
         random.shuffle(self.draw)
-        self.start_turn()
 
     def end_turn(self) -> None:
-        if self.debuffs[StatusTypes.POISON] > 0:
-            self.hp -= self.debuffs[StatusTypes.POISON]
-        if self.debuffs[StatusTypes.BLIGHT] > 0:
-            self.hp -= self.debuffs[StatusTypes.BLIGHT]
-            self.debuffs[StatusTypes.BLIGHT] += 1
+        if self.debuffs[StatusType.POISON] > 0:
+            self.hp -= self.debuffs[StatusType.POISON]
+        if self.debuffs[StatusType.BLIGHT] > 0:
+            self.hp -= self.debuffs[StatusType.BLIGHT]
+            self.debuffs[StatusType.BLIGHT] += 1
         if not self.is_alive:
             self.die()
             return
-        self.block += self.buffs[StatusTypes.ARMOR]
+        if self.debuffs[StatusType.WEAKNESS] > 0:
+            self.debuffs[StatusType.WEAKNESS] -= 1
+        self.block += self.talents[Talent.BLOCK_PER_TURN]
+        self.block += self.buffs[StatusType.ARMOR]
         while self.hand:
             card = self.hand.pop()
             card.on_turn_end()
@@ -243,7 +254,6 @@ class Enemy(Fighter):
     def __init__(
             self,
             target_level: int,
-            loot_table: RDSTable,
             min_hp_on_spawn: int,
             max_hp_on_spawn: int,
             hp_per_level: int,
@@ -269,7 +279,6 @@ class Enemy(Fighter):
         self.ai = ai_cls
         self.default_hand_size = 1
         self.current_hand_size = 1
-        self.loot_table = loot_table
 
         while self.level.current_level < target_level:
             self.level.increase_level()
@@ -278,16 +287,6 @@ class Enemy(Fighter):
 
     def die(self) -> None:
         super().die()
-
-        loot = self.loot_table.rds_result
-
-        for item in loot:
-            if isinstance(item, RDSValue):
-                print(f"Dropped {item.rds_value} gold")
-                self.inventory.gold += item.rds_value
-            elif isinstance(item, Item):
-                print(f"Dropped {item.name}")
-                self.inventory.add_item(item)
 
     def stun(self):
         self.draw.append(self.hand.pop())

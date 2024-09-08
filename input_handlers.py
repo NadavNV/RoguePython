@@ -22,7 +22,9 @@ from actions import (
 from cards import TargetedCard
 from components.equippable import Weapon
 import colors
+import loot_table
 import exceptions
+from dropgen.RDSTable import RDSTable
 from equipment_slots import EquipmentSlot
 from equipment_types import EquipmentType
 from fighter_classes import FighterClass
@@ -1646,6 +1648,7 @@ class CombatEventHandler(EventHandler):
         self.cursor = np.array([0, 0])
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        # TODO: Check if no enemies remain, then exit combat
         super().on_render(console=console)
         render_functions.render_combat_ui(console=console, cursor=self.cursor, player=self.engine.player[0])
 
@@ -2014,34 +2017,40 @@ class SelectAbilityEventHandler(AskUserEventHandler):
 
 
 class LootEventHandler(AskUserEventHandler):
-    TEXT = "Choose which items to pick up:"
+    TEXT = "Choose a card to add to your deck:"
 
     def __init__(self, engine: Engine, parent: EventHandler) -> None:
         super().__init__(engine=engine, parent=parent)
-        self.items: List[Item] = []
-        self.gold = 0
-        for enemy in self.engine.active_enemies.fighters:
-            # for equippable in enemy.equipment.items.values():
-            #     if equippable is not None:
-            #         self.items.append(equippable.parent)
-            for stack in enemy.inventory.items:
-                self.items += stack
-            self.gold += enemy.inventory.gold
+        self.cards = loot_table.RogueCommonCards().rds_result
+        print(self.cards)
+        self.gold = RDSTable(
+            contents=[loot_table.Gold(
+                level=self.engine.game_world.current_floor,
+                min_value=15,
+                max_value=50,
+                probability=10
+            )],
+            always=True,
+            count=1,
+        ).rds_result[0].rds_value
+
+
+
         self.cursor = 0
-        self.height = 8 + len(self.items)
+        self.height = 8 + len(self.cards)
         self.width = 4 + max(
             len(self.TEXT),
             len(f"You pick up {self.gold} gold pieces!")
         )
 
-        if len(self.items) != 0:
+        if len(self.cards) != 0:
             self.width = max(
                 self.width,
-                max([len(item.name) for item in self.items]) + 4,
+                max([len(card.name) for card in self.cards]) + 4,
             )
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        if self.gold == 0 and len(self.items) == 0:
+        if self.gold == 0 and len(self.cards) == 0:
             return MainGameEventHandler(self.engine)
         self.parent.on_render(console)
         console.rgb["fg"] //= 2
@@ -2069,7 +2078,7 @@ class LootEventHandler(AskUserEventHandler):
             alignment=libtcodpy.CENTER
         )
 
-        if len(self.items) > 0:
+        if len(self.cards) > 0:
             console.print_box(
                 x=x,
                 y=y + 2,
@@ -2081,7 +2090,7 @@ class LootEventHandler(AskUserEventHandler):
                 alignment=libtcodpy.CENTER
             )
 
-            for i, item in enumerate(self.items):
+            for i, card in enumerate(self.cards):
                 if self.cursor == i:
                     fg = colors.black
                     bg = colors.white
@@ -2091,10 +2100,20 @@ class LootEventHandler(AskUserEventHandler):
                 console.print(
                     x=x + 2,
                     y=y + 4 + i,
-                    string=item.name,
+                    string=card.name,
                     fg=fg,
                     bg=bg
                 )
+
+
+            # show card tooltip
+            render_functions.render_card_tooltip(
+                console=console,
+                x=x + self.width + 2,
+                y=y,
+                width=console.width // 8,
+                card=self.cards[self.cursor]
+            )
 
         if self.gold > 0:
             console.print_box(
@@ -2112,40 +2131,17 @@ class LootEventHandler(AskUserEventHandler):
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
-        inventory = self.engine.player[0].inventory
+        player = self.engine.player[0]
 
         if key in CONFIRM_KEYS:
-            if len(self.items) > 0:
-                item = self.items.pop(self.cursor)
-                try:
-                    inventory.add_item(item)
-                    self.cursor = min(self.cursor, len(self.items) - 1)
-                    if len(self.items) == 0:
-                        inventory.gold += self.gold
-                        return self.parent
-                except exceptions.Impossible:
-                    self.items.insert(self.cursor, item)
-                    self.engine.message_log.add_message(
-                        text="You don't have room for that item.",
-                        fg=colors.impossible,
-                        stack=True
-                    )
-            else:
-                inventory.gold += self.gold
-                return self.parent
+            card = self.cards.pop(self.cursor)
+            player.deck.append(card)
+            player.inventory.gold += self.gold
+            return self.parent
 
         elif key in CURSOR_Y_KEYS:
-            self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % len(self.items)
+            self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % len(self.cards)
             return self
-        elif key == tcod.event.KeySym.ESCAPE:
-            inventory.gold += self.gold
-
-            for item in self.items:
-                item.x = self.engine.active_enemies.x
-                item.y = self.engine.active_enemies.y
-                self.engine.game_map.entities.add(item)
-
-            return self.parent
 
         return self
 

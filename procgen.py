@@ -7,7 +7,7 @@ import tcod
 
 from components.ai import RoamingEnemy
 from components.fighter import Enemy
-import components.loot_table
+import loot_table
 from entity import Entity, FighterGroup, Item, Trader
 import entity_factories
 from game_map import GameMap
@@ -258,7 +258,7 @@ def place_entities(room: RectangularRoom, dungeon: GameMap, floor_number: int) -
 
 def generate_trader_items(current_floor: int, number_of_items: int) -> List[Item]:
     result = []
-    table = components.loot_table.HealingItemTable(current_floor=current_floor, count=20)
+    table = loot_table.HealingItemTable(current_floor=current_floor, count=20)
     healing_potions = table.rds_result
     result.extend(healing_potions)
     # TODO: Add item rolling

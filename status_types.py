@@ -1,7 +1,7 @@
 from enum import auto, Enum
 
 
-class StatusTypes(Enum):
+class StatusType(Enum):
     AGILITY = auto()
     ARMOR = auto()
     BALM = auto()
@@ -15,3 +15,4 @@ class StatusTypes(Enum):
     SHATTERED = auto()
     STRENGTH = auto()
     WARD = auto()
+    WEAKNESS = auto()

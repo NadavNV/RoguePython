@@ -1,6 +1,6 @@
 import numpy as np
 from PIL import Image
-from status_types import StatusTypes
+from status_types import StatusType
 from typing import Tuple
 
 white = (0xFF, 0xFF, 0xFF)
@@ -58,33 +58,33 @@ shattered = (0xA0, 0x40, 0x0)
 strength = (0xFF, 0xBC, 0x1B)
 ward = (0xC8, 0xA2, 0xC8)
 
-def status_to_color(status: StatusTypes) -> Tuple[int, int, int]:
+def status_to_color(status: StatusType) -> Tuple[int, int, int]:
     match status:
-        case StatusTypes.AGILITY:
+        case StatusType.AGILITY:
             return agility
-        case StatusTypes.ARMOR:
+        case StatusType.ARMOR:
             return armor
-        case StatusTypes.BALM:
+        case StatusType.BALM:
             return balm
-        case StatusTypes.BARBED:
+        case StatusType.BARBED:
             return barbed
-        case StatusTypes.BLEED:
+        case StatusType.BLEED:
             return bleed
-        case StatusTypes.BLIGHT:
+        case StatusType.BLIGHT:
             return blight
-        case StatusTypes.BURNING:
+        case StatusType.BURNING:
             return burn
-        case StatusTypes.EVASION:
+        case StatusType.EVASION:
             return evasion
-        case StatusTypes.EXPOSED:
+        case StatusType.EXPOSED:
             return exposed
-        case StatusTypes.POISON:
+        case StatusType.POISON:
             return poison
-        case StatusTypes.SHATTERED:
+        case StatusType.SHATTERED:
             return shattered
-        case StatusTypes.STRENGTH:
+        case StatusType.STRENGTH:
             return strength
-        case StatusTypes.WARD:
+        case StatusType.WARD:
             return ward
 
 def image_to_rgb(filename: str) -> np.ndarray:

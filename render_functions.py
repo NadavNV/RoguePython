@@ -4,8 +4,6 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import textwrap
 import numpy as np
-import tcod.constants
-from tcod import libtcodpy
 from tcod.constants import COLCTRL_FORE_RGB, COLCTRL_STOP, CENTER
 
 import colors
@@ -17,7 +15,7 @@ if TYPE_CHECKING:
     from tcod.console import Console
     from engine import Engine
     from game_map import GameMap
-    from status_types import StatusTypes
+    from status_types import StatusType
 
 
 def wrap(text: str, width: int):
@@ -391,16 +389,59 @@ def render_card_list(console: Console, cards: List[Card], cursor: int,
 
     if 0 <= cursor < len(cards):
         # Display card tooltip
-        tooltip_x = console.width * 2 // 3
-        tooltip_y = 0
-        width = console.width // 3 + 1
-        title = wrap(cards[cursor].name, width - 2)
-        text = wrap(cards[cursor].description, width - 2)
-        height = len(title.split('\n')) + len(text.split('\n')) + 3
+        render_card_tooltip(
+            console=console,
+            x=console.width * 2 // 3,
+            y=0, card=cards[cursor],
+            width=console.width // 3 + 1
+        )
 
+
+    if down_arrow:
+        console.print(
+            x=frame_x + 2,
+            y=frame_y + 2 + len(cards) + 1,
+            string="▼",
+            fg=colors.white,
+            bg=colors.black,
+        )
+
+
+def render_card_tooltip(console: Console, x: int, y: int, card: Card, width: int) -> None:
+    title = wrap(card.name, width - 2)
+    text = wrap(card.description, width - 2)
+    height = len(title.split('\n')) + len(text.split('\n')) + 3
+
+    console.draw_frame(
+        x=x,
+        y=y,
+        width=width,
+        height=height,
+        clear=True,
+        fg=colors.white,
+        bg=colors.black,
+    )
+    console.print_box(
+        x=x + 1,
+        y=y + 1,
+        width=width - 2,
+        height=height - 2,
+        string=title + '\n\n' + text,
+        fg=colors.white,
+        bg=colors.black,
+    )
+
+    # Display keyword descriptions
+    if len(card.keywords) > 0:
+        y += height
+        text = []
+        for keyword in card.keywords:
+            text.append(f"{keyword.capitalize()} - {keyword_to_description(keyword)}")
+        text = wrap('\n\n'.join(text), width - 2)
+        height = len(text.split('\n')) + 2
         console.draw_frame(
-            x=tooltip_x,
-            y=tooltip_y,
+            x=x,
+            y=y,
             width=width,
             height=height,
             clear=True,
@@ -408,47 +449,11 @@ def render_card_list(console: Console, cards: List[Card], cursor: int,
             bg=colors.black,
         )
         console.print_box(
-            x=tooltip_x + 1,
-            y=tooltip_y + 1,
+            x=x + 1,
+            y=y + 1,
             width=width - 2,
             height=height - 2,
-            string=title + '\n\n' + text,
-            fg=colors.white,
-            bg=colors.black,
-        )
-
-        # Display keyword descriptions
-        if len(cards[cursor].keywords) > 0:
-            tooltip_y += height
-            text = []
-            for keyword in cards[cursor].keywords:
-                text.append(f"{keyword.capitalize()} - {keyword_to_description(keyword)}")
-            text = wrap('\n\n'.join(text), width - 2)
-            height = len(text.split('\n')) + 2
-            console.draw_frame(
-                x=tooltip_x,
-                y=tooltip_y,
-                width=width,
-                height=height,
-                clear=True,
-                fg=colors.white,
-                bg=colors.black,
-            )
-            console.print_box(
-                x=tooltip_x + 1,
-                y=tooltip_y + 1,
-                width=width - 2,
-                height=height - 2,
-                string=text,
-                fg=colors.white,
-                bg=colors.black,
-            )
-
-    if down_arrow:
-        console.print(
-            x=frame_x + 2,
-            y=frame_y + 2 + len(cards) + 1,
-            string="▼",
+            string=text,
             fg=colors.white,
             bg=colors.black,
         )
@@ -543,7 +548,7 @@ def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
     dx = 0
     dy = 25
 
-    def print_status(string: str, status: StatusTypes) -> Tuple[int, int]:
+    def print_status(string: str, status: StatusType) -> Tuple[int, int]:
         nonlocal dx
         nonlocal dy
         length = len(string)

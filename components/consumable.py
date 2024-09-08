@@ -11,12 +11,7 @@ import components.ai
 import components.inventory
 from components.base_component import BaseComponent
 from exceptions import Impossible
-from status_types import StatusTypes
-from input_handlers import (
-    ActionOrHandler,
-    SelectTargetEventHandler,
-    CombatEventHandler,
-)
+from status_types import StatusType
 
 if TYPE_CHECKING:
     from entity import Item
@@ -136,7 +131,7 @@ class LightningDamageConsumable(Consumable):
         target = action.target
         hit_successful = False
 
-        if target.buffs[StatusTypes.EVASION] == 0:
+        if target.buffs[StatusType.EVASION] == 0:
             self.engine.message_log.add_message(
                 f"A lightning bolt strikes the {target.name} with a loud thunder, for {self.damage} damage!"
             )
@@ -146,6 +141,6 @@ class LightningDamageConsumable(Consumable):
             self.engine.message_log.add_message(
                 f"The {target.name} quickly moves out of the way of the lightning bolt!"
             )
-            target.buffs[StatusTypes.EVASION] -= 1
+            target.buffs[StatusType.EVASION] -= 1
         self.consume()
         return hit_successful
