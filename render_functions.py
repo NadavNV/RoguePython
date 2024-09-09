@@ -382,7 +382,7 @@ def render_card_list(console: Console, cards: List[Card], cursor: int,
         console.print(
             x=frame_x + 2,
             y=frame_y + 3 + i,
-            string=cards[i].name,
+            string=cards[i].name + (" +" if cards[i].is_upgraded else ''),
             fg=fg,
             bg=bg,
         )
@@ -395,7 +395,6 @@ def render_card_list(console: Console, cards: List[Card], cursor: int,
             y=0, card=cards[cursor],
             width=console.width // 3 + 1
         )
-
 
     if down_arrow:
         console.print(
@@ -575,6 +574,7 @@ def render_enemy(console: Console, x: int, y: int, enemy: Fighter):
     for debuff in enemy.debuffs:
         if enemy.debuffs[debuff] > 0:
             dx, dy = print_status(str(enemy.debuffs[debuff]), debuff)
+
 
 def render_enemy_tooltip(console: Console, enemy: Fighter):
     x = console.width * 2 // 3

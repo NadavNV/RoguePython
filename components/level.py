@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, TYPE_CHECKING
 
 from components.base_component import BaseComponent
+from components.resoucre import Mana
 
 if TYPE_CHECKING:
     from components.fighter import Fighter
@@ -56,3 +57,4 @@ class Level(BaseComponent):
 
         fighter.max_hp += fighter.hp_per_level
         fighter.hp += fighter.hp_per_level
+

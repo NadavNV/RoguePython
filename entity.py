@@ -100,10 +100,10 @@ class FighterGroup(Entity):
             blocks_movement=True,
             render_order=RenderOrder.ACTOR,
         )
-        print(f"Generating fighter group {hex(id(self))}")
+        # print(f"Generating fighter group {hex(id(self))}")
         self.fighters = fighters
         self.ai = ai_cls(self)
-        print(hasattr(self, 'ai'))
+        # print(hasattr(self, 'ai'))
 
     @property
     def is_alive(self) -> bool:
@@ -147,6 +147,13 @@ class FighterGroup(Entity):
             self.fighters[key] = value
         except IndexError:
             raise
+
+    def die(self) -> None:
+        self.char = '%'
+        self.color = colors.red
+        self.blocks_movement = False
+        self.render_order = RenderOrder.CORPSE
+        self.ai = None
 
 
 class Item(Entity, RDSObject):

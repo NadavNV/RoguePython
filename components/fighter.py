@@ -113,7 +113,6 @@ class Fighter(BaseComponent, RDSObject):
         else:
             death_message = f"{self.name} is dead!"
             death_message_color = colors.enemy_die
-            # TODO: Fix x not in list error
             self.engine.active_enemies.fighters.remove(self)
 
         self.char = "%"
@@ -149,8 +148,8 @@ class Fighter(BaseComponent, RDSObject):
             amount = 0
         else:
             if self.block > 0:
-                self.block = 0
                 amount -= self.block
+                self.block = 0
         if amount > 0 and self.buffs[StatusType.ARMOR] > 0:
             self.buffs[StatusType.ARMOR] -= 1
 
@@ -171,6 +170,7 @@ class Fighter(BaseComponent, RDSObject):
         return self.parent.game_map
 
     def start_turn(self) -> None:
+        print(f"Starting {self.name.capitalize()} turn")
         self.block = 0
         if self.debuffs[StatusType.BLEED] > 0:
             self.hp -= self.debuffs[StatusType.BLEED]
@@ -247,7 +247,13 @@ class Player(Fighter):
         self.equipment = equipment
         self.equipment.parent = self
 
-        # TODO: Add talents
+    def end_combat(self) -> None:
+        self.buffs = dict(self.baseline_buffs)
+        self.debuffs = dict(self.baseline_debuffs)
+        if isinstance(self, Rogue) or isinstance(self, Mage):
+            self.resource.gain(self.resource.max_amount)
+        if isinstance(self, Warrior):
+            self.resource.current_amount = self.resource.max_amount // 2
 
 
 class Enemy(Fighter):

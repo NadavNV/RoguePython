@@ -7,6 +7,7 @@ from typing import Callable, List, Optional, Tuple, TYPE_CHECKING, Union
 import numpy as np
 import tcod
 from tcod import libtcodpy
+from tcod.constants import CENTER
 import traceback
 
 import actions
@@ -21,6 +22,7 @@ from actions import (
 )
 from cards import TargetedCard
 from components.equippable import Weapon
+from components.fighter import Mage
 import colors
 import loot_table
 import exceptions
@@ -129,7 +131,7 @@ class PopupMessage(BaseEventHandler):
             self.text,
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER,
+            alignment=CENTER,
         )
 
         return self
@@ -156,12 +158,7 @@ class EventHandler(BaseEventHandler):
                     # The player was killed some time during or after the action
                     return GameOverEventHandler(self.engine)
                 elif self.engine.in_combat:
-                    if not self.engine.active_enemies.is_alive:
-                        self.engine.game_map.entities.remove(self.engine.active_enemies)
-                        self.engine.in_combat = False
-                        return LootEventHandler(engine=self.engine, parent=MainGameEventHandler(self.engine))
-                    else:
-                        return CombatEventHandler(engine=self.engine)
+                    return CombatEventHandler(engine=self.engine)
                 else:
                     return MainGameEventHandler(engine=self.engine)  # Return to the main handler.
         except exceptions.Impossible as exc:
@@ -268,7 +265,7 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             string=f"┤{self.TITLE}├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         console.print(x=x + 1, y=y + 1, string="Strength:")
@@ -409,7 +406,7 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             string=f"┤Equipment├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         equipment = player.equipment.list_equipped_items()
@@ -461,13 +458,17 @@ class LevelUpEventHandler(AskUserEventHandler):
     TITLE = "Level Up"
     WINDOW_WIDTH = len('perseverance') * 3 + 6
     WINDOW_HEIGHT = 12
+    LENGTH = 10
 
     def __init__(self, engine: Engine, parent: EventHandler):
         super().__init__(engine=engine, parent=parent)
-        self.stats = []
+        # Only show upgradable cards
+        self.cards = [card for card in self.engine.player[0].deck if card.upgradable and not card.is_upgraded]
+        self.cursor = 0
+        self.start = 0
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        # TODO: Show new abilities if there are any
+
         super().on_render(console)
 
         x = (console.width - self.WINDOW_WIDTH) // 2
@@ -489,115 +490,30 @@ class LevelUpEventHandler(AskUserEventHandler):
             string=f"┤{self.TITLE}├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         console.print(x=x + 1, y=2, string="Congratulations! You level up!")
-        console.print(x=x + 1, y=3, string="Select attributes to increase.")
+        console.print(x=x + 1, y=3, string=f"You gain {self.engine.player[0].hp_per_level} maximum HP.")
+        if isinstance(self.engine.player[0], Mage):
+            console.print(x=x + 1, y=4, string=f"You gain 10 maximum mana.")
+            self.engine.player[0].resource.max_amount += 10
 
-        console.print(
-            x=x + 1,
-            y=5,
-            string=f"{"S - Strength":<17}Esc - Cancel",
-        )
-        console.print(
-            x=x + 1,
-            y=6,
-            string=f"{"P - Perseverance":<17}Enter - Confirm",
-        )
-        console.print(
-            x=x + 1,
-            y=7,
-            string="A - Agility",
-        )
+        console.print(x=x + 1, y=6, string="Select a card to upgrade:")
 
+        render_functions.render_card_list(
+            console=console,
+            cards=self.cards[self.start: self.start + 10],
+            cursor=self.cursor,
+            name="Deck",
+            up_arrow=self.start > 0,
+            down_arrow=self.start + self.LENGTH < len(self.cards)
+        )
+        card = self.cards[self.start + self.cursor]
         console.print(
             x=x + 1,
             y=8,
-            string="M - Magic",
-        )
-
-        console.print(
-            x=x + 1,
-            y=10,
-            string=f"[{" ":<12},{" ":<12},{" ":<12}]"
-        )
-
-        for i in range(len(self.stats)):
-            console.print_box(
-                x=x + 2 + i * (len('perseverance') + 1),
-                y=10,
-                width=len('perseverance'),
-                height=1,
-                string=self.stats[i],
-                fg=colors.white,
-                bg=colors.black,
-                alignment=libtcodpy.CENTER
-            )
-
-        width = len("┤Current Attributes├") + 4
-        height = 8
-        x = x - width - 1
-        y = 1
-
-        console.draw_frame(
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            fg=colors.white,
-            bg=colors.black
-        )
-        console.print_box(
-            x=x,
-            y=y,
-            width=width,
-            height=1,
-            string="┤Current Attributes├",
-            fg=colors.white,
-            bg=colors.black,
-            alignment=libtcodpy.CENTER,
-        )
-
-        console.print_box(
-            x=x,
-            y=y + 2,
-            width=width,
-            height=1,
-            string=f"S: {self.engine.player[0].strength}",
-            fg=colors.white,
-            bg=colors.black,
-            alignment=libtcodpy.CENTER,
-        )
-        console.print_box(
-            x=x,
-            y=y + 3,
-            width=width,
-            height=1,
-            string=f"P: {self.engine.player[0].perseverance}",
-            fg=colors.white,
-            bg=colors.black,
-            alignment=libtcodpy.CENTER,
-        )
-        console.print_box(
-            x=x,
-            y=y + 4,
-            width=width,
-            height=1,
-            string=f"A: {self.engine.player[0].agility}",
-            fg=colors.white,
-            bg=colors.black,
-            alignment=libtcodpy.CENTER,
-        )
-        console.print_box(
-            x=x,
-            y=y + 5,
-            width=width,
-            height=1,
-            string=f"M: {self.engine.player[0].magic}",
-            fg=colors.white,
-            bg=colors.black,
-            alignment=libtcodpy.CENTER,
+            string=f"{card.name} - {card.upgrade_description}"
         )
 
         return self
@@ -605,32 +521,24 @@ class LevelUpEventHandler(AskUserEventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         key = event.sym
 
-        if key == tcod.event.KeySym.ESCAPE:
-            if len(self.stats) > 0:
-                self.stats.pop(-1)
-        elif key in SPAM_KEYS:
-            if len(self.stats) >= 3:
-                self.engine.message_log.add_message(text="Can only increase 3 attributes.", fg=colors.invalid)
+        if key in [tcod.event.KeySym.UP, tcod.event.KeySym.KP_8]:
+            if self.cursor == 0:
+                self.start = max(0, self.start - 1)
             else:
-                if key == tcod.event.KeySym.s:
-                    self.stats.append("Strength")
-                elif key == tcod.event.KeySym.p:
-                    self.stats.append("Perseverance")
-                elif key == tcod.event.KeySym.a:
-                    self.stats.append("Agility")
-                elif key == tcod.event.KeySym.m:
-                    self.stats.append("Magic")
-
+                self.cursor -= 1
+        elif key == tcod.event.KeySym.PAGEUP:
+            self.start = max(0, self.start - 10)
+        elif key in [tcod.event.KeySym.DOWN, tcod.event.KeySym.KP_2]:
+            if self.cursor == self.LENGTH - 1:
+                self.start = min(len(self.cards) - self.LENGTH, self.start + 1)
+            else:
+                self.cursor += 1
+        elif key == tcod.event.KeySym.PAGEDOWN:
+            self.start = min(len(self.cards) - self.LENGTH, self.start + 10)
         elif key in CONFIRM_KEYS:
-            if len(self.stats) < 3:
-                self.engine.message_log.add_message(
-                    text="You must choose 3 attributes to increase..",
-                    fg=colors.invalid
-                )
-            else:
-                self.engine.player[0].level.increase_level(self.stats)
-                return self.parent
-
+            self.engine.player[0].level.increase_level()
+            self.cards[self.start + self.cursor].upgrade()
+            return self.parent
         return self
 
     def ev_mousebuttondown(
@@ -690,7 +598,7 @@ class InventoryEventHandler(AskUserEventHandler):
             string=f"┤{self.TITLE}├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         if number_of_items_in_inventory > 0:
@@ -1014,7 +922,7 @@ class HistoryViewer(EventHandler):
         # Draw a frame with a custom banner title.
         log_console.draw_frame(0, 0, log_console.width, log_console.height)
         log_console.print_box(
-            0, 0, log_console.width, 1, "┤Message history├", alignment=libtcodpy.CENTER
+            0, 0, log_console.width, 1, "┤Message history├", alignment=CENTER
         )
 
         # Render the message log using the cursor parameters
@@ -1201,7 +1109,7 @@ class EquipmentEventHandler(AskUserEventHandler):
             string=f"┤{self.TITLE}├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         print_menu(
@@ -1316,7 +1224,7 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
             string=f"┤{self.TITLE}├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         for i in range(2):
@@ -1389,7 +1297,7 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
             string=f"┤{self.TITLE}├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         for i in range(2):
@@ -1454,7 +1362,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             string=f"┤Choose a class├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         sprite = colors.image_to_rgb(ClassSelectEventHandler.warrior_icon)
@@ -1494,7 +1402,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             string='[W]arrior',
             fg=fg,
             bg=bg,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         if self.cursor + 1 == FighterClass.ROGUE.value:
@@ -1510,7 +1418,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             string='[R]ogue',
             fg=fg,
             bg=bg,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         if self.cursor + 1 == FighterClass.MAGE.value:
@@ -1526,7 +1434,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             string='[M]age',
             fg=fg,
             bg=bg,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         console.draw_frame(
@@ -1545,7 +1453,7 @@ class ClassSelectEventHandler(BaseEventHandler):
             string=f"┤Class Description├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         class_descriptions = [
@@ -1610,7 +1518,7 @@ class MainMenu(BaseEventHandler):
                 text.ljust(menu_width),
                 fg=colors.black,
                 bg=colors.white,
-                alignment=libtcodpy.CENTER,
+                alignment=CENTER,
                 bg_blend=libtcodpy.BKGND_ALPHA(64),
             )
 
@@ -1648,7 +1556,9 @@ class CombatEventHandler(EventHandler):
         self.cursor = np.array([0, 0])
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        # TODO: Check if no enemies remain, then exit combat
+        if not self.engine.active_enemies.is_alive:
+            self.engine.end_combat()
+            return LootEventHandler(engine=self.engine, parent=MainGameEventHandler(self.engine))
         super().on_render(console=console)
         render_functions.render_combat_ui(console=console, cursor=self.cursor, player=self.engine.player[0])
 
@@ -1763,6 +1673,9 @@ class PlayerHandEventHandler(EventHandler):
         self.parent = parent
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        if not self.engine.active_enemies.is_alive:
+            self.engine.end_combat()
+            return LootEventHandler(engine=self.engine, parent=MainGameEventHandler(self.engine))
         self.parent.on_render(console)
         self.cursor = min(self.cursor, len(self.engine.player[0].hand) - 1)
 
@@ -1944,7 +1857,7 @@ class SelectAbilityEventHandler(AskUserEventHandler):
             string=f"┤{self.TITLE}├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         for i, ability in enumerate(self.engine.player[0].abilities):
@@ -2022,7 +1935,8 @@ class LootEventHandler(AskUserEventHandler):
     def __init__(self, engine: Engine, parent: EventHandler) -> None:
         super().__init__(engine=engine, parent=parent)
         self.cards = loot_table.RogueCommonCards().rds_result
-        print(self.cards)
+        for card in self.cards:
+            card.parent = self.engine.player[0]
         self.gold = RDSTable(
             contents=[loot_table.Gold(
                 level=self.engine.game_world.current_floor,
@@ -2033,8 +1947,6 @@ class LootEventHandler(AskUserEventHandler):
             always=True,
             count=1,
         ).rds_result[0].rds_value
-
-
 
         self.cursor = 0
         self.height = 8 + len(self.cards)
@@ -2075,7 +1987,7 @@ class LootEventHandler(AskUserEventHandler):
             string=f"┤Loot├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         if len(self.cards) > 0:
@@ -2087,7 +1999,7 @@ class LootEventHandler(AskUserEventHandler):
                 string=self.TEXT,
                 fg=colors.white,
                 bg=colors.black,
-                alignment=libtcodpy.CENTER
+                alignment=CENTER
             )
 
             for i, card in enumerate(self.cards):
@@ -2105,13 +2017,12 @@ class LootEventHandler(AskUserEventHandler):
                     bg=bg
                 )
 
-
             # show card tooltip
             render_functions.render_card_tooltip(
                 console=console,
                 x=x + self.width + 2,
                 y=y,
-                width=console.width // 8,
+                width=console.width // 5,
                 card=self.cards[self.cursor]
             )
 
@@ -2124,7 +2035,7 @@ class LootEventHandler(AskUserEventHandler):
                 string=f"You pick up {self.gold} gold pieces!",
                 fg=colors.white,
                 bg=colors.black,
-                alignment=libtcodpy.CENTER
+                alignment=CENTER
             )
 
         return self
@@ -2187,7 +2098,7 @@ class TraderEventHandler(AskUserEventHandler):
             string="┤Inventory├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         console.print(
@@ -2247,7 +2158,7 @@ class TraderEventHandler(AskUserEventHandler):
             string="┤Trader├",
             fg=colors.white,
             bg=colors.black,
-            alignment=libtcodpy.CENTER
+            alignment=CENTER
         )
 
         console.print(

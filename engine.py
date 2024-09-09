@@ -117,3 +117,8 @@ class Engine(metaclass=Singleton):
         self.player[0].start_combat()
         self.player[0].start_turn()
 
+    def end_combat(self) -> None:
+        self.in_combat = False
+        self.active_enemies.die()
+        self.player[0].end_combat()
+

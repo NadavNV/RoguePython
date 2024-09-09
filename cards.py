@@ -47,20 +47,27 @@ def keyword_to_description(keyword: str) -> str:
             return "Block gained from cards is reduced by 50%. Reduced by 1 at the end of the turn."
         case "strength":
             return "Damage dealt by attacks is increased by 1 per stack."
+        case 'ward':
+            return "Negate the next debuff application and remove a stack."
+        case 'weakness':
+            return "Base damage dealt is reduced by 50%."
 
 
 class Card(RDSObject):
     parent: Fighter = None
 
-    def __init__(self, cost: int, playable: bool = True, burn: bool = False, ethereal: bool = False, **kwargs):
+    def __init__(self, cost: int, upgradable: bool = True, playable: bool = True, burn: bool = False, ethereal: bool = False, **kwargs):
         super().__init__(**kwargs)
         self.cost = cost
         self.playable: bool = playable
         self.burn: bool = burn
         self.ethereal: bool = ethereal
+        self.upgradable: bool = upgradable
+        self.is_upgraded: bool = False
         self.keywords: Set[str] = set()
         self._name: str = '<Card Name>'
         self._description: str = '<Card Description>'
+        self.upgrade_description: str = "<upgrade description>"
 
         if self.burn:
             self.keywords.add("burn")
@@ -102,6 +109,14 @@ class Card(RDSObject):
         else:
             self.parent.discard.append(self)
 
+    def upgrade(self) -> None:
+        """
+        upgrades the card if it is upgradable. Must be overridden by upgradable crds.
+        """
+        assert self.upgradable
+        assert not self.is_upgraded
+        self.is_upgraded = True
+
     def __str__(self) -> str:
         return self.name
 
@@ -113,10 +128,11 @@ class BlockCard(Card):
     def __init__(self, *, amount: int, cost: int, burn: bool = False, ethereal: bool = False, **kwargs):
         super().__init__(cost=cost, playable=True, burn=burn, ethereal=ethereal, **kwargs)
         self.amount = amount
+        self.keywords.add('block')
 
     def block(self) -> None:
         desc = f"{self.parent.name.capitalize()} gained {
-        self.amount + self.parent.buffs[StatusType.AGILITY]
+            self.amount + self.parent.buffs[StatusType.AGILITY]
         } block."
         self.parent.block += self.amount + self.parent.buffs[StatusType.AGILITY]
         self.engine.message_log.add_message(
@@ -200,6 +216,7 @@ class Jab(TargetedCard):
         self._name = "Jab"
         self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage."
+        self.upgrade_description: str = "Increase damage from 5 to 8."
 
     @property
     def description(self) -> str:
@@ -220,6 +237,10 @@ class Jab(TargetedCard):
         self.attack(self.target)
         self.parent.discard.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.damage = 8
+
 
 class Dodge(BlockCard):
     def __init__(self, **kwargs):
@@ -227,6 +248,7 @@ class Dodge(BlockCard):
         self._name = "Dodge"
         self._description = f"Gain {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} block"
+        self.upgrade_description: str = "Increase block amount from 5 to 8."
 
     @property
     def description(self) -> str:
@@ -235,6 +257,10 @@ class Dodge(BlockCard):
     def on_play(self) -> None:
         self.block()
         self.parent.discard.append(self)
+
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.amount = 8
 
 
 class SanguineStrike(TargetedCard):
@@ -245,6 +271,8 @@ class SanguineStrike(TargetedCard):
         self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage. If damage dealt to " + \
                             f"HP inflict <2> bleed."
+        self.upgrade_description: str = "Increase damage from 4 to 5. Increase bleed amount from 2 to 4."
+        self.keywords.add('bleed')
 
     @property
     def description(self) -> str:
@@ -266,6 +294,11 @@ class SanguineStrike(TargetedCard):
             self.target.debuffs[StatusType.BLEED] += self._bleed
         self.parent.discard.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.damage = 5
+        self._bleed = 4
+
 
 class SnakeBite(TargetedCard):
     def __init__(self, **kwargs):
@@ -275,6 +308,8 @@ class SnakeBite(TargetedCard):
         self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage. If damage dealt to " + \
                             f"HP inflict <2> poison."
+        self.upgrade_description: str = "Increase poison amount from 1 to 2. Reduce cost from 3 to 2."
+        self.keywords.add('poison')
 
     @property
     def description(self) -> str:
@@ -296,6 +331,11 @@ class SnakeBite(TargetedCard):
             self.target.debuffs[StatusType.POISON] += self._poison
         self.parent.discard.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.cost = 2
+        self._poison = 2
+
 
 class Muster(Card):
     def __init__(self, **kwargs):
@@ -304,6 +344,9 @@ class Muster(Card):
         self.strength = 1
         self.agility = 1
         self._description = "Gain <1> strength and <2> agility."
+        self.upgrade_description: str = "Increase strength and agility amount from 1 to 2."
+        self.keywords.add('strength')
+        self.keywords.add('agility')
 
     @property
     def description(self) -> str:
@@ -314,12 +357,18 @@ class Muster(Card):
         self.parent.buffs[StatusType.AGILITY] += self.agility
         self.parent.discard.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.strength = 2
+        self.agility = 2
+
 
 class FlashBomb(Card):
     def __init__(self, **kwargs):
         super().__init__(cost=2, burn=True, **kwargs)
         self._name = "Flash Bomb"
         self._description = "Stun all enemies for 1 round."
+        self.upgrade_description: str = "Reduce cost from 2 to 1."
 
     def on_play(self) -> None:
         for enemy in self.engine.active_enemies.fighters:
@@ -330,6 +379,10 @@ class FlashBomb(Card):
             enemy.hand.append(Stunned())
         self.parent.burn.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.cost = 1
+
 
 class SmokeBomb(Card):
     def __init__(self, **kwargs):
@@ -337,6 +390,8 @@ class SmokeBomb(Card):
         self.evasion = 2
         self._name = "Smoke Bomb"
         self._description = "Gain <1> Evasion"
+        self.upgrade_description: str = "Increase evasion amount from 2 to 3."
+        self.keywords.add('evasion')
 
     @property
     def description(self) -> str:
@@ -349,6 +404,10 @@ class SmokeBomb(Card):
         )
         self.parent.burn.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.evasion = 3
+
 
 class ShrapnelBomb(Card):
     def __init__(self, **kwargs):
@@ -356,6 +415,8 @@ class ShrapnelBomb(Card):
         self._name = "Shrapnel Bomb"
         self.bleed = 3
         self._description = "Inflict <1> bleed on all enemies"
+        self.upgrade_description: str = "Increase bleed amount from 3 to 5."
+        self.keywords.add('bleed')
 
     @property
     def description(self) -> str:
@@ -369,13 +430,18 @@ class ShrapnelBomb(Card):
             )
         self.parent.burn.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.bleed = 5
 
-class PrecisionStriket(TargetedCard):
+
+class PrecisionStrike(TargetedCard):
     def __init__(self, **kwargs):
         super().__init__(damage=20, cost=2, ethereal=True, **kwargs)
         self._name = "Precision Strike"
         self._description = f"Ethereal. Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage."
+        self.upgrade_description: str = "Increase damage from 20 to 40."
 
     @property
     def description(self) -> str:
@@ -396,6 +462,10 @@ class PrecisionStriket(TargetedCard):
         self.attack(self.target)
         self.parent.discard.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.damage = 40
+
 
 class SideEffects(TargetedCard):
     def __init__(self, **kwargs):
@@ -405,6 +475,9 @@ class SideEffects(TargetedCard):
         self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
                             f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage. If the target" +\
                             f" is poisoned, inflict <2> weakness."
+        self.upgrade_description: str = "Increase weakness amount from 1 to 2."
+        self.keywords.add('weakness')
+        self.keywords.add('poison')
 
     @property
     def description(self) -> str:
@@ -425,6 +498,10 @@ class SideEffects(TargetedCard):
         self.attack(self.target)
         self.parent.discard.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self._weakness = 2
+
 
 # TODO: Add more cards
 
@@ -439,7 +516,7 @@ class SideEffects(TargetedCard):
 
 class Smack(TargetedCard):
     def __init__(self, **kwargs):
-        super().__init__(damage=5, cost=0, **kwargs)
+        super().__init__(damage=8, cost=0, **kwargs)
         self._name = "Smack"
         self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.red[0]:c}" + \
                             f"{colors.red[1]:c}{colors.red[2]:c}<1>{COLCTRL_STOP:c} damage."

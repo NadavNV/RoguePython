@@ -9,7 +9,7 @@ from dropgen.RDSTable import RDSTable
 from dropgen.RDSValue import RDSValue
 import entity_factories
 from cards import (
-    SanguineStrike, Muster, PrecisionStriket, SmokeBomb, FlashBomb, ShrapnelBomb, SideEffects, SnakeBite,
+    SanguineStrike, Muster, PrecisionStrike, SmokeBomb, FlashBomb, ShrapnelBomb, SideEffects, SnakeBite,
 )
 
 
@@ -47,7 +47,7 @@ class RogueCommonCards(RDSTable):
 
         self.add_entry(entry=SanguineStrike())
         self.add_entry(entry=SnakeBite())
-        self.add_entry(entry=PrecisionStriket())
+        self.add_entry(entry=PrecisionStrike())
         self.add_entry(entry=SideEffects())
         self.add_entry(entry=Muster())
         self.add_entry(entry=FlashBomb())
