@@ -6,6 +6,10 @@
       * [Buffs](#buffs)
       * [Debuffs](#debuffs)
   * [Card Modifiers](#card-modifiers)
+  * [Player Classes](#player-classes)
+      * [Rogue](#rogue)
+      * [Warrior](#warrior)
+      * [Mage](#mage)
 
 ## Character Information
 
@@ -23,25 +27,25 @@ Each character can be afflicted with several status effects, some beneficial (**
 (**debuffs**).
 
 #### Buffs
-* **Balm** - Restores 1 HP per stack at the beginning of the turn. Does not reduce at the end of the turn.
-* **Block** - Absorbs 1 attack damage per stack. Does not block damage-over-time effects like bleed or poison. Removed
-at the start of the turn.
+* **Agility** - Block gained from cards is increased by 1 per stack. Does not reduce at the end of the turn.
 * **Armor** - Adds 1 Block per stack at the end of the turn. Does not reduce at the end of the turn. 1 stack is removed
 when taking attack damage that isn't blocked.
+* **Balm** - Restores 1 HP per stack at the beginning of the turn. Does not reduce at the end of the turn.
+* **Barbed** - When attacked, inflict 1 damage to the attacker per stack. Does not reduce at the end of the turn.
+* **Block** - Absorbs 1 attack damage per stack. Does not block damage-over-time effects like bleed or poison. Removed
+at the start of the turn.
 * **Evasion** - Negate the next attack that would have dealt HP damage and remove a stack. Does not reduce at the end of
 the turn.
 * **Strength** - Damage dealt by attacks is increased by 1 per stack. Does not reduce at the end of the turn.
-* **Agility** - Block gained from cards is increased by 1 per stack. Does not reduce at the end of the turn.
 * **Ward** - Negate the next debuff application and remove a stack. Does not reduce at the end of the turn.
-* **Barbed** - When attacked, inflict 1 damage to the attacker per stack. Does not reduce at the end of the turn.
 
 #### Debuffs
-* **Poison** - Deals 1 damage per stack at the end of the turn. Does not reduce at the end of the turn.
 * **Bleed** - Deals 1 damage per stack at the start of the turn. Reduced by 1 at the end of the turn.
+* **Blight** - Deals 1 damage per stack at the end of the turn. Increased by 1 at the end of the turn.
 * **Burning** - Deals 1 damage per stack at the start of the turn. Reduced by half (rounded down) at the end of the
 turn.
-* **Blight** - Deals 1 damage per stack at the end of the turn. Increased by 1 at the end of the turn.
 * **Exposed** - Damage received from attacks is increased by 50%. Reduced by 1 at the end of the turn.
+* **Poison** - Deals 1 damage per stack at the end of the turn. Does not reduce at the end of the turn.
 * **Shattered** - Block gained from cards is reduced by 50%. Reduced by 1 at the end of the turn.
 * **Weakness** - Base damage dealt is reduced by 50%. Reduced by 1 at the end of the turn.
 
@@ -54,3 +58,15 @@ behavior in some way.
 shuffled into the draw pile.
 * **Ethereal** - Must be played this turn to go to the discard pile, otherwise it goes to the burn pile when the turn
 ends.
+
+### Player Classes
+
+#### Rogue
+The Rogue uses **stamina** which replenishes each turn. It relies heavily on bleed and poison to deal damage and
+uses gadgets and special bombs to survive and overwhelm the enemy.
+
+#### Warrior
+The Warrior builds **rage** with cards or from taking damage, spending it to deal massive blows to the enemy.
+#### Mage
+The Mage uses **mana** which replenishes slowly over time to cast powerful spells to defend themselves and strike at
+the enemy.

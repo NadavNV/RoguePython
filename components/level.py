@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, TYPE_CHECKING
 
 from components.base_component import BaseComponent
-from components.resoucre import Mana
+from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
     from components.fighter import Fighter
@@ -57,4 +57,7 @@ class Level(BaseComponent):
 
         fighter.max_hp += fighter.hp_per_level
         fighter.hp += fighter.hp_per_level
+
+        if hasattr(fighter, 'fighter_cls') and fighter.fighter_cls == FighterClass.MAGE:
+            fighter.resource.max_amount += 10
 

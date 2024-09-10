@@ -497,7 +497,6 @@ class LevelUpEventHandler(AskUserEventHandler):
         console.print(x=x + 1, y=3, string=f"You gain {self.engine.player[0].hp_per_level} maximum HP.")
         if isinstance(self.engine.player[0], Mage):
             console.print(x=x + 1, y=4, string=f"You gain 10 maximum mana.")
-            self.engine.player[0].resource.max_amount += 10
 
         console.print(x=x + 1, y=6, string="Select a card to upgrade:")
 

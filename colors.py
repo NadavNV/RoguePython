@@ -57,6 +57,7 @@ poison = (0xCA, 0xFF, 0x33)
 shattered = (0xA0, 0x40, 0x0)
 strength = (0xFF, 0xBC, 0x1B)
 ward = (0xC8, 0xA2, 0xC8)
+weakness = (0x33, 0xE6, 0xFF)
 
 def status_to_color(status: StatusType) -> Tuple[int, int, int]:
     match status:
@@ -86,6 +87,8 @@ def status_to_color(status: StatusType) -> Tuple[int, int, int]:
             return strength
         case StatusType.WARD:
             return ward
+        case StatusType.WEAKNESS:
+            return weakness
 
 def image_to_rgb(filename: str) -> np.ndarray:
     with Image.open(filename) as im:

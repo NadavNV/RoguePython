@@ -11,9 +11,7 @@ from components.inventory import Inventory
 from components.level import Level
 from components.resoucre import Resource, Stamina, Rage, Mana
 from dropgen.RDSObject import RDSObject
-from dropgen.RDSValue import RDSValue
-from dropgen.RDSTable import RDSTable
-from entity import Item
+from fighter_classes import FighterClass
 from status_types import StatusType
 from talents import Talent
 
@@ -72,11 +70,7 @@ class Fighter(BaseComponent, RDSObject):
         self.buffs: Dict[StatusType, int] = dict(self.baseline_buffs)
         self.debuffs: Dict[StatusType, int] = dict(self.baseline_debuffs)
 
-        self.talents: Dict[Talent, int] = {
-            Talent.STRENGTH_PER_TURN: 0,
-            Talent.ATTACKS_INFLICT_BLEED: 0,
-            Talent.BLOCK_PER_TURN: 0,
-        }
+        self.talents: Dict[Talent, int] = {}
 
         self.deck: List[Card] = copy.deepcopy(deck)
         for card in self.deck:
@@ -182,7 +176,8 @@ class Fighter(BaseComponent, RDSObject):
             self.die()
             return
         self.hp += self.buffs[StatusType.BALM]
-        self.buffs[StatusType.STRENGTH] += self.talents[Talent.STRENGTH_PER_TURN]
+        if  Talent.STRENGTH_PER_TURN in self.talents:
+            self.buffs[StatusType.STRENGTH] += self.talents[Talent.STRENGTH_PER_TURN]
         while len(self.hand) < self.current_hand_size:
             if len(self.draw) == 0:
                 self.draw = self.discard
@@ -209,7 +204,8 @@ class Fighter(BaseComponent, RDSObject):
             return
         if self.debuffs[StatusType.WEAKNESS] > 0:
             self.debuffs[StatusType.WEAKNESS] -= 1
-        self.block += self.talents[Talent.BLOCK_PER_TURN]
+        if Talent.BLOCK_PER_TURN in self.talents:
+            self.block += self.talents[Talent.BLOCK_PER_TURN]
         self.block += self.buffs[StatusType.ARMOR]
         while self.hand:
             card = self.hand.pop()
@@ -224,6 +220,7 @@ class Player(Fighter):
             hp_per_level: int,
             deck: List[Card],
             resource: Resource,
+            fighter_class: FighterClass,
             inventory: Inventory = Inventory(capacity=26),
             equipment: Equipment = Equipment(),
             level: Level = Level(),
@@ -247,9 +244,14 @@ class Player(Fighter):
         self.equipment = equipment
         self.equipment.parent = self
 
+        self.fighter_cls = fighter_class
+
     def end_combat(self) -> None:
         self.buffs = dict(self.baseline_buffs)
         self.debuffs = dict(self.baseline_debuffs)
+        if Talent.STAMINA_PER_TURN in self.talents:
+            self.resource.max_amount -= self.talents[Talent.STAMINA_PER_TURN]
+        self.talents.clear()
         if isinstance(self, Rogue) or isinstance(self, Mage):
             self.resource.gain(self.resource.max_amount)
         if isinstance(self, Warrior):
@@ -311,6 +313,7 @@ class Rogue(Player):
             resource=Stamina(),
             level=Level(level_up_base=200),
             deck=deck,
+            fighter_class=FighterClass.ROGUE
         )
         self.default_hand_size = 5
         self.current_hand_size = 5
@@ -329,6 +332,7 @@ class Warrior(Player):
             resource=Rage(),
             level=Level(level_up_base=200),
             deck=deck,
+            fighter_class=FighterClass.WARRIOR
         )
         self.default_hand_size = 4
         self.current_hand_size = 4
@@ -347,6 +351,7 @@ class Mage(Player):
             resource=Mana(),
             level=Level(level_up_base=200),
             deck=deck,
+            fighter_class=FighterClass.MAGE
         )
         self.default_hand_size = 6
         self.current_hand_size = 6
