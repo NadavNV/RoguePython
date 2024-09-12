@@ -1486,15 +1486,19 @@ class ClassSelectEventHandler(BaseEventHandler):
         if key in CURSOR_X_KEYS:
             self.cursor = (self.cursor + CURSOR_X_KEYS[key]) % len(FighterClass)
         elif key in CONFIRM_KEYS:
+            if self.cursor in (0, 2):
+                return PopupMessage(parent_handler=self, text="Not yet implemented")
             return MainGameEventHandler(new_game(FighterClass(self.cursor + 1)))
         elif key == tcod.event.KeySym.ESCAPE:
             return MainMenu()
         elif key == tcod.event.KeySym.w:
-            return MainGameEventHandler(new_game(FighterClass.WARRIOR))
+            return PopupMessage(parent_handler=self, text="Not yet implemented")
+            # return MainGameEventHandler(new_game(FighterClass.WARRIOR))
         elif key == tcod.event.KeySym.r:
             return MainGameEventHandler(new_game(FighterClass.ROGUE))
         elif key == tcod.event.KeySym.m:
-            return MainGameEventHandler(new_game(FighterClass.MAGE))
+            return PopupMessage(parent_handler=self, text="Not yet implemented")
+            # return MainGameEventHandler(new_game(FighterClass.MAGE))
 
 
 class MainMenu(BaseEventHandler):
