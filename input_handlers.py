@@ -93,7 +93,7 @@ ActionOrHandler = Union[Action, "BaseEventHandler"]
 
 If a handler is returned then it will become the active handler for future events.
 If an action is returned it will be attempted and if it's valid then
-MainGameEventHandler will become the active handler."""
+an appropriate event handler will become the active handler."""
 
 
 class BaseEventHandler(tcod.event.EventDispatch[ActionOrHandler]):
@@ -268,106 +268,6 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             alignment=CENTER
         )
 
-        console.print(x=x + 1, y=y + 1, string="Strength:")
-
-        if player.equipment.strength_bonus > 0:
-            text_color = colors.buff
-        elif player.equipment.strength_bonus < 0:
-            text_color = colors.debuff
-        else:
-            text_color = colors.white
-
-        console.print(
-            x=x + 15,
-            y=y + 1,
-            string=f"{player.strength + player.equipment.strength_bonus}",
-            fg=text_color,
-            bg=colors.black,
-        )
-
-        console.print(
-            x=x + 19,
-            y=y + 1,
-            string=f"{(player.strength + player.equipment.strength_bonus) // 2:+}",
-            fg=colors.white,
-            bg=colors.black,
-        )
-
-        console.print(x=x + 1, y=y + 2, string="Perseverance:")
-
-        if player.equipment.perseverance_bonus > 0:
-            text_color = colors.buff
-        elif player.equipment.perseverance_bonus < 0:
-            text_color = colors.debuff
-        else:
-            text_color = colors.white
-
-        console.print(
-            x=x + 15,
-            y=y + 2,
-            string=f"{player.perseverance + player.equipment.perseverance_bonus}",
-            fg=text_color,
-            bg=colors.black,
-        )
-
-        console.print(
-            x=x + 19,
-            y=y + 2,
-            string=f"{(player.perseverance + player.equipment.perseverance_bonus) // 2:+}",
-            fg=colors.white,
-            bg=colors.black,
-        )
-
-        console.print(x=x + 1, y=y + 3, string="Agility:")
-
-        if player.equipment.agility_bonus > 0:
-            text_color = colors.buff
-        elif player.equipment.agility_bonus < 0:
-            text_color = colors.debuff
-        else:
-            text_color = colors.white
-
-        console.print(
-            x=x + 15,
-            y=y + 3,
-            string=f"{player.agility + player.equipment.agility_bonus}",
-            fg=text_color,
-            bg=colors.black,
-        )
-
-        console.print(
-            x=x + 19,
-            y=y + 3,
-            string=f"{(player.agility + player.equipment.agility_bonus) // 2:+}",
-            fg=colors.white,
-            bg=colors.black,
-        )
-
-        console.print(x=x + 1, y=y + 4, string="Magic:")
-
-        if player.equipment.magic_bonus > 0:
-            text_color = colors.buff
-        elif player.equipment.magic_bonus < 0:
-            text_color = colors.debuff
-        else:
-            text_color = colors.white
-
-        console.print(
-            x=x + 15,
-            y=y + 4,
-            string=f"{player.magic + player.equipment.magic_bonus}",
-            fg=text_color,
-            bg=colors.black,
-        )
-
-        console.print(
-            x=x + 19,
-            y=y + 4,
-            string=f"{(player.magic + player.equipment.magic_bonus) // 2:+}",
-            fg=colors.white,
-            bg=colors.black,
-        )
-
         console.print(
             x=x + 1, y=y + 6, string=f"Level: {player.level.current_level}"
         )
@@ -379,12 +279,6 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             y=y + 8,
             string=f"XP for next Level: {player.level.experience_to_next_level}",
         )
-        console.print(
-            x=x + 1, y=y + 9, string=f"Proficiency Bonus: {player.level.proficiency}",
-        )
-
-        # Longest line in this window
-        width = len(f"Mainhand Attack Bonus: {player.mainhand_attack_bonus:+}") + 2
 
         x = console.width // 2
         y = 1
@@ -418,38 +312,6 @@ class CharacterScreenEventHandler(AskUserEventHandler):
                 fg=colors.white,
                 bg=colors.black
             )
-
-        console.print(
-            x=x + 1,
-            y=y + len(equipment) + 3,
-            string=f"Mainhand Attack Bonus: {player.equipment.mainhand_attack_bonus:+}",
-            fg=colors.white,
-            bg=colors.black
-        )
-
-        console.print(
-            x=x + 1,
-            y=y + len(equipment) + 4,
-            string=f"Mainhand Damage: {player.equipment.mainhand_min_damage} - {player.equipment.mainhand_max_damage}",
-            fg=colors.white,
-            bg=colors.black
-        )
-
-        console.print(
-            x=x + 1,
-            y=y + len(equipment) + 5,
-            string=f"Offhand Attack Bonus: {player.equipment.offhand_attack_bonus:+}",
-            fg=colors.white,
-            bg=colors.black
-        )
-
-        console.print(
-            x=x + 1,
-            y=y + len(equipment) + 6,
-            string=f"Offhand Damage: {player.equipment.offhand_min_damage} - {player.equipment.offhand_max_damage}",
-            fg=colors.white,
-            bg=colors.black
-        )
 
         return self
 
@@ -493,7 +355,16 @@ class LevelUpEventHandler(AskUserEventHandler):
             alignment=CENTER
         )
 
-        console.print(x=x + 1, y=2, string="Congratulations! You level up!")
+        console.print_box(
+            x=x + 1,
+            y=2,
+            string="Congratulations! You level up!",
+            width=self.WINDOW_WIDTH - 2,
+            height=1,
+            fg=colors.white,
+            bg=colors.black,
+            alignment=CENTER
+        )
         console.print(x=x + 1, y=3, string=f"You gain {self.engine.player[0].hp_per_level} maximum HP.")
         if isinstance(self.engine.player[0], Mage):
             console.print(x=x + 1, y=4, string=f"You gain 10 maximum mana.")
@@ -572,7 +443,7 @@ class InventoryEventHandler(AskUserEventHandler):
         if height <= 5:
             height = 5
 
-        y = 0
+        y = 1
 
         width = len(self.TITLE) + 4
         if number_of_items_in_inventory != 0:
