@@ -6,11 +6,14 @@ class EquipmentSlot(Enum):
     ARMOR = auto()
     MAINHAND = auto()
     OFFHAND = auto()
-    TRINKET1 = auto()
-    TRINKET2 = auto()
+    TRINKET = auto()
+    CONSUMABLE_1 = auto()
+    CONSUMABLE_2 = auto()
+    CONSUMABLE_3 = auto()
+    CONSUMABLE_4 = auto()
 
     def __lt__(self, other):
-        if not hasattr(other, 'value'):
-            return NotImplemented
+        if not isinstance(other, EquipmentSlot):
+            raise NotImplemented
         else:
             return self.value < other.value

@@ -6,4 +6,5 @@ class EquipmentType(Enum):
     ARMOR = auto()
     HEAD = auto()
     TRINKET = auto()
-    OFFHAND = auto()  # Shields and magic focuses
+    FOCUS = auto()
+    CONSUMABLE = auto()

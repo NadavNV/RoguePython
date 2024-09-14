@@ -19,23 +19,6 @@ class Equipment(BaseComponent):
     def __init__(self):
         self.items = {slot: None for slot in EquipmentSlot}
 
-        self.strength_bonus = 0
-        self.perseverance_bonus = 0
-        self.agility_bonus = 0
-        self.magic_bonus = 0
-        self.armor_bonus = 0
-        self.avoidance_bonus = 0
-        self.magic_resistance = 0
-        self.spell_attack_bonus = 0
-
-        self.mainhand_attack_bonus = 0
-        self.mainhand_min_damage = 0
-        self.mainhand_max_damage = 0
-
-        self.offhand_attack_bonus = 0
-        self.offhand_min_damage = 0
-        self.offhand_max_damage = 0
-
     def item_is_equipped(self, slot: EquipmentSlot) -> bool:
         return self.items[slot] is not None
 
@@ -63,18 +46,6 @@ class Equipment(BaseComponent):
 
         item.equippable.on_equip(self)
 
-        if isinstance(item.equippable, Weapon):
-            min_damage = item.equippable.min_damage + item.equippable.damage_bonus
-            max_damage = item.equippable.max_damage + item.equippable.damage_bonus
-            if slot == EquipmentSlot.MAINHAND:
-                self.mainhand_max_damage = max_damage
-                self.mainhand_min_damage = min_damage
-                self.mainhand_attack_bonus = item.equippable.attack_bonus
-            elif slot == EquipmentSlot.OFFHAND:
-                self.offhand_max_damage = max_damage
-                self.offhand_min_damage = min_damage
-                self.offhand_attack_bonus = item.equippable.attack_bonus
-
         if (
                 slot == EquipmentSlot.MAINHAND and
                 item.equippable.two_handed and
@@ -93,14 +64,6 @@ class Equipment(BaseComponent):
             current_item.parent.parent = self.parent.inventory
 
             current_item.on_unequip(self)
-            if slot == EquipmentSlot.MAINHAND:
-                self.mainhand_max_damage = self.parent.strength // 2
-                self.mainhand_min_damage = self.parent.strength // 2
-                self.mainhand_attack_bonus = self.parent.strength // 2
-            elif slot == EquipmentSlot.OFFHAND:
-                self.offhand_max_damage = 0
-                self.offhand_min_damage = 0
-                self.offhand_attack_bonus = 0
 
             if add_message:
                 self.unequip_message(current_item.parent.name)

@@ -553,11 +553,13 @@ class InventoryActivateHandler(InventoryEventHandler):
     TITLE = "Select an item to use"
 
     def on_item_selected(self, item: Item) -> Optional[ActionOrHandler]:
-        player = self.engine.player.fighters[0]
+        player: Player = self.engine.player.fighters[0]
         if item.consumable:
+            # TODO: Remove, consumables are equippable now
             # Return the action for the selected item.
             return item.consumable.get_action(self.engine.player.fighters[0])
         elif item.equippable:
+            # TODO: Overview, make sure everything works
             if item.equippable.equipment_type == EquipmentType.WEAPON:
 
                 if not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND):
@@ -658,57 +660,6 @@ class LookHandler(SelectIndexHandler):
     def on_index_selected(self, x: int, y: int) -> MainGameEventHandler:
         """Return to main handler."""
         return MainGameEventHandler(self.engine)
-
-
-class SingleRangedAttackHandler(SelectIndexHandler):
-    """Handles targeting a single enemy. Only the enemy selected will be affected."""
-
-    def __init__(
-            self, engine: Engine, callback: Callable[[Tuple[int, int]], Optional[Action]], parent: EventHandler
-    ):
-        super().__init__(engine, parent)
-
-        self.callback = callback
-
-    def on_index_selected(self, x: int, y: int) -> Optional[Action]:
-        return self.callback((x, y))
-
-
-class AreaRangedAttackHandler(SelectIndexHandler):
-    """Handles targeting an area within a given radius. Any entity within the area will be affected."""
-
-    def __init__(
-            self,
-            engine: Engine,
-            radius: int,
-            callback: Callable[[Tuple[int, int]], Optional[Action]],
-            parent: EventHandler,
-    ):
-        super().__init__(engine, parent)
-
-        self.radius = radius
-        self.callback = callback
-
-    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        """Highlight the tile under the cursor."""
-        super().on_render(console)
-
-        x, y = self.engine.mouse_location
-
-        # Draw a rectangle around the targeted area, so the player can see the affected tiles.
-        console.draw_frame(
-            x=x - self.radius - 1,
-            y=y - self.radius - 1,
-            width=self.radius ** 2,
-            height=self.radius ** 2,
-            fg=colors.red,
-            clear=False,
-        )
-
-        return self
-
-    def on_index_selected(self, x: int, y: int) -> Optional[Action]:
-        return self.callback((x, y))
 
 
 class MainGameEventHandler(EventHandler):
