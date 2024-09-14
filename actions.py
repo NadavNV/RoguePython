@@ -180,9 +180,9 @@ class BumpAction(ActionWithDirection):
                 return True
             else:
                 if self.entity is self.engine.player:
-                    self.engine.start_combat(self.target_actor)
+                    self.engine.start_combat(enemies=self.target_actor, player_initiated=True)
                 else:
-                    self.engine.start_combat(self.entity)
+                    self.engine.start_combat(enemies=self.entity, player_initiated=False)
                 return True
 
         else:

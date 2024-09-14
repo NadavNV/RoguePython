@@ -36,6 +36,7 @@ class Engine(metaclass=Singleton):
         self.mouse_location = (0, 0)
         self.player = player
         self.in_combat = False
+        self.turn = 0
         self.active_enemies = None
         self.active_trader: Optional[Trader] = None
 
@@ -44,7 +45,6 @@ class Engine(metaclass=Singleton):
         if not self.in_combat:
             for entity in set(self.game_map.actors) - {self.player}:
                 if hasattr(entity, "ai") and entity.ai:
-                    print(entity)
                     try:
                         entity.ai.perform()
                         if self.in_combat:
@@ -53,7 +53,7 @@ class Engine(metaclass=Singleton):
                         pass  # Ignore impossible action exceptions from AI.
         else:
             for entity in self.active_enemies.fighters:
-                if entity.is_alive:
+                if entity.is_alive and self.turn > 0:
                     entity.start_turn()
                     card = entity.hand.pop()
                     card.on_play()
@@ -108,16 +108,19 @@ class Engine(metaclass=Singleton):
         # If a tile is "visible" it should be added to "explored".
         self.game_map.explored |= self.game_map.visible
 
-    def start_combat(self, enemies: FighterGroup) -> None:
+    def start_combat(self, enemies: FighterGroup, player_initiated: bool) -> None:
         self.in_combat = True
         self.active_enemies = enemies
         for enemy in enemies:
             enemy.start_combat()
-            enemy.start_turn()
         self.player[0].start_combat()
-        self.player[0].start_turn()
+        if player_initiated:
+            self.turn = 0
+        else:
+            self.turn = 1
 
     def end_combat(self) -> None:
+        self.turn = 0
         self.in_combat = False
         self.active_enemies.die()
         self.player[0].end_combat()

@@ -163,8 +163,17 @@ class Fighter(BaseComponent, RDSObject):
     def game_map(self) -> GameMap:
         return self.parent.game_map
 
+    def draw_hand(self) -> None:
+        while len(self.hand) < self.current_hand_size:
+            if len(self.draw) == 0:
+                self.draw = self.discard
+                self.discard = []
+                random.shuffle(self.draw)
+            next_card = self.draw.pop()
+            next_card.on_draw()
+            self.hand.append(next_card)
+
     def start_turn(self) -> None:
-        print(f"Starting {self.name.capitalize()} turn")
         self.block = 0
         if self.debuffs[StatusType.BLEED] > 0:
             self.hp -= self.debuffs[StatusType.BLEED]
@@ -176,22 +185,16 @@ class Fighter(BaseComponent, RDSObject):
             self.die()
             return
         self.hp += self.buffs[StatusType.BALM]
-        if  Talent.STRENGTH_PER_TURN in self.talents:
+        if Talent.STRENGTH_PER_TURN in self.talents:
             self.buffs[StatusType.STRENGTH] += self.talents[Talent.STRENGTH_PER_TURN]
-        while len(self.hand) < self.current_hand_size:
-            if len(self.draw) == 0:
-                self.draw = self.discard
-                self.discard = []
-                random.shuffle(self.draw)
-            next_card = self.draw.pop()
-            next_card.on_draw()
-            self.hand.append(next_card)
+        self.draw_hand()
 
     def start_combat(self) -> None:
         self.buffs = dict(self.baseline_buffs)
         self.debuffs = dict(self.baseline_debuffs)
         self.draw = self.deck[:]
         random.shuffle(self.draw)
+        self.draw_hand()
 
     def end_turn(self) -> None:
         if self.debuffs[StatusType.POISON] > 0:

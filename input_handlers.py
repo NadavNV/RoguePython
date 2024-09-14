@@ -179,10 +179,10 @@ class EventHandler(BaseEventHandler):
             self.engine.message_log.add_message(exc.args[0], colors.impossible)
             return False  # Skip enemy turn on exceptions.
 
-        if not isinstance(action, BumpAction) or action.entity != self.engine.player:
-            # This is to make sure that the player gets the first turn in combat
-            self.engine.handle_enemy_turns()
+        if isinstance(action, WaitAction) and self.engine.in_combat:
+            self.engine.turn += 1
 
+        self.engine.handle_enemy_turns()
         self.engine.update_fov()
         return True
 
