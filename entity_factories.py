@@ -185,6 +185,7 @@ mana_potion = Item(
     name="Mana Potion",
     description="Drink to restore 4 mana.",
     consumable=consumable.ManaConsumable(amount=4),
+    equippable=equippable.Equippable(EquipmentType.POTION),
     stackable=True
 )
 
