@@ -68,6 +68,8 @@ def new_game(player_class: FighterClass) -> Engine:
         player[0].resource = Mana()
 
     player[0].resource.parent = player[0]
+    player[0].equipment.parent = player[0]
+    player[0].inventory.parent = player[0]
     player[0].parent = player
 
     engine = Engine(player=player)

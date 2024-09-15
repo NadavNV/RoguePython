@@ -90,6 +90,8 @@ class DropItem(ItemAction):
 class EquipAction(Action):
     def __init__(self, entity: Actor, item: Item, slot: EquipmentSlot):
         super().__init__(entity)
+        print(f"Equip Action, entity: {entity}")
+        print(f"Entity equipment parent: {entity.equipment.parent}")
 
         self.item = item
         self.slot = slot
