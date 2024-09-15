@@ -66,7 +66,6 @@ class Inventory(BaseComponent):
                 raise Impossible("Inventory is full")
 
     def list_items(self) -> List[str]:
-        # TODO: Include equipped items.
         """Creates a list of the items in the inventory, with their amounts if stacked."""
         result = []
 

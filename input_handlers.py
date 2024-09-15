@@ -555,36 +555,112 @@ class InventoryActivateHandler(InventoryEventHandler):
     def on_item_selected(self, item: Item) -> Optional[ActionOrHandler]:
         player: Player = self.engine.player.fighters[0]
         if item.consumable:
-            # TODO: Remove, consumables are equippable now
-            # Return the action for the selected item.
-            return item.consumable.get_action(self.engine.player.fighters[0])
+            return UseConsumableEventHandler(self.engine, self, item)
         elif item.equippable:
             # TODO: Overview, make sure everything works
             if item.equippable.equipment_type == EquipmentType.WEAPON:
 
-                if not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND):
+                if (
+                        not player.equipment.item_is_equipped(EquipmentSlot.MAINHAND) and
+                        not player.equipment.item_is_equipped(EquipmentSlot.OFFHAND)
+                ):
                     return actions.EquipAction(player, item=item, slot=EquipmentSlot.MAINHAND)
                 elif isinstance(item.equippable, Weapon) and (
-                        not item.equippable.offhand
-                        or player.equipment.items[EquipmentSlot.MAINHAND].two_handed
+                        not item.equippable.offhand  # Weapon is not an offhand weapon
+                        or player.equipment.items[EquipmentSlot.MAINHAND].two_handed  # Current weapon is two-handed
                 ):
                     player.equipment.unequip_from_slot(EquipmentSlot.MAINHAND, add_message=True)
                     return actions.EquipAction(player, item=item, slot=EquipmentSlot.MAINHAND)
-                elif player.equipment.items[EquipmentSlot.OFFHAND] is None:
+                elif player.equipment.items[EquipmentSlot.OFFHAND] is None and item.equippable.offhand:
                     return actions.EquipAction(player, item=item, slot=EquipmentSlot.OFFHAND)
                 else:
+                    # Player needs to pick a weapon to unequip first
                     return EquipWeaponEventHandler(self.engine, item, self)
-            elif item.equippable.equipment_type == EquipmentType.TRINKET:
-                if not player.equipment.item_is_equipped(EquipmentSlot.TRINKET1):
-                    return actions.EquipAction(player, item, EquipmentSlot.TRINKET1)
-                elif not player.equipment.item_is_equipped(EquipmentSlot.TRINKET2):
-                    return actions.EquipAction(player, item, EquipmentSlot.TRINKET2)
-                return EquipTrinketEventHandler(self.engine, item, self)
             else:
-                slot = EquipmentSlot(item.equippable.equipment_type)
+                match item.equippable.equipment_type:
+                    case EquipmentType.ARMOR:
+                        slot = EquipmentSlot.ARMOR
+                    case EquipmentType.HEAD:
+                        slot = EquipmentSlot.HEAD
+                    case EquipmentType.TRINKET:
+                        slot = EquipmentSlot.TRINKET
+                    case EquipmentType.OFFHAND:
+                        slot = EquipmentSlot.OFFHAND
+                    case _:
+                        raise exceptions.Impossible("Invalid item type")
+                if player.equipment.items[slot] is not None:
+                    player.equipment.unequip_from_slot(slot=slot, add_message=True)
                 return actions.EquipAction(player, item=item, slot=slot)
         else:
             return None
+
+
+class UseConsumableEventHandler(AskUserEventHandler):
+    def __init__(self, engine: Engine, parent: EventHandler, item: Item):
+        super().__init__(engine=engine, parent=parent)
+        self.item = item
+
+    def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
+        self.parent.on_render(console)
+        console.rgb["fg"] //= 2
+        console.rgb["bg"] //= 2
+
+        text = "Do you want to drink the potion or equip it for battle?"
+        width = len(text) + 6
+        height = 8
+
+        x = (console.width - width) // 2
+        y = (console.height - height) // 2
+
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            fg=colors.white,
+            bg=colors.black
+        )
+        console.print_box(
+            x=x,
+            y=y + 2,
+            width=width,
+            height=1,
+            string=text,
+            fg=colors.white,
+            bg=colors.black,
+            alignment=CENTER,
+        )
+
+        console.print(
+            x=x + 3,
+            y=y + 4,
+            string="1) Drink",
+        )
+        console.print(
+            x=x + 3,
+            y=y + 5,
+            string="2) Equip",
+        )
+
+        return self
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+        player: Player = self.engine.player[0]
+
+        if key == tcod.event.KeySym.N1 or key == tcod.event.KeySym.KP_1:
+            # Return the action for the selected item.
+            return self.item.consumable.get_action(self.engine.player.fighters[0])
+        elif key == tcod.event.KeySym.N2 or key == tcod.event.KeySym.KP_2:
+            if not player.equipment.item_is_equipped(EquipmentSlot.POTION_1):
+                return actions.EquipAction(player, self.item, EquipmentSlot.POTION_1)
+            elif not player.equipment.item_is_equipped(EquipmentSlot.POTION_2):
+                return actions.EquipAction(player, self.item, EquipmentSlot.POTION_2)
+            elif not player.equipment.item_is_equipped(EquipmentSlot.POTION_3):
+                return actions.EquipAction(player, self.item, EquipmentSlot.POTION_3)
+            elif not player.equipment.item_is_equipped(EquipmentSlot.POTION_4):
+                return actions.EquipAction(player, self.item, EquipmentSlot.POTION_4)
+            return EquipPotionEventHandler(self.engine, self.item, self.parent)
 
 
 class InventoryDropHandler(InventoryEventHandler):
@@ -700,6 +776,13 @@ class MainGameEventHandler(EventHandler):
             return LookHandler(self.engine, parent=self)
         elif key == tcod.event.KeySym.u:
             return UnequipEventHandler(self.engine, parent=self)
+        elif key == tcod.event.KeySym.e:
+            return InspectPileEventHandler(
+                engine=self.engine,
+                pile=self.engine.player[0].deck,
+                name="Your Cards",
+                parent=self
+            )
 
         # No valid key was pressed
         return action
@@ -949,7 +1032,7 @@ class EquipmentEventHandler(AskUserEventHandler):
 
         if 0 <= index < len(EquipmentSlot):
             try:
-                selected_item = index
+                selected_item = EquipmentSlot(index + 1)
             except IndexError:
                 self.engine.message_log.add_message("Invalid entry.", colors.invalid)
                 return None
@@ -1015,7 +1098,7 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
     TITLE = "Select weapon to replace"
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        player = self.engine.player.fighters[0]
+        player: Player = self.engine.player.fighters[0]
         super().on_render(console)
 
         equipped_weapons = [
@@ -1084,20 +1167,22 @@ class EquipWeaponEventHandler(ChooseSlotEventHandler):
         return actions.EquipAction(self.engine.player, self.item, slot)
 
 
-class EquipTrinketEventHandler(ChooseSlotEventHandler):
-    TITLE = "Select trinket to replace"
+class EquipPotionEventHandler(ChooseSlotEventHandler):
+    TITLE = "Select potion to replace"
 
     def on_render(self, console: tcod.console.Console) -> BaseEventHandler:
-        player = self.engine.player.fighters[0]
+        player: Player = self.engine.player.fighters[0]
         super().on_render(console)
 
-        equipped_trinkets = [
-            player.equipment.items[EquipmentSlot.TRINKET1].name,
-            player.equipment.items[EquipmentSlot.TRINKET2].name
+        equipped_potions = [
+            player.equipment.items[EquipmentSlot.POTION_1].name,
+            player.equipment.items[EquipmentSlot.POTION_2].name,
+            player.equipment.items[EquipmentSlot.POTION_3].name,
+            player.equipment.items[EquipmentSlot.POTION_4].name,
         ]
 
-        width = max(len(self.TITLE), len(equipped_trinkets[0]), len(equipped_trinkets[1])) + 2
-        height = 4
+        width = max(len(self.TITLE), max([len(potion) for potion in equipped_potions])) + 2
+        height = 6
         x = (console.width - width) // 2
         y = (console.height - height) // 2
 
@@ -1132,7 +1217,7 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
             console.print(
                 x=x + 1,
                 y=y + 1 + i,
-                string=equipped_trinkets[i],
+                string=equipped_potions[i],
                 fg=fg,
                 bg=bg,
             )
@@ -1145,9 +1230,13 @@ class EquipTrinketEventHandler(ChooseSlotEventHandler):
             self.cursor = (self.cursor + CURSOR_Y_KEYS[key]) % 2
         elif key in CONFIRM_KEYS:
             if self.cursor == 0:
-                slot = EquipmentSlot.TRINKET1
+                slot = EquipmentSlot.POTION_1
+            elif self.cursor == 1:
+                slot = EquipmentSlot.POTION_2
+            elif self.cursor == 2:
+                slot = EquipmentSlot.POTION_3
             else:
-                slot = EquipmentSlot.TRINKET2
+                slot = EquipmentSlot.POTION_4
             return self.on_slot_selected(slot)
         elif key == tcod.event.KeySym.ESCAPE:
             return self.parent
@@ -1550,7 +1639,7 @@ class PlayerHandEventHandler(EventHandler):
 class InspectPileEventHandler(EventHandler):
     LENGTH = 10
 
-    def __init__(self, engine: Engine, pile: List[Card], name: str, parent: CombatEventHandler):
+    def __init__(self, engine: Engine, pile: List[Card], name: str, parent: EventHandler):
         super().__init__(engine)
         self.parent = parent
         self.cursor = 0

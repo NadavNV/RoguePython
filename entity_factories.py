@@ -13,6 +13,7 @@ from dropgen.RDSNullValue import RDSNullValue
 from dropgen.RDSTable import RDSTable
 from dropgen.RDSValue import RDSValue
 from entity import FighterGroup, Item
+from equipment_types import EquipmentType
 
 SCROLL_CHAR = '~'
 POTION_CHAR = '!'
@@ -41,6 +42,7 @@ class HealingItem(Item):
             name=name,
             description=description,
             consumable=consumable.HealingConsumable(min_amount, max_amount),
+            equippable=equippable.Equippable(EquipmentType.POTION),
             probability=probability,
             stackable=True,
         )

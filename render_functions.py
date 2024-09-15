@@ -486,9 +486,10 @@ def render_dungeon_ui(console: Console) -> None:
     console.print(x=frame_x + 1, y=frame_y + 3, string="Unequip item:                    u")
     console.print(x=frame_x + 1, y=frame_y + 4, string="Character & Equipment info:      c")
     console.print(x=frame_x + 1, y=frame_y + 5, string="Expand message log:              v")
-    console.print(x=frame_x + 1, y=frame_y + 6, string="Descend stairs:          shift + .")
-    console.print(x=frame_x + 1, y=frame_y + 7, string="Movement:              Numpad keys")
-    console.print(x=frame_x + 1, y=frame_y + 8, string="Wait:                     Numpad 5")
+    console.print(x=frame_x + 1, y=frame_y + 6, string="View deck:                       e")
+    console.print(x=frame_x + 1, y=frame_y + 7, string="Descend stairs:          shift + .")
+    console.print(x=frame_x + 1, y=frame_y + 8, string="Movement:              Numpad keys")
+    console.print(x=frame_x + 1, y=frame_y + 9, string="Wait:                     Numpad 5")
 
     frame_x = console.width * 2 // 3 + 1
     frame_y = console.height * 2 // 3 + 1

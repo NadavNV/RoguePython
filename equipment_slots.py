@@ -7,10 +7,10 @@ class EquipmentSlot(Enum):
     MAINHAND = auto()
     OFFHAND = auto()
     TRINKET = auto()
-    CONSUMABLE_1 = auto()
-    CONSUMABLE_2 = auto()
-    CONSUMABLE_3 = auto()
-    CONSUMABLE_4 = auto()
+    POTION_1 = auto()
+    POTION_2 = auto()
+    POTION_3 = auto()
+    POTION_4 = auto()
 
     def __lt__(self, other):
         if not isinstance(other, EquipmentSlot):

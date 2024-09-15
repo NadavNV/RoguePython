@@ -8,13 +8,13 @@ from equipment_types import EquipmentType
 from equipment_slots import EquipmentSlot
 
 if TYPE_CHECKING:
-    from components.fighter import Fighter
+    from components.fighter import Player
     from entity import Item
 
 
 class Equipment(BaseComponent):
     items: Dict[EquipmentSlot, Optional[Equippable]]
-    parent: Fighter
+    parent: Player
 
     def __init__(self):
         self.items = {slot: None for slot in EquipmentSlot}
@@ -23,12 +23,12 @@ class Equipment(BaseComponent):
         return self.items[slot] is not None
 
     def unequip_message(self, item_name: str) -> None:
-        self.parent.game_map.engine.message_log.add_message(
+        self.parent.engine.message_log.add_message(
             f"You remove the {item_name}."
         )
 
     def equip_message(self, item_name: str) -> None:
-        self.parent.game_map.engine.message_log.add_message(
+        self.parent.engine.message_log.add_message(
             f"You equip the {item_name}."
         )
 
@@ -85,15 +85,14 @@ class Equipment(BaseComponent):
 
     @staticmethod
     def get_slot_type(slot: EquipmentSlot) -> EquipmentType:
-        if slot == EquipmentSlot.MAINHAND:
-            return EquipmentType.WEAPON
-        elif slot == EquipmentSlot.OFFHAND:
-            return EquipmentType.WEAPON
-        elif slot == EquipmentSlot.ARMOR:
-            return EquipmentType.ARMOR
-        elif slot == EquipmentSlot.HEAD:
-            return EquipmentType.HEAD
-        elif slot == EquipmentSlot.TRINKET1:
-            return EquipmentType.TRINKET
-        elif slot == EquipmentSlot.TRINKET2:
-            return EquipmentType.TRINKET
+        match slot:
+            case EquipmentSlot.MAINHAND | EquipmentSlot.OFFHAND:
+                return EquipmentType.WEAPON
+            case EquipmentSlot.ARMOR:
+                return EquipmentType.ARMOR
+            case EquipmentSlot.HEAD:
+                return EquipmentType.HEAD
+            case EquipmentSlot.TRINKET:
+                return EquipmentType.TRINKET
+            case EquipmentSlot.POTION_1 | EquipmentSlot.POTION_2 | EquipmentSlot.POTION_3 | EquipmentSlot.POTION_4:
+                return EquipmentType.POTION
