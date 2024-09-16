@@ -59,6 +59,7 @@ class Card(RDSObject):
     def __init__(self, cost: int, upgradable: bool = True, playable: bool = True, burn: bool = False, ethereal: bool = False, **kwargs):
         super().__init__(**kwargs)
         self.cost = cost
+        self.original_cost = cost
         self.playable: bool = playable
         self.burn: bool = burn
         self.ethereal: bool = ethereal
@@ -104,6 +105,7 @@ class Card(RDSObject):
         What should happen at the end of the turn if this card hasn't been played.
         Can be overridden by Card subclasses.
         """
+        self.cost = self.original_cost
         if self.ethereal:
             self.parent.burn.append(self)
         else:
@@ -116,6 +118,9 @@ class Card(RDSObject):
         assert self.upgradable
         assert not self.is_upgraded
         self.is_upgraded = True
+
+    def temporary_cost(self, new_cost: int) -> None:
+        self.cost = new_cost
 
     def __str__(self) -> str:
         return self.name
@@ -340,6 +345,7 @@ class SnakeBite(TargetedCard):
     def upgrade(self) -> None:
         super().upgrade()
         self.cost = 2
+        self.original_cost = 2
         self._poison = 2
 
 
@@ -392,7 +398,7 @@ class FlashBomb(Card):
     def upgrade(self) -> None:
         super().upgrade()
         self.cost = 1
-
+        self.original_cost = 1
 
 class SmokeBomb(Card):
     def __init__(self, **kwargs):
@@ -496,7 +502,7 @@ class SideEffects(TargetedCard):
                 (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
                  self.parent.buffs[StatusType.STRENGTH]) * 
                 (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
-            }")
+            }").replace("<2>", str(self._weakness))
         else:
             return self._description.replace("<1>", f"{
                 (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
@@ -518,6 +524,40 @@ class SideEffects(TargetedCard):
         super().upgrade()
         self._weakness = 2
 
+
+class DanseMacabre(TargetedCard):
+    def __init__(self, **kwargs):
+        super().__init__(damage=4, cost=1, **kwargs)
+        self._agility = 1
+        self._name = "Danse Macabre"
+        self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+                            f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage 2 times. Gain " +\
+                            f"<2> Agility.\n\nCosts 1 Stamina."
+        self.upgrade_description: str = "Increase damage from 4 to 6. Increase Agility from 1 to 2"
+        self.keywords.add('agility')
+
+    def description(self) -> str:
+        if self.target:
+            return self._description.replace("<1>", f"{
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH]) * 
+                (1.5 if self.target.debuffs[StatusType.EXPOSED] > 0 else 1)
+            }").replace("<2>", str(self._agility))
+        else:
+            return self._description.replace("<1>", f"{
+                (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+                 self.parent.buffs[StatusType.STRENGTH])
+            }").replace("<2>", str(self._agility))
+
+    def on_play(self) -> None:
+        super().on_play()
+        self.attack(self.target)
+        self.attack(self.target)
+        self.parent.buffs[StatusType.AGILITY] += self._agility
+        self.engine.message_log.add_message(
+            text=f"{self.parent.name.capitalize()} gains {self._agility} agility", fg=colors.agility
+        )
+        self.parent.discard.append(self)
 
 # TODO: Add more cards
 

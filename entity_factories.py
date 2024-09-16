@@ -77,16 +77,6 @@ class WeaponItem(Item):
             equippable=equippable_component
         )
 
-    def on_rds_hit(self, **kwargs):
-        floor = self.rds_table.current_floor
-        n = random.choices(
-            population=[floor - 2, floor - 1, floor, floor + 1, floor + 2],
-            weights=[1, 7, 14, 7, 1],
-        )[0]
-
-        if n > 0:
-            self.equippable.enhance_item(n)
-
 
 rogue_deck = [Jab() for _ in range(4)] + [Dodge() for _ in range(4)]
 
