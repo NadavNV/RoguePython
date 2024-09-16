@@ -5,6 +5,7 @@ import copy
 import pickle
 import lzma
 
+import exceptions
 from cards import AttackCard
 import colors
 from components.resoucre import Mana, Rage, Stamina
@@ -37,7 +38,7 @@ def new_game(player_class: FighterClass) -> Engine:
     max_rooms = 30
 
     if player_class == FighterClass.WARRIOR:
-        player = copy.deepcopy(entity_factories.warrior)
+        player = entity_factories.warrior
         player[0].fighter_class = FighterClass.WARRIOR
 
         club = copy.deepcopy(entity_factories.club)
@@ -47,7 +48,7 @@ def new_game(player_class: FighterClass) -> Engine:
         player[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
 
     elif player_class == FighterClass.ROGUE:
-        player = copy.deepcopy(entity_factories.rogue)
+        player = entity_factories.rogue
         player[0].fighter_class = FighterClass.ROGUE
 
         dagger = copy.deepcopy(entity_factories.dagger)
@@ -57,8 +58,7 @@ def new_game(player_class: FighterClass) -> Engine:
         player[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
 
     elif player_class == FighterClass.MAGE:
-        player = copy.deepcopy(entity_factories.mage)
-        player[0].fighter_class = FighterClass.MAGE
+        player = entity_factories.mage
 
         wand = copy.deepcopy(entity_factories.wand)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
@@ -66,10 +66,10 @@ def new_game(player_class: FighterClass) -> Engine:
         player[0].equipment.equip_to_slot(EquipmentSlot.MAINHAND, wand, add_message=False)
         player[0].equipment.equip_to_slot(EquipmentSlot.ARMOR, leather_armor, add_message=False)
         player[0].resource = Mana()
+    else:
+        raise exceptions.Impossible("Invalid class selected")
 
     player[0].resource.parent = player[0]
-    player[0].equipment.parent = player[0]
-    player[0].inventory.parent = player[0]
     player[0].parent = player
 
     engine = Engine(player=player)

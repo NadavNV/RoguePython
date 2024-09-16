@@ -20,6 +20,11 @@ system blatantly stolen from [Knock on the Coffin lid](https://store.steampowere
 ## Screenshots
 ***TBA***
 ## Setup and Usage
-***TBA***
+* Install dependencies:<br>
+`pip install tcod`<br>
+`pip install pillow`<br>
+`pip install drop-generator`
+* Clone the repository.
+* To play the game run `python main.py` from the repository folder.
 ## Additional Files
 ***TBA***
