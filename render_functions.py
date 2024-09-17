@@ -9,6 +9,7 @@ from tcod.constants import COLCTRL_FORE_RGB, COLCTRL_STOP, CENTER
 import colors
 from cards import keyword_to_description
 from components.fighter import Fighter, Player
+from fighter_classes import FighterClass
 
 if TYPE_CHECKING:
     from cards import Card
@@ -645,4 +646,64 @@ def render_enemy_tooltip(console: Console, enemy: Fighter):
         string=wrap(enemy.hand[0].description, width - 2),
         fg=colors.white,
         bg=colors.black,
+    )
+
+
+def render_level_up_screen(console: Console, cards: List[Card], player: Player, cursor: int, start: int) -> None:
+    width = 42
+    height = 16
+    x = (console.width - width) // 2
+
+    console.draw_frame(
+        x=x,
+        y=1,
+        width=width,
+        height=height,
+        clear=True,
+        fg=colors.white,
+        bg=colors.black,
+    )
+    console.print_box(
+        x=x,
+        y=1,
+        width=width,
+        height=1,
+        string=f"┤Level Up├",
+        fg=colors.white,
+        bg=colors.black,
+        alignment=CENTER
+    )
+
+    console.print_box(
+        x=x + 1,
+        y=3,
+        string="Congratulations! You level up!",
+        width=width - 2,
+        height=1,
+        fg=colors.white,
+        bg=colors.black,
+        alignment=CENTER
+    )
+    console.print(x=x + 2, y=4, string=f"You gain {player.hp_per_level} maximum HP.")
+    if player.fighter_cls == FighterClass.MAGE:
+        console.print(x=x + 2, y=5, string=f"You gain 10 maximum mana.")
+
+    console.print(x=x + 2, y=7, string="Select a card to upgrade:")
+
+    render_card_list(
+        console=console,
+        cards=cards[start:start + 10],
+        cursor=cursor,
+        name="Deck",
+        up_arrow=start > 0,
+        down_arrow=start + 10 < len(cards)
+    )
+    card = cards[start + cursor]
+    console.print(
+        x=x + 3,
+        y=9,
+        string=wrap(
+            text=f"{card.name} - {card.upgrade_description}",
+            width=width - 6
+        )
     )

@@ -314,7 +314,7 @@ class Rogue(Player):
             max_hp_on_spawn=80,
             hp_per_level=10,
             resource=Stamina(),
-            level=Level(level_up_base=200),
+            level=Level(level_up_base=50),  # 200
             deck=deck,
             fighter_class=FighterClass.ROGUE
         )

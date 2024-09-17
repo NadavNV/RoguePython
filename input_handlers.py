@@ -317,11 +317,6 @@ class CharacterScreenEventHandler(AskUserEventHandler):
 
 
 class LevelUpEventHandler(AskUserEventHandler):
-    TITLE = "Level Up"
-    WINDOW_WIDTH = len('perseverance') * 3 + 6
-    WINDOW_HEIGHT = 12
-    LENGTH = 10
-
     def __init__(self, engine: Engine, parent: EventHandler):
         super().__init__(engine=engine, parent=parent)
         # Only show upgradable cards
@@ -333,57 +328,12 @@ class LevelUpEventHandler(AskUserEventHandler):
 
         super().on_render(console)
 
-        x = (console.width - self.WINDOW_WIDTH) // 2
-
-        console.draw_frame(
-            x=x,
-            y=1,
-            width=self.WINDOW_WIDTH,
-            height=self.WINDOW_HEIGHT,
-            clear=True,
-            fg=colors.white,
-            bg=colors.black,
-        )
-        console.print_box(
-            x=x,
-            y=1,
-            width=self.WINDOW_WIDTH,
-            height=1,
-            string=f"┤{self.TITLE}├",
-            fg=colors.white,
-            bg=colors.black,
-            alignment=CENTER
-        )
-
-        console.print_box(
-            x=x + 1,
-            y=2,
-            string="Congratulations! You level up!",
-            width=self.WINDOW_WIDTH - 2,
-            height=1,
-            fg=colors.white,
-            bg=colors.black,
-            alignment=CENTER
-        )
-        console.print(x=x + 1, y=3, string=f"You gain {self.engine.player[0].hp_per_level} maximum HP.")
-        if isinstance(self.engine.player[0], Mage):
-            console.print(x=x + 1, y=4, string=f"You gain 10 maximum mana.")
-
-        console.print(x=x + 1, y=6, string="Select a card to upgrade:")
-
-        render_functions.render_card_list(
+        render_functions.render_level_up_screen(
             console=console,
-            cards=self.cards[self.start: self.start + 10],
+            cards=self.cards,
+            player=self.engine.player[0],
             cursor=self.cursor,
-            name="Deck",
-            up_arrow=self.start > 0,
-            down_arrow=self.start + self.LENGTH < len(self.cards)
-        )
-        card = self.cards[self.start + self.cursor]
-        console.print(
-            x=x + 1,
-            y=8,
-            string=f"{card.name} - {card.upgrade_description}"
+            start=self.start,
         )
 
         return self

@@ -355,8 +355,8 @@ class Muster(Card):
         self._name = "Muster"
         self.strength = 1
         self.agility = 1
-        self._description = "Gain <1> strength and <2> agility."
-        self.upgrade_description: str = "Increase strength and agility amount from 1 to 2.\n\nCosts 1 Stamina."
+        self._description = "Gain <1> strength and <2> agility.\n\nCosts 1 Stamina."
+        self.upgrade_description: str = "Increase strength and agility amount from 1 to 2."
         self.keywords.add('strength')
         self.keywords.add('agility')
 
