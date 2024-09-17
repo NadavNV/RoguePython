@@ -46,16 +46,16 @@ class RogueCommonCards(RDSTable):
     def __init__(self):
         super().__init__(count=3, unique=True)
 
-        self.add_entry(entry=SanguineStrike, unique=True)
-        self.add_entry(entry=SnakeBite, unique=True)
-        self.add_entry(entry=PrecisionStrike, unique=True)
-        self.add_entry(entry=SideEffects, unique=True)
-        self.add_entry(entry=Muster, unique=True)
-        self.add_entry(entry=FlashBomb, unique=True)
-        self.add_entry(entry=SmokeBomb, unique=True)
-        self.add_entry(entry=ShrapnelBomb, unique=True)
-        self.add_entry(entry=DanseMacabre, unique=True)
-        self.add_entry(entry=Flourish, unique=True)
+        self.add_entry(entry=SanguineStrike(), unique=True)
+        self.add_entry(entry=SnakeBite(), unique=True)
+        self.add_entry(entry=PrecisionStrike(), unique=True)
+        self.add_entry(entry=SideEffects(), unique=True)
+        self.add_entry(entry=Muster(), unique=True)
+        self.add_entry(entry=FlashBomb(), unique=True)
+        self.add_entry(entry=SmokeBomb(), unique=True)
+        self.add_entry(entry=ShrapnelBomb(), unique=True)
+        self.add_entry(entry=DanseMacabre(), unique=True)
+        self.add_entry(entry=Flourish(), unique=True)
 
 
 class Gold(RDSValue):
