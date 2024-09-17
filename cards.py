@@ -559,6 +559,45 @@ class DanseMacabre(TargetedCard):
         )
         self.parent.discard.append(self)
 
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.damage = 6
+        self._agility = 2
+
+
+class Flourish(AttackCard):
+    def __init__(self, **kwargs):
+        super().__init__(damage=4, cost=1, **kwargs)
+        self._exposed = 1
+        self._name = "Flourish"
+        self._description = f"Deal {COLCTRL_FORE_RGB:c}{colors.balm[0]:c}" + \
+                            f"{colors.balm[1]:c}{colors.balm[2]:c}<1>{COLCTRL_STOP:c} damage to all enemies." +\
+                            f"When dealing HP damage, inflict <2> Exposed\n\nCosts 1 Stamina."
+        self.upgrade_description: str = "Increase damage from 4 to 7. Increase Exposed from 1 to 2"
+        self.keywords.add('exposed')
+
+    def description(self) -> str:
+        return self._description.replace("<1>", f"{
+            (self.damage * (0.5 if self.parent.debuffs[StatusType.WEAKNESS] > 0 else 1) +
+             self.parent.buffs[StatusType.STRENGTH])
+        }").replace("<2>", str(self._exposed))
+
+    def on_play(self) -> None:
+        super().on_play()
+        for enemy in self.engine.active_enemies.fighters:
+            if self.attack(enemy):
+                enemy.debuffs[StatusType.EXPOSED] += self._exposed
+                self.engine.message_log.add_message(
+                    text=f"{enemy.name} gains {self._exposed} Exposed!",
+                    fg=colors.exposed
+                )
+        self.parent.discard.append(self)
+
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.damage = 7
+        self._exposed = 2
+
 # TODO: Add more cards
 
 ###############
