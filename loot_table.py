@@ -10,6 +10,7 @@ from dropgen.RDSValue import RDSValue
 import entity_factories
 from cards import (
     SanguineStrike, Muster, PrecisionStrike, SmokeBomb, FlashBomb, ShrapnelBomb, SideEffects, SnakeBite,
+    DanseMacabre, Flourish,
 )
 
 
@@ -45,14 +46,16 @@ class RogueCommonCards(RDSTable):
     def __init__(self):
         super().__init__(count=3, unique=True)
 
-        self.add_entry(entry=SanguineStrike())
-        self.add_entry(entry=SnakeBite())
-        self.add_entry(entry=PrecisionStrike())
-        self.add_entry(entry=SideEffects())
-        self.add_entry(entry=Muster())
-        self.add_entry(entry=FlashBomb())
-        self.add_entry(entry=SmokeBomb())
-        self.add_entry(entry=ShrapnelBomb())
+        self.add_entry(entry=SanguineStrike, unique=True)
+        self.add_entry(entry=SnakeBite, unique=True)
+        self.add_entry(entry=PrecisionStrike, unique=True)
+        self.add_entry(entry=SideEffects, unique=True)
+        self.add_entry(entry=Muster, unique=True)
+        self.add_entry(entry=FlashBomb, unique=True)
+        self.add_entry(entry=SmokeBomb, unique=True)
+        self.add_entry(entry=ShrapnelBomb, unique=True)
+        self.add_entry(entry=DanseMacabre, unique=True)
+        self.add_entry(entry=Flourish, unique=True)
 
 
 class Gold(RDSValue):

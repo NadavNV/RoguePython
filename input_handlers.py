@@ -1798,7 +1798,9 @@ class LootEventHandler(AskUserEventHandler):
 
     def __init__(self, engine: Engine, parent: EventHandler) -> None:
         super().__init__(engine=engine, parent=parent)
+        # TODO: split into common, rare, and epic cards
         self.cards = loot_table.RogueCommonCards().rds_result
+        self.cards = [card() for card in self.cards]
         for card in self.cards:
             card.parent = self.engine.player[0]
         self.gold = RDSTable(
