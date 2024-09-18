@@ -6,3 +6,4 @@ class Talent(Enum):
     ATTACKS_INFLICT_BLEED = auto()
     BLOCK_PER_TURN = auto()
     STAMINA_PER_TURN = auto()
+    DRAW_EXTRA_FREE_CARD = auto()

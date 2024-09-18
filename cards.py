@@ -598,6 +598,25 @@ class Flourish(AttackCard):
         self.damage = 7
         self._exposed = 2
 
+
+class CardTrick(Card):
+    def __init__(self, **kwargs):
+        super().__init__(cost=3, **kwargs)
+        self._name = "Card Trick"
+        self._description = "At the start of the turn, draw 1 extra card. It costs 0 this turn.\n\nCosts <1> stamina."
+        self.upgrade_description = "Reduce cost from 3 to 1."
+
+    @property
+    def description(self) -> str:
+        return self._description.replace("<1>", str(self.cost))
+
+    def on_play(self) -> None:
+        self.parent.talents[Talent.DRAW_EXTRA_FREE_CARD] += 1
+
+    def upgrade(self) -> None:
+        super().upgrade()
+        self.cost = 1
+
 # TODO: Add more cards
 
 ###############

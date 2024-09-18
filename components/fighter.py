@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import random
 from typing import Dict, List, Optional, Tuple, Type, TYPE_CHECKING
+from collections import Counter
 
 import colors
 from components.base_component import BaseComponent
@@ -70,7 +71,7 @@ class Fighter(BaseComponent, RDSObject):
         self.buffs: Dict[StatusType, int] = dict(self.baseline_buffs)
         self.debuffs: Dict[StatusType, int] = dict(self.baseline_debuffs)
 
-        self.talents: Dict[Talent, int] = {}
+        self.talents: Dict[Talent, int] = Counter()
 
         self.deck: List[Card] = copy.deepcopy(deck)
         for card in self.deck:
@@ -188,6 +189,12 @@ class Fighter(BaseComponent, RDSObject):
         if Talent.STRENGTH_PER_TURN in self.talents:
             self.buffs[StatusType.STRENGTH] += self.talents[Talent.STRENGTH_PER_TURN]
         self.draw_hand()
+        if Talent.DRAW_EXTRA_FREE_CARD in self.talents:
+            for _ in range(self.talents[Talent.DRAW_EXTRA_FREE_CARD]):
+                next_card = self.draw.pop()
+                next_card.on_draw()
+                next_card.temporary_cost(0)
+                self.hand.append(next_card)
 
     def start_combat(self) -> None:
         self.buffs = dict(self.baseline_buffs)
