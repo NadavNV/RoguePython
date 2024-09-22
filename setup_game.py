@@ -39,7 +39,8 @@ def new_game(player_class: FighterClass) -> Engine:
 
     if player_class == FighterClass.WARRIOR:
         player = entity_factories.warrior
-        player[0].fighter_class = FighterClass.WARRIOR
+        # player[0].equipment.parent = player[0]
+        # player[0].inventory.parent = player[0]
 
         club = copy.deepcopy(entity_factories.club)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
@@ -49,7 +50,8 @@ def new_game(player_class: FighterClass) -> Engine:
 
     elif player_class == FighterClass.ROGUE:
         player = entity_factories.rogue
-        player[0].fighter_class = FighterClass.ROGUE
+        # player[0].equipment.parent = player[0]
+        # player[0].inventory.parent = player[0]
 
         dagger = copy.deepcopy(entity_factories.dagger)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
@@ -59,6 +61,8 @@ def new_game(player_class: FighterClass) -> Engine:
 
     elif player_class == FighterClass.MAGE:
         player = entity_factories.mage
+        # player[0].equipment.parent = player[0]
+        # player[0].inventory.parent = player[0]
 
         wand = copy.deepcopy(entity_factories.wand)
         leather_armor = copy.deepcopy(entity_factories.leather_armor)
@@ -85,6 +89,7 @@ def new_game(player_class: FighterClass) -> Engine:
 
     engine.game_world.generate_floor()
     engine.update_fov()
+    print(engine.player.parent)
 
     engine.message_log.add_message(
         "Hello and welcome, adventurer, to yet another dungeon!", colors.welcome_text

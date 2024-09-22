@@ -8,13 +8,13 @@ from equipment_types import EquipmentType
 from equipment_slots import EquipmentSlot
 
 if TYPE_CHECKING:
-    from components.fighter import Player
+    from components.fighter import Fighter
     from entity import Item
 
 
 class Equipment(BaseComponent):
     items: Dict[EquipmentSlot, Optional[Equippable]]
-    parent: Player
+    parent: Fighter
 
     def __init__(self):
         self.items = {slot: None for slot in EquipmentSlot}
@@ -57,12 +57,13 @@ class Equipment(BaseComponent):
             self.equip_message(item.name)
 
     def unequip_from_slot(self, slot: EquipmentSlot, add_message: bool) -> None:
+        print(f"Unequipping from {slot.name}")
         current_item = self.items[slot]
         if current_item is not None:
             self.items[slot] = None
             self.parent.inventory.add_item(current_item.parent)
             current_item.parent.parent = self.parent.inventory
-
+            print(self)
             current_item.on_unequip(self)
 
             if add_message:

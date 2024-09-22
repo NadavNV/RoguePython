@@ -37,8 +37,9 @@ class Fighter(BaseComponent, RDSObject):
             max_hp_on_spawn: int,
             hp_per_level: int,
             deck: List[Card],
-            inventory: Inventory = Inventory(capacity=26),
-            level: Level = Level(),
+            inventory: Optional[Inventory] = None,
+            equipment: Optional[Equipment] = None,
+            level: Optional[Level] = None,
             char: str = "?",
             color: Tuple[int, int, int] = colors.white,
             name: str = "<Unnamed>",
@@ -86,9 +87,20 @@ class Fighter(BaseComponent, RDSObject):
         self.hp_per_level = hp_per_level
         self.block = 0
 
-        self.inventory = inventory
+        if inventory is None:
+            self.inventory = Inventory(capacity=26)
+        else:
+            self.inventory = inventory
         self.inventory.parent = self
-        self.level = level
+        if equipment is None:
+            self.equipment = Equipment()
+        else:
+            self.equipment = equipment
+        self.equipment.parent = self
+        if level is None:
+            self.level = Level()
+        else:
+            self.level = level
         self.level.parent = self
 
     @property
@@ -231,9 +243,8 @@ class Player(Fighter):
             deck: List[Card],
             resource: Resource,
             fighter_class: FighterClass,
-            inventory: Inventory = Inventory(capacity=26),
-            equipment: Equipment = Equipment(),
-            level: Level = Level(),
+            inventory: Optional[Inventory] = None,
+            level: Optional[Level] = None,
             sprite: str = "images/rogue_icon.png"
     ):
         super().__init__(
@@ -251,8 +262,6 @@ class Player(Fighter):
 
         self.resource = resource
         self.resource.parent = self
-        self.equipment = equipment
-        self.equipment.parent = self
 
         self.fighter_cls = fighter_class
 
@@ -277,7 +286,7 @@ class Enemy(Fighter):
             hp_per_level: int,
             ai_cls: Type[BaseAI],
             deck: List[Card],
-            level: Level = Level(),
+            level: Optional[Level] = None,
             char: str = "?",
             color: Tuple[int, int, int] = colors.white,
             name: str = "<Unnamed>",
@@ -321,7 +330,7 @@ class Rogue(Player):
             max_hp_on_spawn=80,
             hp_per_level=10,
             resource=Stamina(),
-            level=Level(level_up_base=50),  # 200
+            level=Level(level_up_base=200),
             deck=deck,
             fighter_class=FighterClass.ROGUE
         )

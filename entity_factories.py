@@ -261,7 +261,7 @@ leather_armor = Item(
     char=ARMOR_CHAR,
     color=(139, 69, 19),
     name="Leather Armor",
-    description="Layers of hardened leather provide some protection without restricting movement.",
+    description="Increase max HP by 10.",
     equippable=equippable.LeatherArmor(),
 )
 
@@ -318,6 +318,4 @@ class Lumberjack(Enemy):
 
 
 if __name__ == "__main__":
-    janitor = Janitor(target_level=3)
-    print(janitor.hp)
-    print(janitor.level.current_level)
+    pass

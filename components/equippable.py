@@ -112,6 +112,16 @@ class LeatherArmor(Armor):
     def __init__(self) -> None:
         super().__init__(equipment_type=EquipmentType.ARMOR)
 
+    def on_equip(self, equipment: Equipment) -> None:
+        print("Equipping Leather Armor")
+        equipment.parent.max_hp += 10
+        equipment.parent.hp += 10
+
+    def on_unequip(self, equipment: Equipment) -> None:
+        print("Unequipping Leather Armor")
+        equipment.parent.max_hp -= 10
+        equipment.parent.hp = min(equipment.parent.hp, equipment.parent.max_hp)
+
 
 class ChainMail(Armor):
     def __init__(self) -> None:
